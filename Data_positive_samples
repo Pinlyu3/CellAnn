@@ -28,34 +28,587 @@
 #####
 
 Retina
+
 PMID 34584087_sub3
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons (Retina)
+pmid:34584087_sub3
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+pmid34584087_sub3_DEGs_long = readRDS('pmid34584087_sub3_DEGs_long')
+
+###### Get the short list: #########
+
+pmid34584087_sub3_seurat_obj = readRDS('pmid34584087_sub3_seurat_obj')
+
+pmid34584087_sub3_seurat_obj[['RNA']]@data[1:10,1:10]
+
+######
+######
+
+table(pmid34584087_sub3_seurat_obj$celltype)
+
+
+Get_DEGs_list_short <- function(seurat_obj){
+	library(future)
+	plan("multisession", workers = 30)
+	Idents(seurat_obj) = "celltype"
+	List_ct = names(table(seurat_obj$celltype))
+	#######
+	i = data.frame(i=1:length(List_ct))
+	j = data.frame(j=1:length(List_ct))
+	ij_tab = merge(i,j)
+	k = which(ij_tab$i > ij_tab$j)
+	ij_tab_cl = ij_tab[k,]
+	#######
+	ij_tab_cl = as.matrix(ij_tab_cl)
+	#######
+	library(parallel)
+	cl <- makeCluster(20)
+	res_list = parApply(cl,ij_tab_cl,1,Get_DEGs_list_sub,seurat_obj=seurat_obj,List_ct=List_ct)
+	stopCluster(cl)
+	#######
+	res_list = unlist(res_list)
+	res_list = as.character(res_list)
+	res_list = res_list[!duplicated(res_list)]
+	#####
+	return(res_list)
+}
+
+#########
+#########
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+#########
+#########
+
+DEGs_long = pmid31995762_total_DEGs_long
+
+#########
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+pmid31995762_total_avg_expmat = readRDS('pmid31995762_total_avg_expmat')
+
+Gene_Avg = pmid31995762_total_avg_expmat
+
+
+DEGs_long_to_short <- function(DEGs_long,length=50,Gene_Avg){
+	######
+	for(i in 1:length(DEGs_long)){
+		DEGs_long[[i]]$tag = names(DEGs_long)[i]
+	}
+	DEGs_long_merge = do.call('rbind',DEGs_long)
+	######
+	sp = strsplit(DEGs_long_merge$tag,'@VS@')
+	DEGs_long_merge$cell1 = sapply(sp,function(x) x[[1]])
+	DEGs_long_merge$cell2 = sapply(sp,function(x) x[[2]])
+	######
+	all_cells = c(DEGs_long_merge$cell1,DEGs_long_merge$cell2)
+	all_cells = all_cells[!duplicated(all_cells)]
+	######
+	Markers_all = list()
+	for(j in 1:length(all_cells)){
+		print(j)
+		tmp_cells_index1 = which(DEGs_long_merge$cell1 == all_cells[j] & DEGs_long_merge$avg_log2FC > 0)
+		tmp_cells_index2 = which(DEGs_long_merge$cell2 == all_cells[j] & DEGs_long_merge$avg_log2FC < 0)
+		tmp_cells_all = c(tmp_cells_index1,tmp_cells_index2)
+		tmp_table = DEGs_long_merge[tmp_cells_all,]
+		tmp_table_list = split(tmp_table,tmp_table$tag)
+		Markers_all_sub = c()
+		for(k in 1:length(tmp_table_list)){
+			tmp_table_list_sub = tmp_table_list[[k]]
+			########## add ranks #####################
+			cell1_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell1[1])
+			cell1_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell1_index],ties.method='average'))
+			cell2_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell2[1])
+			cell2_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell2_index],ties.method='average'))
+			##########
+			m1 = match(tmp_table_list_sub$gene,cell1_index_tab$genes)
+			tmp_table_list_sub$rank1 = cell1_index_tab$ranks[m1]
+			m2 = match(tmp_table_list_sub$gene,cell2_index_tab$genes)
+			tmp_table_list_sub$rank2 = cell2_index_tab$ranks[m2]
+			#########
+			tmp_table_list_sub$delta_rank = tmp_table_list_sub$rank1-tmp_table_list_sub$rank2
+			##########
+			tmp_table_list_sub$score = tmp_table_list_sub$delta_rank*tmp_table_list_sub$avg_log2FC
+			##########
+			if(tmp_table_list_sub$avg_log2FC[1] > 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(tmp_table_list_sub$avg_log2FC[1] < 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(dim(tmp_table_list_sub)[1] > length){tmp_markers = tmp_table_list_sub$gene[1:length]}
+			if(dim(tmp_table_list_sub)[1] == length){tmp_markers = tmp_table_list_sub$gene}
+			Markers_all_sub = c(Markers_all_sub,tmp_markers)
+		}
+		Markers_all_sub = Markers_all_sub[!duplicated(Markers_all_sub)]
+		Markers_all = c(Markers_all,list(Markers_all_sub))
+	}
+	names(Markers_all) = all_cells
+	return(Markers_all)
+}
 
 
 
 
-
+#########
 Retina
 PMID 31995762_total
+###### pmid31995762_total_DEGs_long
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+pmid31995762_total_DEGs_long = readRDS('pmid31995762_total_DEGs_long')
+
+Gene_Avg = pmid31995762_total_avg_expmat
+
+pmid31995762_total_DEGs_short = DEGs_long_to_short(pmid31995762_total_DEGs_long,Gene_Avg=Gene_Avg)
+
+
+saveRDS(pmid31995762_total_DEGs_short,file='pmid31995762_total_DEGs_short')
+
+load('pmid31995762_total_seurat_obj')
+pmid31995762_total_bulk = Prepare_the_Seurat_objects_Step3(pmid31995762_total_seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99)
+
+
+####### see the correlations: for self #######
+#######
+pmid31995762_total_DEGs_short_merge = do.call('c',pmid31995762_total_DEGs_short)
+
+index = grep('RGC',colnames(pmid31995762_total_bulk))
+submat = pmid31995762_total_bulk[,index]
+submat_cor = submat[which(rownames(submat) %in% pmid31995762_total_DEGs_short_merge == T),]
+
+submat_cor_res = cor(submat_cor,method = 'spearman')
+k = which(upper.tri(submat_cor_res) == F)
+submat_cor_res[k] = NA
+
+summary(as.vector(submat_cor_res))
+
+
+png('test.png')
+hist(as.vector(submat_cor_res))
+dev.off()
+
+
+########### find a average expression profile in 
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+pmid34584087_sub3_geneAvg = readRDS('pmid34584087_sub3_geneAvg')
+
+k = which(colnames(pmid34584087_sub3_geneAvg) == 'Microglia')
+
+QgeneAvg = pmid34584087_sub3_geneAvg
+Qindex = which(colnames(pmid34584087_sub3_geneAvg) == 'Cones')
+Rbulk = pmid31995762_total_bulk
+DEGs = unlist(pmid31995762_total_DEGs_short)
+DEGs = DEGs[!duplicated(DEGs)]
 
 
 
+Self_cor_fun <- function(x=merge_cor_results){
+	x = x[,-1]
+	x = x[-1,]
+	print(dim(x))
+	cts = sapply(strsplit(colnames(x),'@'),function(x) x[[1]])
+	cts = cts[!duplicated(cts)]
+	####
+	cts_cor_list = list()
+	####
+	for(i in 1:length(cts)){
+		temp_ct = cts[i]
+		temp_ct_index = grep(temp_ct,colnames(x))
+		#######
+		temp_ct_mat = x[temp_ct_index,temp_ct_index]
+		#######
+		temp_k = which(upper.tri(temp_ct_mat) == F)
+		temp_ct_mat[temp_k] = NA
+		#######
+		temp_ct_vect = as.vector(temp_ct_mat)
+		#######
+		temp_ct_vect_index = which(is.na(temp_ct_vect) == T)
+		temp_ct_vect = temp_ct_vect[-temp_ct_vect_index]
+		cts_cor_list = c(cts_cor_list,list(temp_ct_vect))
+	}
+	####
+	names(cts_cor_list) = cts
+	return(cts_cor_list)
+}
+
+
+
+Calculate_the_confidence <- function(score1,score2){
+	########
+	min = min(score1,score2)
+	max = max(score1,score2)
+	da <- density(score1, from=min, to=max)
+	db <- density(score2, from=min, to=max)
+	d <- data.frame(x=da$x, a=da$y, b=db$y)
+	d$w <- pmin(d$a, d$b)
+	# integrate areas under curves
+	library(sfsmisc)
+	total <- integrate.xy(d$x, d$a) + integrate.xy(d$x, d$b)
+	intersection <- integrate.xy(d$x, d$w)
+	overlap <- 2 * intersection / total
+	########
+	return(overlap)
+}
+
+
+install.packages('sfsmisc')
+
+
+Corr_cutoff = 0.4
+Confident_cutoff = 0.8
+
+newCTs = c('Bipolar','Rods')
+
+
+Get_DEGs_CT <- function(newCTs,DEGs_long,length=100,Gene_Avg,QgeneAvg){
+	###########
+	for(i in 1:length(DEGs_long)){
+		DEGs_long[[i]]$tag = names(DEGs_long)[i]
+	}
+	DEGs_long_merge = do.call('rbind',DEGs_long)
+	######
+	sp = strsplit(DEGs_long_merge$tag,'@VS@')
+	DEGs_long_merge$cell1 = sapply(sp,function(x) x[[1]])
+	DEGs_long_merge$cell2 = sapply(sp,function(x) x[[2]])
+	###########
+	k = which(DEGs_long_merge$cell1 %in% newCTs == T & DEGs_long_merge$cell2 %in% newCTs == T)
+	DEGs_long_merge_cl = DEGs_long_merge[k,]
+	###########
+	Markers_all = c()
+	tmp_table_list = split(DEGs_long_merge_cl,DEGs_long_merge_cl$tag)
+	for(k in 1:length(tmp_table_list)){
+			tmp_table_list_sub = tmp_table_list[[k]]
+			########## add ranks #####################
+			cell1_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell1[1])
+			cell1_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell1_index],ties.method='average'))
+			cell2_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell2[1])
+			cell2_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell2_index],ties.method='average'))
+			##########
+			m1 = match(tmp_table_list_sub$gene,cell1_index_tab$genes)
+			tmp_table_list_sub$rank1 = cell1_index_tab$ranks[m1]
+			m2 = match(tmp_table_list_sub$gene,cell2_index_tab$genes)
+			tmp_table_list_sub$rank2 = cell2_index_tab$ranks[m2]
+			#########
+			tmp_table_list_sub$delta_rank = (tmp_table_list_sub$rank1-tmp_table_list_sub$rank2) / dim(Gene_Avg)[1]
+			tmp_table_list_sub$delta_pct = (tmp_table_list_sub$pct.1-tmp_table_list_sub$pct.2) 
+			##########
+			tmp_table_list_sub$score = tmp_table_list_sub$delta_rank*tmp_table_list_sub$delta_pct
+			##########
+			### using cuoff ######
+			##########
+			k1 = which(abs(tmp_table_list_sub$avg_log2FC) > 1)
+			tmp_table_list_sub = tmp_table_list_sub[k1,]
+			k2 = which(abs(tmp_table_list_sub$delta_pct) > 0.3)
+			tmp_table_list_sub = tmp_table_list_sub[k2,]
+			k3 = which(abs(tmp_table_list_sub$delta_rank) > 0.2)
+			tmp_table_list_sub = tmp_table_list_sub[k3,]
+			##########
+			########## tmp_table_list_sub[which(tmp_table_list_sub$gene=='GLB1L2'),]
+			tmp_table_list_sub1 = tmp_table_list_sub[which(tmp_table_list_sub$avg_log2FC >0 & tmp_table_list_sub$delta_pct >0 & tmp_table_list_sub$delta_rank > 0),]
+			tmp_table_list_sub2 = tmp_table_list_sub[which(tmp_table_list_sub$avg_log2FC <0 & tmp_table_list_sub$delta_pct <0 & tmp_table_list_sub$delta_rank < 0),]
+			########## tmp_table_list_sub1[which(tmp_table_list_sub1$gene=='ISL1'),]
+			k1 = which(tmp_table_list_sub1$gene %in% rownames(QgeneAvg) == T)
+			tmp_table_list_sub1 = tmp_table_list_sub1[k1,]
+			k2 = which(tmp_table_list_sub2$gene %in% rownames(QgeneAvg) == T)
+			tmp_table_list_sub2 = tmp_table_list_sub2[k2,]
+			##########
+			tmp_table_list_sub1 = tmp_table_list_sub1[order(tmp_table_list_sub1$avg_log2FC,decreasing=T),]
+			tmp_table_list_sub2 = tmp_table_list_sub2[order(tmp_table_list_sub2$avg_log2FC,decreasing=T),]
+			##########
+			if(dim(tmp_table_list_sub1)[1] < length){tmp_markers_1 = tmp_table_list_sub1$gene}else{
+			tmp_markers_1 = tmp_table_list_sub1$gene[1:length]}
+			if(dim(tmp_table_list_sub2)[1] < length){tmp_markers_2 = tmp_table_list_sub2$gene}else{
+			tmp_markers_2 = tmp_table_list_sub2$gene[1:length]}
+			##########
+			Markers_all = c(Markers_all,tmp_markers_1,tmp_markers_2)
+		}
+		Markers_all = Markers_all[!duplicated(Markers_all)]
+		return(Markers_all)
+}
+
+
+
+Compare_cor_QandR_mini <- function(QgeneAvg,Qindex,Rbulk,DEGs){
+	QR_genes = rownames(QgeneAvg)[which(rownames(QgeneAvg) %in% rownames(Rbulk) == T)]
+	QR_genes = QR_genes[which(QR_genes %in% DEGs == T)]
+	########
+	QgeneAvg_cl = QgeneAvg[which(rownames(QgeneAvg) %in% QR_genes == T),]
+	m1 = match(QR_genes,rownames(QgeneAvg_cl))
+	QgeneAvg_cl = QgeneAvg_cl[m1,]
+	########
+	Rbulk_cl = Rbulk[which(rownames(Rbulk) %in% QR_genes == T),]
+	m2 = match(QR_genes,rownames(Rbulk_cl))
+	Rbulk_cl = Rbulk_cl[m2,]
+	######## Test: ##########
+	Rbulk_cl_Zero =  which(rowSums(Rbulk_cl) == 0)
+	QgeneAvg_cl_Zero = which(QgeneAvg_cl[,Qindex] == 0)
+	########
+	Zero_all = c(Rbulk_cl_Zero,QgeneAvg_cl_Zero)
+	Zero_all = Zero_all[!duplicated(Zero_all)]
+	########
+	merge_cor_mat = cbind(QgeneAvg_cl[,Qindex],Rbulk_cl)
+	colnames(merge_cor_mat)[1] = colnames(QgeneAvg_cl)[Qindex]
+	########
+	merge_cor_results = cor(merge_cor_mat,method = 'spearman')
+	######## Next get average correlations ###############
+	merge_cor_results_Q = merge_cor_results[1,]
+	########
+	merge_cor_results_Q = merge_cor_results_Q[-1]
+	########
+	return(merge_cor_results_Q)
+}
+
+Compare_cor_QandR_mini2 <- function(QgeneAvg,Qindex,Rbulk,DEGs,newCTs){
+	QR_genes = rownames(QgeneAvg)[which(rownames(QgeneAvg) %in% rownames(Rbulk) == T)]
+	QR_genes = QR_genes[which(QR_genes %in% DEGs == T)]
+	########
+	QgeneAvg_cl = QgeneAvg[which(rownames(QgeneAvg) %in% QR_genes == T),]
+	m1 = match(QR_genes,rownames(QgeneAvg_cl))
+	QgeneAvg_cl = QgeneAvg_cl[m1,]
+	########
+	########
+	Rbulk_cl = Rbulk[which(rownames(Rbulk) %in% QR_genes == T),]
+	########
+	Rbulk_cl_colindex = sapply(strsplit(colnames(Rbulk_cl),'@'),function(x) x[[1]])
+	########
+	Rbulk_cl = Rbulk_cl[,which(Rbulk_cl_colindex%in%newCTs==T)]
+	m2 = match(QR_genes,rownames(Rbulk_cl))
+	Rbulk_cl = Rbulk_cl[m2,]
+	######## Test: ##########
+	Rbulk_cl_Zero =  which(rowSums(Rbulk_cl) == 0)
+	QgeneAvg_cl_Zero = which(QgeneAvg_cl[,Qindex] == 0)
+	########
+	Zero_all = c(Rbulk_cl_Zero,QgeneAvg_cl_Zero)
+	Zero_all = Zero_all[!duplicated(Zero_all)]
+	########
+	merge_cor_mat = cbind(QgeneAvg_cl[,Qindex],Rbulk_cl)
+	colnames(merge_cor_mat)[1] = colnames(QgeneAvg_cl)[Qindex]
+	########
+	merge_cor_results = cor(merge_cor_mat,method = 'spearman')
+	######## Next get average correlations ###############
+	merge_cor_results_Q = merge_cor_results[1,]
+	########
+	merge_cor_results_Q = merge_cor_results_Q[-1]
+	########
+	return(merge_cor_results_Q)
+}
+
+
+
+
+
+Compare_cor_QandR <- function(QgeneAvg,Qindex,Rbulk,DEGs,Corr_cutoff,Confident_cutoff){
+	########
+	########
+	merge_cor_results_Q = Compare_cor_QandR_mini(QgeneAvg,Qindex,Rbulk,DEGs)
+	Q_index_cor = sapply(strsplit(names(merge_cor_results_Q),'@'),function(x) x[[1]])
+	merge_cor_results_Q_median = tapply(merge_cor_results_Q,Q_index_cor,mean)
+	########
+	merge_cor_results_Q_list = split(merge_cor_results_Q,Q_index_cor)
+	########
+	########
+	######## see the candidates ########
+	########
+	########
+	Passed_index = which(merge_cor_results_Q_median > Corr_cutoff)
+	if(length(Passed_index) == 0){
+		res_tab = data.frame(cluster=colnames(QgeneAvg_cl)[Qindex],res='Unidentified',cor=max(merge_cor_results_Q_median))
+		return(res_tab)
+	}
+	######## while ###################
+	if(length(Passed_index) > 0){
+		Qmerge_cor_results_list = merge_cor_results_Q_list
+		Qmerge_cor_results = merge_cor_results_Q_median
+		determined = 'No'
+		while(determined == 'No'){
+			##### find the largest celltypes #######
+			Qmerge_cor_results = Qmerge_cor_results[order(Qmerge_cor_results,decreasing=T)]
+			##### for loops ########################
+			ct_max = names(Qmerge_cor_results)[1]
+			overlap = c()
+			for(k in 2:length(names(Qmerge_cor_results))){
+				tmp_name = names(Qmerge_cor_results)[k]
+				score1 = Qmerge_cor_results_list[[which(names(Qmerge_cor_results_list) == ct_max)]]
+				score2 = Qmerge_cor_results_list[[which(names(Qmerge_cor_results_list) == tmp_name)]]
+				overlap = c(overlap,round(Calculate_the_confidence(score1,score2),2))
+			}
+			conf_index = which((1-overlap) < Confident_cutoff)
+			if(length(conf_index) == 0){
+				res_tab = data.frame(cluster=colnames(QgeneAvg_cl)[Qindex],res=ct_max,cor=merge_cor_results_Q_median[which(names(merge_cor_results_Q_median)==ct_max)])
+				return(res_tab)
+				determined = 'Yes'
+			}else if(length(conf_index) == (length(Qmerge_cor_results)-1)){
+				######
+				res_tab = data.frame(cluster=colnames(QgeneAvg_cl)[Qindex],res='Mutiple_Celltypes',cor=mean(merge_cor_results_Q_median[which(names(merge_cor_results_Q_median)%in%names(Qmerge_cor_results)==T)]))
+				return(res_tab)
+				determined = 'Yes'
+			}else{
+				newCTs = names(Qmerge_cor_results)[1:(length(conf_index)+1)]
+				###### newCTs = c('Bipolar','Rods')
+				newDEGs = Get_DEGs_CT(newCTs,DEGs_long,length=100,Gene_Avg,QgeneAvg)
+				######
+				####### newDEGs = DEGs_long$"Bipolar@VS@Rods"$gene
+				Qmerge_cor_results_ori = Compare_cor_QandR_mini2(QgeneAvg,Qindex,Rbulk,newDEGs,newCTs)
+				######
+				Q_index_cor2 = sapply(strsplit(names(Qmerge_cor_results_ori),'@'),function(x) x[[1]])
+				Qmerge_cor_results = tapply(Qmerge_cor_results_ori,Q_index_cor2,mean)
+				Qmerge_cor_results_list = split(Qmerge_cor_results_ori,Q_index_cor2)
+				######
+
+			}
+		}
+	}
+}
+
+####### ######## #######
+####### good!!!! #######
+res_tab = Compare_cor_QandR(QgeneAvg,Qindex,Rbulk,DEGs,Corr_cutoff=0.4,Confident_cutoff=0.8)
+
+
+#######
+
+######
 Retina BC
 PMID 31995762_sub1
+###### pmid31995762_sub1_DEGs_long
 
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+pmid31995762_sub1_DEGs_long = readRDS('pmid31995762_sub1_DEGs_long')
+pmid31995762_sub1_DEGs_short = DEGs_long_to_short(pmid31995762_sub1_DEGs_long)
+saveRDS(pmid31995762_sub1_DEGs_short,file='pmid31995762_sub1_DEGs_short')
 
-
+######
 Retina development
+PMID 32386599
+######
 
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+pmid32386599_DEGs_long = readRDS('pmid32386599_DEGs_long')
+pmid32386599_DEGs_short = DEGs_long_to_short(pmid32386599_DEGs_long)
+saveRDS(pmid32386599_DEGs_short,file='pmid32386599_DEGs_short')
 
 
 #####
+##### Then check the average expression file: #########
 #####
-#####
+
+##### No need the average expression file #############
+##### just pseudo-bulk cells for each clusters ########
 
 
 #####
-##### Negative control ######
+##### Then check the pseudo-bulk expression file: #######
 #####
+
+
+
+get_smooth_gene_exp <- function(x,mat){
+	#####
+	mat_cl = mat[,x]
+	#####
+	vector = rowMeans(mat_cl)
+	#####
+	return(vector)
+}
+
+
+get_NonOverlap <- function(knnIdx,Sample_Numbers,non_overlapping_cutoff = 0.9){
+	counts = 0
+	index_list_ori = sample(1:dim(knnIdx)[1],1)
+	i = 1
+	while(i < (Sample_Numbers)){
+		######
+		tmp_index = sample(1:dim(knnIdx)[1],1)
+		######
+		counts = counts+1
+		#####
+		tmp_index_new_dat = as.vector(knnIdx[tmp_index,])
+		tmp_index_old_dat = as.vector(knnIdx[index_list_ori,])
+		######
+		tmp_overlap = 1-(length(which(tmp_index_new_dat %in% tmp_index_old_dat == T)) / length(knnIdx[tmp_index,]))
+		######
+		if(tmp_overlap > non_overlapping_cutoff){
+			index_list_ori = c(index_list_ori,tmp_index)
+			i = i+1
+		}
+		if(counts > 10000){
+			break
+		}
+	}
+	print(paste('clusters = ',length(index_list_ori)))
+	return(index_list_ori)
+}
+
+
+
+Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99){
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	dims_tab = seurat_obj@meta.data
+	k = which(colnames(dims_tab) %in% c('dim1','dim2','dim3'))
+	dims_tab = dims_tab[,k]
+	######
+	###### using UMAPs as dim #################
+	All_mat = list()
+	######
+	for(i in 1:(length(celltype))){
+		print(i)
+		#############
+		tmp_k = which(seurat_obj$celltype == celltype[i])
+		print(length(tmp_k))
+		#####
+		tmp_mat = mat[,tmp_k]
+		#####
+		tmp_dims_tab = dims_tab[tmp_k,]
+		tmp_dims_tab = as.matrix(tmp_dims_tab)
+		############# decide KNN ##########
+		print(paste('KNN =',KNN))
+		#############
+		#############
+		knnObj <- FNN::get.knn(data = tmp_dims_tab,k = KNN)
+		knnIdx <- knnObj$nn.index
+		rownames(knnIdx) = 1:dim(knnIdx)[1]
+		############# sample cells #########################
+		Sample_Numbers = round(length(tmp_k)/(KNN*5))
+		if(Sample_Numbers > 300){Sample_Numbers=300}
+		if(Sample_Numbers < 5){Sample_Numbers=5}
+		print(paste('Sample_Numbers',Sample_Numbers))
+		#############
+		#### sample No overlapping KNN clusters #####
+		#############
+		Sample_index = get_NonOverlap(knnIdx,Sample_Numbers,non_overlapping_cutoff)
+		#############
+		sample_index_mat = knnIdx[Sample_index,]
+		#############
+		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
+		sample_index_mat_res = as.matrix(sample_index_mat_res,nrow=dim(tmp_mat)[1])
+		#############
+		rownames(sample_index_mat_res) = rownames(tmp_mat)
+		colnames(sample_index_mat_res) = paste(celltype[i],1:dim(sample_index_mat_res)[2],sep='@psedobulk')
+		#############
+		sample_index_mat_res = list(sample_index_mat_res)
+		#############
+		All_mat = c(All_mat,sample_index_mat_res)
+	}
+	##### 
+	#####
+	All_mat = do.call('cbind',All_mat)
+	All_mat = round(All_mat,3)
+	#####
+	return(All_mat)
+}
+
+
+
+
 
 
 
