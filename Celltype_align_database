@@ -1,0 +1,988 @@
+####### 
+setwd('/zp1/data/plyu3/Downloading_datasets')
+
+
+#######
+library(Seurat)
+
+cd /zp1/data/plyu3/Downloading_datasets
+mkdir Retinal_Bipolar_Drop_seq
+
+setwd('/zp1/data/plyu3/Downloading_datasets/Mouse_Retinal_Bipolar_Dropseq')
+
+corrding = read.table('coordinates_retinal_bipolar.txt',sep='\t',header=T)
+
+clust = read.table('clust_retinal_bipolar.txt',sep='\t',header=T)
+
+mat = read.table('exp_matrix.txt',sep='\t',header=T)
+
+
+####### covert to seurat objects ##############
+
+Covert_to_seurat_from_DB = function(mat,corrding,clust){
+	#### for mat #####
+	mat_cl = mat[,-1]
+	rownames(mat_cl) = mat$GENE
+	seurat_obj = CreateSeuratObject(mat_cl)
+	#### for clust ####
+	clust_cl = clust[-1,]
+	####
+	m = match(colnames(seurat_obj),clust_cl$NAME)
+	seurat_obj$celltype = clust_cl$CLUSTER[m]
+	#### adding corr ########
+	corrding = corrding[-1,]
+	corrding$X = as.numeric(corrding$X)
+	corrding$Y = as.numeric(corrding$Y)
+	#####
+	seurat_obj = FindVariableFeatures(seurat_obj)
+	seurat_obj = ScaleData(seurat_obj)
+	seurat_obj = RunPCA(seurat_obj)
+	#### 
+	seurat_obj <- RunUMAP(seurat_obj, reduction = "pca", dims = 1:50)
+	####
+	tab = seurat_obj@reductions$umap@cell.embeddings
+	m = match(rownames(tab),corrding$NAME)
+	####
+	corrding_mat = as.matrix(corrding[,c(2,3)])
+	colnames(corrding_mat) = c('UMAP_1','UMAP_2')
+	rownames(corrding_mat) = corrding$NAME
+	seurat_obj@reductions$umap@cell.embeddings = corrding_mat
+	####
+	return(seurat_obj)
+}
+
+
+class(seurat_obj@reductions$pca@cell.embeddings)
+class(seurat_obj@reductions$umap@cell.embeddings)
+
+Bipolar_object = seurat_obj
+
+png_file = paste('Bipolar_object','.png',sep='')
+library(ggplot2)
+png(png_file,height=4000,width=8000,res=72*12)
+print(DimPlot(Bipolar_object, reduction = "umap",group.by = "celltype",label = TRUE, label.size = 4))
+dev.off()
+
+#######
+saveRDS(Bipolar_object,file='Bipolar_object')
+#######
+#######
+Bipolar_avg_mat = Get_the_bulk_data_for_eachcluster(Bipolar_object,tag='celltype')
+
+save(Bipolar_avg_mat,file='Bipolar_avg_mat')
+
+####### covert Name to cellID #################
+Genes = read.table('/zp1/data/plyu3/Downloading_datasets/Mouse_Development/10x_mouse_retina_development_feature.csv',sep=',',header=T)
+
+m = match(rownames(Bipolar_avg_mat),Genes$gene_short_name)
+
+k = which(is.na(m) == T)
+
+Bipolar_avg_mat = Bipolar_avg_mat[-k,]
+
+m = match(rownames(Bipolar_avg_mat),Genes$gene_short_name)
+
+rownames(Bipolar_avg_mat) = Genes$id[m]
+
+save(Bipolar_avg_mat,file='Bipolar_avg_mat')
+
+
+#######
+Idents(Bipolar_object) = 'celltype'
+
+Bipolar_Diff_genes = Get_DEGs(Bipolar_object)
+
+save(Bipolar_Diff_genes,file='Bipolar_Diff_genes')
+
+k = which(Genes$gene_short_name %in% Bipolar_Diff_genes == T)
+
+Bipolar_Diff_genes = Genes$id[k]
+
+save(Bipolar_Diff_genes,file='Bipolar_Diff_genes')
+
+
+spearman_reference_correlations = Calculate_corr_for_onecluster(Bipolar_object,tag='celltype',features=Bipolar_Diff_genes,method='spearman',tag_index = 'BC7 (Cone Bipolar cell 7)')
+
+
+spearman_reference_correlations_combine = do.call(rbind,spearman_reference_correlations)
+
+
+#### green ######
+#### green ######
+#### green ######
+
+df = spearman_reference_correlations_combine
+
+ggplot(df, aes(x=score)) + geom_histogram(binwidth=0.01) + facet_grid(index ~ .,scales="free_y")
+
+ggsave('test4.png',width=5,height=15)
+
+
+#######
+
+#########
+x <- rnorm(n=1000, mean=10)
+
+### 取平均值后取log ####
+
+x <- 1000:10000
+
+log(mean(x))
+mean(log(x))
+
+
+### 余旋相似度 ###
+###
+
+x <- c(33, 33, 43, 55, 48, 37, 43, 24)
+y <- c(37, 38, 42, 46, 46, 59, 41, 50)
+
+library(lsa)
+cosine(x, y)
+
+### spearman 相关系数 ######
+
+x <- c(33, 20, 43, 55, 48, 37, 70, 24)
+y <- c(37, 38, 42, 46, 48, 59, 41, 50)
+
+cor(x,y,method="spearman")
+cor(x,y,method="pearson")
+
+
+#### first prepare the datasets from the data ####
+
+n <- 10
+x <- rnorm(n)
+y <- rnorm(n)
+
+
+####
+
+#### prepare the datasets ####
+
+#### query datasets ####
+
+setwd('/zp1/data/plyu3/Downloading_datasets/Mouse_Development')
+
+Data_matrix = Matrix::readMM('10x_mouse_retina_development.mtx')
+
+Genes = read.table('10x_mouse_retina_development_feature.csv',sep=',',header=T)
+
+Cells = read.table('10x_Mouse_retina_pData_umap2_CellType_annot_w_horiz.csv',sep=',',header=T)
+
+table(Cells$age)
+
+table(Cells$umap2_CellType)
+
+#### using P14 datasets ######
+
+dim(Data_matrix)
+
+dim(Genes)
+
+dim(Cells)
+
+#### 
+
+rownames(Data_matrix) = Genes$id
+colnames(Data_matrix) = Cells$barcode
+
+####
+library(Seurat)
+
+mouse_dev = CreateSeuratObject(counts=Data_matrix)
+
+m = match(colnames(mouse_dev),Cells$barcode)
+
+mouse_dev$time = Cells$age[m]
+mouse_dev$celltype = Cells$umap2_CellType[m]
+
+
+P14_mouse_dev = subset(mouse_dev,subset = time %in% c('P14') == T)
+
+####
+
+head(P14_mouse_dev@meta.data)
+
+table(P14_mouse_dev$celltype)
+
+
+#### process the seurat ######
+#### process the seurat ###### 
+
+P14_mouse_dev = subset(P14_mouse_dev,subset=seurat_clusters %in% c(5,6,7) == F)
+
+P14_mouse_dev <- NormalizeData(P14_mouse_dev)
+P14_mouse_dev <- FindVariableFeatures(P14_mouse_dev, selection.method = "vst", nfeatures = 2000)
+P14_mouse_dev <- ScaleData(P14_mouse_dev,  verbose = FALSE)
+P14_mouse_dev <- RunPCA(P14_mouse_dev, verbose = FALSE)
+P14_mouse_dev <- RunUMAP(P14_mouse_dev, reduction = "pca", dims = 1:50)
+P14_mouse_dev <- FindNeighbors(P14_mouse_dev, reduction = "pca", dims = 1:50)
+P14_mouse_dev <- FindClusters(P14_mouse_dev, resolution = 0.5)
+
+
+
+png_file = paste('P14P8.combined_samples','.png',sep='')
+library(ggplot2)
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(P14_mouse_dev, reduction = "umap",group.by='seurat_clusters',label = TRUE, label.size = 5, repel = TRUE) + ggtitle("UMAP"))
+dev.off()
+
+
+
+celltype_list = list(Rod=c(0,5),BC=c(2,3),Cone=c(4),MG=c(1))
+
+x = P14_mouse_dev
+
+x$new_celltypes = 'Unknown'
+	######## find Genes ######
+	for(i in 1:length(celltype_list)){
+		print(celltype_list[[i]])
+		print(names(celltype_list)[i])
+		k = which(x$seurat_clusters %in% celltype_list[[i]] == T)
+		x$new_celltypes[k] = names(celltype_list)[i]
+	}
+
+table(x$new_celltypes)
+
+P14_mouse_dev = x
+
+
+png_file = paste('P14P8.combined_celltypes','.png',sep='')
+library(ggplot2)
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(P14_mouse_dev, reduction = "umap",group.by='new_celltypes',label = TRUE, label.size = 5, repel = TRUE) + ggtitle("UMAP"))
+dev.off()
+
+setwd('/zp1/data/plyu3/Downloading_datasets/Mouse_Development')
+
+saveRDS(P14_mouse_dev,file='P14_mouse_dev')
+
+#### cluster and new_celltypes #####
+
+setwd('/zp1/data/plyu3/Downloading_datasets/Mouse_Development')
+
+P14_mouse_dev = readRDS('P14_mouse_dev')
+
+
+
+
+
+####### ##########
+####### ##########
+
+
+
+#######
+####### load the reference datasets ###########
+#######
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/Downloading_datasets/Mouse_NMDA_science')
+
+load('Mouse_NMDA_pbmc_seurat.RData')
+
+Mouse_NMDA_seurat = UpdateSeuratObject(pbmc)
+
+######## 
+
+png_file = paste('NMDA_time1','.png',sep='')
+library(ggplot2)
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Mouse_NMDA_seurat, reduction = "tsne",group.by='Time',label = TRUE, label.size = 5, repel = TRUE))
+dev.off()
+
+
+"good!!!!"
+
+
+########
+######## find the celltype annotation !!! #######
+########
+
+Cellfeatures = read.table('Mouse_NMDA_cell_features.tsv',header=F,sep='\t')
+
+m = match(colnames(Mouse_NMDA_seurat),Cellfeatures$V1)
+
+Mouse_NMDA_seurat$celltype = Cellfeatures$V3[m]
+
+######## cluster ? ######
+
+png_file = paste('NMDA_celltypes','.png',sep='')
+library(ggplot2)
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Mouse_NMDA_seurat, reduction = "tsne",group.by='celltype',label = TRUE, label.size = 3, repel = TRUE) + ggtitle("UMAP"))
+dev.off()
+
+######## 
+########
+
+########
+######## 计算平均值 ################
+########
+
+######## 先计算reference的平均值 每个cluster Or celltypes #########
+######## [['RNA']]@data #########
+
+### x = Mouse_NMDA_seurat
+
+Get_the_bulk_data_for_eachcluster = function(x,tag='celltype'){
+	########
+	RNA_mat = x[['RNA']]@data
+	########
+	k = which(colnames(x@meta.data) == tag)
+	clusters = names(table(x@meta.data[,k]))
+	print(clusters)
+	meta = x@meta.data
+	########
+	Merge = c()
+	for(i in clusters){
+		sub_mat = RNA_mat[,which(meta[,k] == i)]
+		sub_mat_sum = rowMeans(sub_mat)
+		Merge = c(Merge,sub_mat_sum)
+	}
+	Merge_mat = matrix(Merge,nrow=dim(RNA_mat)[1])
+	rownames(Merge_mat) = rownames(RNA_mat)
+	colnames(Merge_mat) = clusters
+	########
+	#scale = apply(Merge_mat,2,sum)/1e6
+	#Merge_mat = sweep(Merge_mat,2,scale,FUN='/')
+	#Merge_mat = log2(Merge_mat+1)
+	#######
+	k = which(rowSums(Merge_mat) == 0)
+	if(length(k) > 0){Merge_mat = Merge_mat[-k,]}
+	print(dim(Merge_mat))
+	#######
+	return(Merge_mat)
+}
+
+
+Reference_avg_mat = Get_the_bulk_data_for_eachcluster(Mouse_NMDA_seurat,tag='celltype')
+
+## Query_avg_mat = Get_the_bulk_data_for_eachcluster(P14_mouse_dev,tag='seurat_clusters')
+
+########
+setwd('/zp1/data/plyu3/Downloading_datasets/compare_code')
+
+saveRDS(Reference_avg_mat,file='Reference_avg_mat')
+
+saveRDS(Query_avg_mat,file='Query_avg_mat')
+
+saveRDS(Mouse_NMDA_seurat,file='Mouse_NMDA_seurat')
+
+
+######## let us find variable genes #########
+Mouse_NMDA_seurat = readRDS('Mouse_NMDA_seurat')
+
+
+# Mouse_NMDA_seurat = FindVariableFeatures(Mouse_NMDA_seurat,nfeatures = 5000)
+
+Mouse_NMDA_seurat_Vargenes = VariableFeatures(Mouse_NMDA_seurat)
+
+
+######
+
+GRNmo_Smoothing_MAGIC(Mouse_NMDA_seurat,'tsne',Input_matrix_Tag='RNA','Mouse_NMDA_seurat_sm',dimsToUse=2,k=30,td=3,folder="/zp1/data/plyu3/Downloading_datasets/compare_code")
+
+GRNmo_Smoothing_MAGIC <- function(Seurat_projects,Reduction_Tag,Input_matrix_Tag='RNA',File_Tag,dimsToUse,k=30,td=3,folder){
+	 ###
+	 time1_start = Sys.time()
+	 dim_tag = paste(min(dimsToUse),max(dimsToUse),sep=':')
+	 message(sprintf('\n\tComputing distances between cells based on the %s dimension: %s\n',Reduction_Tag,dim_tag))
+	 ###
+	 Reduction_names = names(Seurat_projects@reductions)
+	 k1 = which(Reduction_names == Reduction_Tag)
+	 Dimension_reduction_Seurat <- data.frame(Seurat_projects@reductions[[k1]]@cell.embeddings)
+	 ###
+	 message(sprintf('\tDetected total %s dims on the %s dimension\n',dim(Dimension_reduction_Seurat)[2],Reduction_Tag))
+	 Dimension_reduction_Seurat_used = Dimension_reduction_Seurat[,dimsToUse]
+	 ###
+	 message(sprintf('\tComputing distances for the %s nearest neighbors...\n',k))
+  	 knnObj <- FNN::get.knn(data = Dimension_reduction_Seurat_used,k = k)
+     knnIdx <- knnObj$nn.index
+     knnDist <- knnObj$nn.dist
+     ##### rm(knnObj)
+     #####
+     ka = round(k/3)
+  	 ### scale distance to the ka th nearest cells  ####
+  	 if (ka > 0) {
+    	knnDist <- knnDist / knnDist[,ka]
+  	 }
+  	 ### 
+  	 N = length(colnames(Seurat_projects))
+  	 i <- rep((1:N), k)
+  	 j <- c(knnIdx)
+  	 s <- c(knnDist)
+  	 ###### Get combined distance matrix #####
+  	 ###### The diagonal of the matrix is 0 ###
+  	 ###### i is the index of cell1, j is the index of cell2, s is the distance between cell1 and cell2 ###
+  	 epsilon = 1
+     if (epsilon > 0) {
+     	W <- Matrix::sparseMatrix(i, j, x=s) # weighted kNN graph
+     } else {
+     	W <- Matrix::sparseMatrix(i, j, x=1) # unweighted kNN graph
+     }
+     ###### Symmetrize distances ######
+     W <- W + Matrix::t(W)
+     ######
+     # Compute Gaussian Kernel ###
+     ## Note that the Gaussian kernel is a measure of similarity between cell1 and cell2 ###
+     ## It evalues to 1 if the cell1 and cell2 are identical, and approaches 0 as cell1 and cell2 move further apart ###
+     ###### transfer the distance to -exp(distance/epsilon) #####
+     W@x <- exp(-(W@x / epsilon^2))
+     ######
+     # Markov normalization #####
+     ###### normalze the transition probability to 0-1 and sum =1 ####
+     W <- W / Matrix::rowSums(W) 
+     #Initialize Matrix
+     Wt <- W
+     #Computing Diffusion Matrix ######
+     # To perform diffusion, we exponentiate the Markov matrix to a chosen power td ####
+     # Thus, exponentiation refines cell affinities, increasing the weight of similarity 
+     # along axes that follow the data manifold.
+     message(sprintf('\tComputing Diffusion Matrix...\n',k))
+     Wt <- expm::"%^%"(as.matrix(W), td)
+     Wt = round(Wt,3)
+     setwd(folder)
+     Diffusion_matrix = paste(File_Tag,'_Diffusion_matrix.rds',sep='')
+     saveRDS(Wt,file=Diffusion_matrix)
+     #####
+     #### N = nrow(data) # number of cells #####
+     #### ### RNA seq datasets ######
+     data = as.matrix(Matrix::t(Seurat_projects[['RNA']]@data))
+     message(sprintf('\tImputing Matrix...\n'))
+  	 data_imputed <- Wt %*% data
+  	 #### 
+  	 #### scale the impute matrix ######
+  	 #### ##### ###### #################
+  	 message(sprintf('\tScale the imputed Matrix...\n'))
+  	 rescale_percent = 0.99
+  	 if (rescale_percent > 0) {
+    	M99 <- apply(data, 2, function(x) quantile(x, rescale_percent))
+		M100 <- apply(data, 2, max)
+    	indices <- which(M99 == 0, arr.ind=TRUE)
+    	### replace 99 0 with max values #######
+    	if (length(indices) > 0){
+      		M99[indices] <- M100[indices]
+    	}
+	 	M99_new <- apply(data_imputed, 2, function(x) quantile(x, rescale_percent))
+     	M100_new <- apply(data_imputed, 2, max)
+     	indices <- which(M99_new == 0, arr.ind=TRUE)
+     	if (length(indices) > 0) {
+     		M99_new[indices] <- M100_new[indices]
+     	}
+     	max_ratio <- M99 / M99_new
+     	data_imputed <- data_imputed * matrix(rep(max_ratio, length(data[,1])),nrow=length(data[,1]), byrow=TRUE)
+     }
+     ##### add to Seurat objects ########
+     message(sprintf('\tSaving...\n'))
+     #####
+     data_imputed_t = t(data_imputed)
+     colnames(data_imputed_t) = rownames(data)
+     data_imputed_t = round(data_imputed_t,3)
+     data_imputed_t = as(data_imputed_t, "sparseMatrix")
+     colnames(data_imputed_t) = colnames(Seurat_projects)
+     rownames(data_imputed_t) = rownames(Seurat_projects)
+     ##### Seurat_projects[['MAGIC']] = Seurat::CreateAssayObject(counts=data_imputed_t) #####
+     setwd(folder)
+     MAGIC_matrix = paste(File_Tag,'_MAGIC_matrix.rds',sep='')
+     saveRDS(data_imputed_t,file=MAGIC_matrix)
+     #####
+     #####
+     ######
+     time1_end = Sys.time()
+     Diff_time = round(as.numeric(difftime(time1_end,time1_start,units="mins")),2)
+     message(sprintf('\tFinished! total time %s minutes',Diff_time))
+}
+
+
+
+
+######## 找variableGenes ##########
+######## DEGs #####################
+
+library(Seurat)
+
+library(future)
+plan("multisession", workers = 30)
+options(future.globals.maxSize = 10000 * 1024^2)
+
+setwd('/zp1/data/plyu3/Downloading_datasets/compare_code')
+
+Mouse_NMDA_seurat = readRDS('Mouse_NMDA_seurat')
+
+table(Mouse_NMDA_seurat$Condition)
+
+table(Mouse_NMDA_seurat)
+
+k = which(Mouse_NMDA_seurat$Condition == 'mmP60')
+
+Mouse_NMDA_seurat_cl = Mouse_NMDA_seurat[,k]
+
+Idents(object = Mouse_NMDA_seurat_cl) <- "celltype"
+
+x = Mouse_NMDA_seurat_cl
+
+####### Calcualte clusters ########
+Get_DEGs <- function(x){
+	########
+	reslist = FindAllMarkers(x)
+	########
+	k = which(reslist$p_val_adj < 0.05)
+	########
+	reslist_cl = reslist[k,]
+	########
+	reslist_cl_sp = split(reslist_cl,reslist_cl$cluster)
+	########
+	reslist_cl_out = list()
+	for(i in 1:length(reslist_cl_sp)){
+		tmp = reslist_cl_sp[[i]]
+		tmp = tmp[order(abs(tmp$avg_log2FC),decreasing=T),]
+		if(dim(tmp)[1] > 100){
+			tmp = tmp[1:100,]
+		}
+		print(dim(tmp))
+		reslist_cl_out = c(reslist_cl_out,list(tmp))
+	}
+	names(reslist_cl_out) = names(reslist_cl_sp)
+	#####
+	reslist_cl_out_merge = do.call('rbind',reslist_cl_out)
+	#####
+	genes = reslist_cl_out_merge$gene
+	genes = genes[!duplicated(genes)]
+	return(genes)
+}
+
+Diff_genes = Get_DEGs(Mouse_NMDA_seurat)
+
+save(Diff_genes,file='Diff_genes')
+
+
+
+
+
+######### ################################# ##############
+######### 计算每一个 cluster 与其中心点的相关系数 vector ##############
+######### ################################# ##############
+
+setwd('/zp1/data/plyu3/Downloading_datasets/compare_code')
+
+Mouse_NMDA_seurat_sm = readRDS('Mouse_NMDA_seurat_sm_MAGIC_matrix.rds')
+
+Mouse_NMDA_seurat_sm = CreateSeuratObject(Mouse_NMDA_seurat_sm)
+
+m = match(colnames(Mouse_NMDA_seurat_sm),colnames(Mouse_NMDA_seurat))
+
+Mouse_NMDA_seurat_sm$celltype = Mouse_NMDA_seurat$celltype[m]
+
+saveRDS(Mouse_NMDA_seurat_sm,file='Mouse_NMDA_seurat_sm')
+
+x = Mouse_NMDA_seurat
+
+setwd('/zp1/data/plyu3/Downloading_datasets/compare_code')
+
+load('Diff_genes')
+
+features = Diff_genes
+
+Calculate_corr_for_eachcluster <- function(x,tag='celltype',features=features,method='spearman'){
+	########
+	RNA_mat = x[['RNA']]@data
+	########
+	k = which(colnames(x@meta.data) == tag)
+	clusters = names(table(x@meta.data[,k]))
+	print(clusters)
+	meta = x@meta.data
+	########
+	Merge_correlations = list()
+	for(i in clusters){
+		print(i)
+		sub_mat = RNA_mat[,which(meta[,k] == i)]
+		sub_mat_sum = rowMeans(sub_mat)
+		#### then calcuate corr ############
+		index = which(rownames(sub_mat) %in% features == T)
+		sub_mat = sub_mat[index,]
+		sub_mat_sum = sub_mat_sum[index]
+		#####################################
+		spearman_fun = function(x,y){
+			res = cor(x,y,method="spearman")
+			return(res)
+		}
+		cos_fun = function(x,y){
+			library(lsa)
+			res = cosine(x,y)
+			return(res)
+		}
+		####
+		if(method=='spearman'){
+			corr_res = apply(sub_mat,2,spearman_fun,y=sub_mat_sum)}
+		if(method=='cosine'){
+			corr_res = apply(sub_mat,2,cos_fun,y=sub_mat_sum)}
+		print(summary(corr_res))
+		corr_res = list(corr_res)
+		names(corr_res) = i
+		####
+		Merge_correlations = c(Merge_correlations,corr_res)
+	}
+	#######
+	return(Merge_correlations)
+}
+
+############
+
+x = Mouse_NMDA_seurat
+
+features = Diff_genes
+
+tag='celltype'
+
+tag_index = 'ON cone BC'
+
+Calculate_corr_for_onecluster <- function(x,tag='celltype',features=features,method='cosine',tag_index = 'ON cone BC'){
+	########
+	RNA_mat = x[['RNA']]@data
+	########
+	k = which(colnames(x@meta.data) == tag)
+	clusters = names(table(x@meta.data[,k]))
+	print(clusters)
+	meta = x@meta.data
+	########
+	sub_mat_index = RNA_mat[,which(meta[,k] == tag_index)]
+	########
+	sub_mat_index_sum = rowMeans(sub_mat_index)
+	########
+	sub_mat_index_sum = sub_mat_index_sum[which(names(sub_mat_index_sum) %in% features == T)]
+	########
+	Merge_correlations = list()
+	for(i in clusters){
+		print(i)
+		sub_mat = RNA_mat[,which(meta[,k] == i)]
+		#### then calcuate corr ############
+		index = which(rownames(sub_mat) %in% features == T)
+		sub_mat = sub_mat[index,]
+		#####################################
+		spearman_fun = function(x,y){
+			res = cor(x,y,method="spearman")
+			return(res)
+		}
+		cos_fun = function(x,y){
+			library(lsa)
+			res = cosine(x,y)
+			return(res)
+		}
+		####
+		if(method=='spearman'){
+			corr_res = apply(sub_mat,2,spearman_fun,y=sub_mat_index_sum)}
+		if(method=='cosine'){
+			corr_res = apply(sub_mat,2,cos_fun,y=sub_mat_index_sum)}
+		print(summary(corr_res))
+		####
+		####
+		corr_res = data.frame(index=i,score=corr_res)
+		Merge_correlations = c(Merge_correlations,list(corr_res))
+	}
+	#######
+	return(Merge_correlations)
+}
+
+spearman_reference_correlations = Calculate_corr_for_onecluster(Mouse_NMDA_seurat,tag='celltype',features=Diff_genes,method='spearman',tag_index = 'ON cone BC')
+
+spearman_reference_correlations_sm = Calculate_corr_for_onecluster(Mouse_NMDA_seurat_sm,tag='celltype',features=Diff_genes,method='spearman',tag_index = 'ON cone BC')
+
+spearman_reference_correlations_combine = do.call(rbind,spearman_reference_correlations_sm)
+
+
+#### green ######
+#### green ######
+#### green ######
+
+df = spearman_reference_correlations_combine
+
+ggplot(df, aes(x=score)) + geom_histogram(binwidth=0.01) + facet_grid(index ~ .,scales="free_y")
+
+ggsave('test4.png',width=5,height=15)
+
+#### red ######
+#### red ######
+#### red ######
+
+
+#### yellow ######
+#### yellow ######
+#### yellow ######
+
+next smooth the datasets !!!!!!
+
+####
+
+
+
+
+
+
+
+
+##### spearman_reference_correlations = Calculate_corr_for_eachcluster(Mouse_NMDA_seurat,tag='celltype',features=Diff_genes,method='spearman')
+
+summary(cosine_reference_correlations$Rods)
+
+
+###### get pseudo-bulk for one cell type: ########
+
+Seurat_obj = Mouse_NMDA_seurat
+celltypes_colN = 'celltype'
+celltypes = 'Rods'
+
+bootstrap_cells_Seurat <- function(Seurat_obj,celltypes_colN,celltypes,nCells=2000,mergeCellsratio=0.05){
+	#########
+	k = which(Seurat_obj[[celltypes_colN]] == celltypes)
+	print(dim(Seurat_obj))
+	#########
+	Seurat_obj_cl = Seurat_obj[,k]
+	print(dim(Seurat_obj_cl))
+	#########
+	Meta = Seurat_obj_cl@meta.data
+	#########
+	#print('Trouble shooting:')
+	#print(table(Meta[,which(colnames(Meta)==celltypes_colN)]))
+	#print(table(Meta[,which(colnames(Meta)==condition_colN)]))
+	#########
+	#conditions = names(table(Meta[,which(colnames(Meta)==condition_colN)]))
+	#########
+	RNA_matrix = Seurat_obj_cl[['RNA']]@data
+	print(paste('Trouble shooting: Dim of data matrix:',dim(RNA_matrix)))
+	#########
+	cell_id = colnames(Seurat_obj_cl)
+	conditions = 'all'
+	#########
+	#########
+	#for(i in 1:length(conditions)){
+		#print(conditions[i])
+		## k1 = which(Meta[,condition_index] == conditions[i])
+		tmp_cell_id = cell_id
+		#### bootstrap cells from the tmp_cell_id ######
+		mergeCells = round(length(tmp_cell_id)*mergeCellsratio)
+		sample_fun = function(x,size=mergeCells,cell_id=tmp_cell_id){
+			out = sample(cell_id,size,replace=T)
+			return(out)
+		}
+		####
+		index_Bootcells = 1:nCells
+		cells_list = sapply(index_Bootcells,sample_fun,size=mergeCells,cell_id=tmp_cell_id)
+		print(paste('dims of bootstrap:',dim(cells_list)))
+		####
+		library(Matrix)
+		merge_fun = function(x,RNA_matrix){
+			k = match(x,colnames(RNA_matrix))
+			####
+			if(length(k)!= length(x)){print('Error')}
+			####
+			tmp_RNA_matrix = RNA_matrix[,k]
+			#### merge the counts data #########
+			tmp_sum = rowMeans(tmp_RNA_matrix)
+			####
+			return(tmp_sum)
+		}
+		#####
+		Bootcells_Matrix = apply(cells_list,2,merge_fun,RNA_matrix=RNA_matrix)
+		#####
+		CellNew_names = paste(celltypes,'_bootstrap_Cell',1:dim(Bootcells_Matrix)[2],sep='')
+		#####
+		colnames(Bootcells_Matrix)=CellNew_names
+		#####
+		cell_condition_matrix = Bootcells_Matrix
+	}
+	####
+	return(cell_condition_matrix)
+}
+
+Rod_Bootcells_Matrix = Bootcells_Matrix
+
+
+Reference_avg_vector = Reference_avg_mat[,which(colnames(Reference_avg_mat)=='Rods')]
+
+Calculate_corr_for_Bootstrap <- function(Bootcells_Matrix,Reference_avg_vector,features=features,method='spearman'){
+	########
+		sub_mat = Bootcells_Matrix
+		sub_mat_sum = Reference_avg_vector
+		features_all = features[which(features %in% rownames(sub_mat) == T & features %in% names(sub_mat_sum) == T)]
+		#######	
+		#### then calcuate corr ############
+		m1 = match(features_all,rownames(sub_mat))
+		sub_mat = sub_mat[m1,]
+		m2 = match(features_all,names(sub_mat_sum))
+		sub_mat_sum = sub_mat_sum[m2]
+		#####################################
+		spearman_fun = function(x,y){
+			res = cor(x,y,method="spearman")
+			return(res)
+		}
+		cos_fun = function(x,y){
+			library(lsa)
+			res = cosine(x,y)
+			return(res)
+		}
+		####
+		if(method=='spearman'){
+			corr_res = apply(sub_mat,2,spearman_fun,y=sub_mat_sum)}
+		if(method=='cosine'){
+			corr_res = apply(sub_mat,2,cos_fun,y=sub_mat_sum)}
+		print(summary(corr_res))
+		####
+	#######
+	return(corr_res)
+}
+
+
+###### 
+
+
+
+
+
+df = data.frame(weight=cosine_reference_correlations$Cone)
+
+library(ggplot2)
+# Basic histogram
+ggplot(df, aes(x=weight)) + geom_histogram(binwidth=0.01,fill='lightblue',col='black') + theme_classic()  + xlab('Correlation') + ylab('single cells')
+# Change the width of bins
+ggsave('Cone_cosine_single_cell.png',height=3,width=4.5)
+
+
+
+library(ggplot2)
+# Basic histogram
+ggplot(df, aes(x=weight)) + geom_histogram(binwidth=0.01,fill='lightblue',col='black') + theme_classic()  + xlab('Correlation') + ylab('single cells') + scale_x_continuous(limits=c(-1,1))
+# Change the width of bins
+ggsave('Rod_spearman_single_cell.png',height=3,width=4.5)
+
+
+###########
+
+
+
+
+
+
+
+
+
+
+
+
+###########
+########### 
+
+Reference_avg_mat = Reference_avg_mat
+load('/zp1/data/plyu3/Downloading_datasets/Mouse_Retinal_Bipolar_Dropseq/Bipolar_avg_mat')
+Query_avg_mat = Bipolar_avg_mat
+
+
+load('/zp1/data/plyu3/Downloading_datasets/Mouse_Retinal_Bipolar_Dropseq/Bipolar_Diff_genes')
+#### reverse #######
+
+
+
+calculate_correlation_between = function(Reference_avg_mat,Query_avg_mat,features=features,method='spearman'){
+	#########
+	var_genes = features
+	#########
+	overlap_genes = var_genes[which(var_genes %in% rownames(Reference_avg_mat) == T & var_genes %in% rownames(Query_avg_mat))]
+	print(length(overlap_genes))
+	#########
+	m1 = match(overlap_genes,rownames(Reference_avg_mat))
+	reference_mat_cl = Reference_avg_mat[m1,]
+	#########
+	m2 = match(overlap_genes,rownames(Query_avg_mat))
+	query_mat_cl = Query_avg_mat[m2,]
+	######### change the cell names #########
+	colnames(reference_mat_cl) = paste('ref',colnames(reference_mat_cl),sep=':')
+	colnames(query_mat_cl) = paste('query',colnames(query_mat_cl),sep=':')
+	######### merge the matrix #########
+	merge_mat = cbind(reference_mat_cl,query_mat_cl)
+	#########
+	sums = rowSums(merge_mat)
+	k = which(is.na(sums) == T)
+	if(length(k) > 0){merge_mat = merge_mat[-k,]}
+	########
+	########
+	if(method=='spearman'){
+		corres = cor(merge_mat,method='spearman')
+	}
+	if(method=='cosine'){
+		corres = cosine(merge_mat)
+	}
+	######## extract the matrix ########
+	ref_length = dim(reference_mat_cl)[2]
+	query_length = dim(query_mat_cl)[2]
+	########
+	rows = 1:ref_length
+	cols = (ref_length+1):dim(corres)[2]
+	submat = corres[rows,cols]
+	submat = round(submat,3)
+	########
+	#######
+	return(submat)
+}
+
+Corr_spearman = calculate_correlation_between(Query_avg_mat,Reference_avg_mat,features=Bipolar_Diff_genes,method='spearman')
+
+
+Corr_spearman[which(rownames(Corr_spearman) == 'ON cone BC'),]
+
+Corr_spearman[which(rownames(Corr_spearman) == 'ref:BC7 (Cone Bipolar cell 7)'),]
+
+Corr_cosine = calculate_correlation_between(Reference_avg_mat,Query_avg_mat,features=Diff_genes,method='cosine')
+
+######## 计算距离并且聚类 ########
+######## 仅限于 reference #######
+
+
+dim(Reference_avg_mat)
+
+spearman = cor(Reference_avg_mat,method='spearman')
+
+library(complex)
+
+
+library('ComplexHeatmap')
+library('circlize')
+col_fun = colorRamp2(c(0.5,0.75,1), c('#61BFB9','white','#A74997'))
+
+TextFunc <- function(dat, col = "black", fontsize = 15, numdat = TRUE,
+                     digit = 2){
+    if(numdat == TRUE){
+        function(j, i, x, y, width, height, fill){
+                grid.text(round(dat, digit)[i, j], x, y, gp = gpar(fontsize = fontsize, col  = col))
+            }
+    }else{
+    function(j, i, x, y, width, height, fill){
+                grid.text(dat[i, j], x, y, gp = gpar(fontsize = fontsize, col  = col))
+            }
+}}
+png('Corr_query.png',height=5000,width=5500,res=72*12)
+Heatmap(Corr_cosine, name = "RNAseq", border = F, show_row_names=T,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 5),cluster_rows = T,cluster_columns = T,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='white',at=c(0.5,0.75,1)),cell_fun = TextFunc(Corr_cosine))
+dev.off()
+
+png('Corr_reference.png',height=5000,width=5500,res=72*12)
+Heatmap(Corr_cosine, name = "RNAseq", border = F, show_row_names=T,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 5),cluster_rows = T,cluster_columns = T,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='white',at=c(0.5,0.75,1)))
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

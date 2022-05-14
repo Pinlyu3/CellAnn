@@ -1,0 +1,1740 @@
+#### try Matrix:readMM function to read mtx file ######
+
+R
+
+mtx_file = Matrix::readMM('path_of_file.mtx')
+
+#### red ##### 
+study: pmid 27471252
+Div-Seq: Single-nucleus RNA-Seq reveals dynamics of rare adult newborn neurons
+
+#### download to server using gdrive #######
+conda activate dropbox
+gdrive list -q "name contains '27471252'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1Z24kAXttqcIyVDpLFTQdvre-PFuulwDr
+
+#### R process to Seurat ####
+library(Seurat)
+library(tidyverse)
+
+setwd('/zp1/data/plyu3/CellAlignment_database/27471252_snRNA_Adult Mouse Hippocampus')
+mat = read_delim("Matrix.txt", delim = "\t")
+
+####
+Broad_sc_db_tibble_to_Seurat = function(mat,log_trans="F",Norm_rpkm = "F"){
+	mat_cl = as.matrix(mat[,-1])
+	rownames(mat_cl) = mat$GENE
+	if(log_trans == "T"){
+		scale = apply(mat_cl,2,sum) / 1e6
+		mat_cl = sweep(mat_cl,2,scale,FUN='/')
+	}
+	######
+	if(log_trans == "T"){
+		mat_cl = log2(mat_cl+1)
+	}
+	######
+	seurat_obj = CreateSeuratObject(mat_cl)
+	return(seurat_obj)
+}
+
+#### 
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+#### added the cell types and UMAP1/UMAP2 #######
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+
+#### added the dims #############################
+#### not find dims in the database ##############
+
+Merge_celltype = function(seurat_obj,celltype_table){
+	celltype_table = data.frame(celltype_table)
+	m = match(colnames(seurat_obj),celltype_table[,1])
+	######
+	seurat_obj$celltype = celltype_table[m,2]
+	return(seurat_obj)
+}
+
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+saveRDS(seurat_obj,file='pmid27471252_seurat_obj')
+#### 
+
+
+
+
+
+#### red ##### 
+study: Comprehensive Classification of Retinal Bipolar Neurons by Single-Cell Transcriptomics.
+##############
+
+gdrive list -q "name contains '27565351'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1GwTOqX3y0acmMvjY84uxa7e311OyDesK
+
+library(Seurat)
+library(tidyverse)
+setwd('/zp1/data/plyu3/CellAlignment_database/27565351_scRNA_Mouse Retinal Bipolar Neuron')
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[,c(1,2)]
+
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+####### merge the dims to seurat_obj keys: dim1 and dim2 #######
+dims = read_delim('coordinates_retinal_bipolar.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+
+Merge_dim = function(seurat_obj,dims){
+	dims = data.frame(dims)
+	m = match(colnames(seurat_obj),dims[,1])
+	######
+	seurat_obj$dim1 = as.numeric(dims[m,2])
+	seurat_obj$dim2 = as.numeric(dims[m,3])
+	return(seurat_obj)
+}
+
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+###### plot the dims for this study ########
+###### check the cluster_dim.png in your folder ####
+Plot_dims = function(seurat_obj){
+	####
+	tag = c('celltype','dim1','dim2')
+	m = match(tag,colnames(seurat_obj@meta.data))
+	plot_tab = seurat_obj@meta.data[,m]
+	####
+	library(ggplot2)
+	####
+	png_file = paste('cluster','dim.png',sep='_')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(ggplot(plot_tab,aes(x=dim1,y=dim2,color=celltype)) + geom_point())
+ 	dev.off()
+}
+
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,file='pmid27565351_seurat_obj')
+######
+
+
+
+#### red ##### 
+study: Adult mouse cortical cell taxonomy revealed by single cell transcriptomics.
+##############
+pmid:26727548 
+
+conda activate dropbox
+gdrive list -q "name contains '26727548'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1TdibVS558VEubCTsFjT544Sl-N0OWBVt
+
+setwd('/zp1/data/plyu3/CellAlignment_database/26727548_scRNA_Adult Mouse Visual Cortex')
+mat = read_delim("Matrix.txt", delim = "\t")
+
+#### RPKM #####
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat,log_trans="T")
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+dims = read_delim('coordinates.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,file='pmid26727548_seurat_obj')
+
+
+
+
+
+#### red #####
+study: Dissecting the multicellular ecosystem of metastatic melanoma by single-cell RNA-seq
+pmid:27124452
+
+conda activate dropbox
+gdrive list -q "name contains '27124452'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1PyQZnGiNRy7PyQvhqP4IX9AjASrqOml1
+
+setwd('/zp1/data/plyu3/CellAlignment_database/27124452_scRNA_Human Metastatic Melanoma')
+mat = read_delim("Matrix.txt", delim = "\t")
+
+#### RPKM #####
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+dims = read_delim('melanoma_coordinates_portal.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,file='pmid27124452_seurat_obj')
+
+
+
+
+
+#### red #####
+#### only one cell type ####
+study: Single-cell RNA-seq supports a developmental hierarchy in human oligodendroglioma
+pmid:27806376
+
+gdrive list -q "name contains '27806376'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1Q1yzS6fQfMI7QMGb_CJmRRyoylkuBRbP
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/27806376_scRNA_Human Oligodendroglioma')
+mat = read_delim("Matrix.txt", delim = "\t")
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+dims = read_delim('melanoma_coordinates_portal.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+
+
+
+#### red #####
+study: Single-cell RNA-seq reveals changes in cell cycle and differentiation programs upon aging of hematopoietic stem cells
+pmid:26430063
+
+gdrive list -q "name contains '26430063'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 12Z1-GaWuI8EWdRljR7bvm9G6fZfatQ1E
+
+#### No cluster #######
+
+
+
+
+#### red ####
+study: Fxr signaling and microbial metabolism of bile salts in the zebrafish intestine
+pmid:34301599
+
+gdrive list -q "name contains '34301599'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1hRTjD-qCv3K-yh71I7Jm4WZuza5W0fiU
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34301599_scRNA_Zebrafish intestine')
+
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 10)
+mat = read_delim("Matrix.txt", delim = "\t")
+
+#### raw counts ###
+
+colnames(mat)[1] = 'GENE'
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat,log_trans="T",Norm_rpkm = "T")
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[,c(1,6)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+dims = cluster[,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid34301599_seurat_obj")
+
+
+
+
+#### red ####
+study: Connecting the Dots: Resolving the Bone Marrow Niche Heterogeneity
+pmid:33777933
+
+gdrive list -q "name contains '33777933'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --recursive 1Yx7CyXSU1ZGwxHKaofdoL8WradvthSDh
+
+setwd('/zp1/data/plyu3/CellAlignment_database/33777933_scRNA_Mouse Bone Marrow Niche')
+
+mat = read_delim("counts.normalized.csv.gz", delim = ",")
+
+colnames(mat)[1] = 'GENE'
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+
+celltype_table = cluster[,c(1,4)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = cluster[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid33777933_seurat_obj")
+
+
+
+#### red ####
+#### red ####
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons
+(Cornea)
+pmid:34584087_sub1
+
+gdrive list -q "name contains '34584087'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1dQ8im3uLaRdhb7z4zjm8FxbI4NY2fPwM
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Cornea')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+##### download the #######
+
+cluster = read_delim('scp_metadata.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('scp_Cornea_coordinates.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid34584087_sub1_seurat_obj")
+
+
+
+
+#### red ####
+#### red ####
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons
+(Iris)
+pmid:34584087_sub2
+
+gdrive list -q "name contains '34584087'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1gr9P-ATEjFBqpSqAROe79QaKNfhFsNSB
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Iris')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+
+cluster = read_delim('scp_metadata.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+
+dims = read_delim('scp_Iris_coordinates.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid34584087_sub2_seurat_obj")
+
+
+
+#### red ####
+#### red ####
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons
+(Retina)
+pmid:34584087_sub3
+
+gdrive list -q "name contains '34584087'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 197ZZ5EGz9FY0NOwRbB0ykR2juKth4D83
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('scp_metadata.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('scp_Retina_coordinates.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid34584087_sub3_seurat_obj")
+
+#######
+####### red #########
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons
+(RPE)
+"No dims"
+
+pmid:34584087_sub4
+
+gdrive list -q "name contains '34584087'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1ArDYGLddCku3vjHjuuxBTzqd2QBBWO_N
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_RPE')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('scp_metadata.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+#########
+
+
+
+#######
+####### red #########
+study: Multi-species single-cell transcriptomic analysis of ocular compartment regulons
+(Sclera and Choroid)
+"No dims"
+
+pmid:34584087_sub5
+
+gdrive list -q "name contains '34584087'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1ze_P4IRhlJXfxc2BtaWHeWnabqNfP2jT
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Sclera and Choroid')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('scp_metadata.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('scp_Sclera_coordinates.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid34584087_sub5_seurat_obj")
+
+
+
+#######
+####### red #########
+study: Transcriptional mediators of treatment resistance in lethal prostate cancer
+
+pmid:33664492
+
+gdrive list -q "name contains '33664492'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1n6a_ogYoXxtkf-CGCY4PNnfKTdRF7mW3
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/33664492_scRNA_Human prostate cancer')
+
+mat = read_delim("Matrix.txt", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat,log_trans='T')
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,2)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('Cluster.txt', delim = "\t")
+dims = dims[-1,c(1,4,5)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid33664492_seurat_obj")
+
+
+
+#####
+##### red ########
+
+Tumor and immune reprogramming during immunotherapy in advanced renal cell carcinoma
+pmid:33711272
+
+
+gdrive list -q "name contains '33711272'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1uQfdO_0zQgJRWGLOf3VuwKgtI3ghfOSc
+
+33711272_scRNA_Human renal cell carcinoma
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/33711272_scRNA_Human renal cell carcinoma')
+mat = read_delim("Matrix.txt", delim = "\t")
+
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,4)]
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('Cluster.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid33711272_seurat_obj")
+
+###############
+###############
+
+
+
+#####
+##### red ########
+
+Impaired local intrinsic immunity to SARS-CoV-2 infection in severe COVID-19
+pmid:33619488
+
+gdrive list -q "name contains '33619488'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1qlrilPI2DtyZkVgaYR8A1kvZiS57ufcu
+
+setwd('/zp1/data/plyu3/CellAlignment_database/33619488_scRNA_Human_Covid19 Nasal Swab')
+mat = read.table("Matrix.txt", sep = "\t")
+mat$GENE = rownames(mat)
+
+cols = dim(mat)[2]
+mat = mat[,c(cols,1:(cols-1))]
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,4)]
+
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('Cluster.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid33619488_seurat_obj")
+
+
+
+#####
+##### red ########
+
+Human Intestinal Organoids Maintain Self-Renewal Capacity and Cellular Diversity in Niche-Inspired Culture Condition
+pmid:30526881
+
+gdrive list -q "name contains '30526881'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1R7UBd09cEnDPaVD23KR7FY8NLZCBuwQM
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/30526881_scRNA_Human Cultured Small intestinal organoids')
+mat = read_delim("Matrix.csv.gz", delim = ",")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.csv', delim = ",")
+celltype_table = cluster[-1,c(1,4)]
+
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('Cluster.csv', delim = ",")
+dims = dims[-1,c(1,2,3)]
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid30526881_seurat_obj")
+
+#########
+#########
+
+
+
+
+#####
+##### red ########
+#####
+
+Integrated single-cell analysis of multicellular immune dynamics during hyperacute HIV-1 infection
+pmid:32251406
+
+gdrive list -q "name contains '32251406'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 163NZUncJqBDsnWtxBC-zBPkDPh4pW53r
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32251406_scRNA_Human PBMC pre and post HIV')
+mat = read_delim("Matrix.txt.gz", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+#####
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,8)]
+
+seurat_obj = Merge_celltype(seurat_obj,celltype_table)
+
+
+dims = read_delim('FRESH_FItSNE_040220.txt', delim = "\t")
+dims = dims[-1,c(1,2,3)]
+
+seurat_obj = Merge_dim(seurat_obj,dims)
+
+Plot_dims(seurat_obj)
+
+saveRDS(seurat_obj,"pmid32251406_seurat_obj")
+
+
+#########
+
+SARS-CoV-2 Receptor ACE2 Is an Interferon-Stimulated Gene in Human Airway Epithelial Cells 
+pmid:32413319
+
+### not find #####
+
+gdrive list -q "name contains '32413319'"
+cd /zp1/data/plyu3/CellAlignment_database/
+gdrive download --force --recursive 1rxTJ0659BHxOW3On1VQC71gVnyiSzyCh
+
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32413319_scRNA_Mouse Nasal mucosa after interferon')
+mat = read_delim("Matrix.csv", delim = ",")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+cluster = read_delim('Cluster.txt', delim = "\t")
+celltype_table = cluster[-1,c(1,8)]
+
+
+
+########## Next datasets #############
+##########
+
+Integration of eQTL and a Single-Cell Atlas in the Human Eye Identifies Causal Genes for Age-Related Macular Degeneration
+
+########## pmid 31995762 ###########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+
+library(Seurat)
+library(tidyverse)
+
+mat = read_delim("PRJ0027145_ex.txt.gz", delim = "\t")
+
+seurat_obj = Broad_sc_db_tibble_to_Seurat(mat)
+
+
+
+
+#######
+#######
+
+Dissecting the transcriptome landscape of the human fetal neural retina and retinal pigment epithelium by single-cell RNA-seq analysis
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31269016')
+
+mat = read_csv("GSE107618_Merge.TPM.csv.gz")
+
+
+
+
+#######
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32555229')
+
+library(Seurat)
+library(tidyverse)
+
+Human_retina_txt = read_csv('Human_retina_combined_all_expression_matrix.csv')
+
+#######
+#######
+
+
+
+#######
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+
+library(Seurat)
+library(tidyverse)
+
+#######
+
+Human_matrix = Matrix::readMM('GSE138002_Final_matrix.mtx.gz')
+
+dim(Human_matrix)
+#######
+#######
+
+Genes = read.table('GSE138002_genes.csv.gz',sep=';',header=T)
+
+rownames(Human_matrix) = Genes$gene_short_name
+
+Cells = read.csv('GSE138002_Final_barcodes.csv.gz',header=T,sep=';')
+
+colnames(Human_matrix) = Cells$barcode
+
+Human_matrix_seurat = CreateSeuratObject(Human_matrix)
+
+####### added the UMAPs #######
+
+Human_matrix_seurat = NormalizeData(Human_matrix_seurat)
+
+Cells_umaps = Cells[,c(2,8:11)]
+
+Cells_umaps$umap1_coord = as.numeric(gsub(',','.',Cells_umaps$umap1_coord))
+Cells_umaps$umap2_coord = as.numeric(gsub(',','.',Cells_umaps$umap2_coord))
+Cells_umaps$umap3_coord = as.numeric(gsub(',','.',Cells_umaps$umap3_coord))
+
+Merge_celltype = function(seurat_obj,celltype_table){
+	celltype_table = data.frame(celltype_table)
+	m = match(colnames(seurat_obj),celltype_table[,1])
+	######
+	seurat_obj$celltype = celltype_table[m,2]
+	return(seurat_obj)
+}
+
+Human_matrix_seurat = Merge_celltype(Human_matrix_seurat,Cells_umaps[,c(1,5)])
+
+Merge_dim = function(seurat_obj,dims){
+	dims = data.frame(dims)
+	m = match(colnames(seurat_obj),dims[,1])
+	######
+	if(dim(dims)[2] == 3){
+		seurat_obj$dim1 = as.numeric(dims[m,2])
+		seurat_obj$dim2 = as.numeric(dims[m,3])
+	}
+    if(dim(dims)[2] == 4){
+    	seurat_obj$dim1 = as.numeric(dims[m,2])
+		seurat_obj$dim2 = as.numeric(dims[m,3])
+		seurat_obj$dim3 = as.numeric(dims[m,4])
+    }
+	return(seurat_obj)
+}
+
+Human_matrix_seurat = Merge_dim(Human_matrix_seurat,Cells_umaps[,c(1:4)])
+
+#### Good! then saving the results !!!! ###########
+####
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+
+saveRDS(Human_matrix_seurat,"pmid32386599_seurat_obj")
+
+pmid32386599_seurat_obj = readRDS('pmid32386599_seurat_obj')
+
+#### output the dim objects ########
+#### there are celltype colnames and dim colnames in the seurat ##########
+#### rownames are cell names #######
+
+tag='pmid32386599'
+seurat_obj = Human_matrix_seurat
+
+Output_dims <- function(seurat_obj,tag){
+	######
+	meta = seurat_obj@meta.data
+	######
+	###### key words: celltype,dim1,dim2,dim3 ########
+	k = which(colnames(meta) %in% c('celltype','dim1','dim2','dim3') == T)
+	meta_cl = meta[,k]
+	###### change celltype to cluster ######
+	k = which(colnames(meta_cl) == 'celltype')
+	colnames(meta_cl)[k] = 'cluster'
+	###### saveRDS #####
+	FN = paste(tag,'_Dimplot',sep='')
+	saveRDS(meta_cl,FN)
+}
+
+Output_dims(seurat_obj,'pmid32386599')
+
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+
+
+#### Good! Next is to prepare the average expression 
+#### DEGs 
+#### and Psesudo-bulk cells #########################
+#### Psesudo-bulk cells for each cluster ############
+
+seurat_obj = readRDS('pmid32386599_seurat_obj')
+
+Prepare_the_Seurat_objects_Step1 <- function(seurat_obj,matrix_tag = 'data',tag='pmid32386599'){
+	####### average expression ########
+	####### generate average expression for each celltype #########
+	####### key: celltype ######
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	####### 
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	#######
+	avg_total = c()
+	for(i in 1:length(celltype)){
+		#######
+		print(celltype[i])
+		k = which(seurat_obj$celltype == celltype[i])
+		#######
+		mat_cl = mat[,k]
+		#######
+		avg = Matrix::rowMeans(mat_cl)
+		avg_total = c(avg_total,avg)
+	}
+	avg_total = matrix(avg_total,ncol=length(celltype))
+	colnames(avg_total) = celltype
+	rownames(avg_total) = rownames(seurat_obj)
+	k = which(rowSums(avg_total) == 0)
+	if(length(k) > 0){avg_total = avg_total[-k,]}
+	print(dim(avg_total))
+	#####
+	FN = paste(tag,'_avg_expmat',sep='')
+	saveRDS(avg_total,FN)
+}
+
+########
+
+Prepare_the_Seurat_objects_Step1(seurat_obj,'data','pmid32386599')
+
+
+pmid32386599_avg_expmat <- readRDS('pmid32386599_avg_expmat')
+
+
+############
+############ Prepare the DEGs for the Seurat objects ##############
+############
+
+pmid32386599_seurat_obj
+seurat_obj = pmid32386599_seurat_obj
+
+
+Prepare_the_Seurat_objects_Step2_DEGs_Fast <- function(seurat_obj){
+	##############
+	Idents(seurat_obj) = 'celltype'
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	######
+	DEGs_list = list()
+	##############
+	for(i in 1:(length(celltype))){
+		#######
+		print(celltype[i])
+		#######
+		library(future)
+		plan("multisession", workers = 30)
+		tmp_markers = FindMarkers(seurat_obj,ident.1=celltype[i],test.use='MAST',logfc.threshold = 0.5)
+		#######
+		tmp_markers = data.frame(tmp_markers)
+		tmp_markers$gene = rownames(tmp_markers)
+		k = which(tmp_markers$p_val_adj < 0.01)
+		#######
+		tmp_markers = tmp_markers[k,]
+		tmp_markers = list(tmp_markers)
+		names(tmp_markers) = celltype[i]
+		DEGs_list = c(DEGs_list,tmp_markers)
+	}
+	return(DEGs_list)
+}
+
+seurat_obj_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(seurat_obj)
+
+saveRDS(seurat_obj_DEGs_list,file='pmid32386599_deg_list')
+
+############
+############ KNN presudo-replicates ###########
+############ KNN based on the UMAP ############
+############ same cluster #####################
+
+Prepare_the_Seurat_objects_Step2 <- function(seurat_obj){
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	######
+	DEGs_list = list()
+	######
+	for(i in 1:(length(celltype)-1)){
+		for(j in (i+1):length(celltype)){
+			print(paste(celltype[i],celltype[j],sep='@VS@'))
+			library(future)
+			plan("multisession", workers = 30)
+			tmp_markers = FindMarkers(seurat_obj,ident.1=celltype[i],ident.2=celltype[j],test.use='MAST',logfc.threshold = 0.3)
+			tmp_markers = data.frame(tmp_markers)
+			tmp_markers$gene = rownames(tmp_markers)
+			k = which(tmp_markers$p_val_adj < 0.01)
+			tmp_markers = tmp_markers[k,]
+			tmp_markers = list(tmp_markers)
+			names(tmp_markers) = paste(celltype[i],celltype[j],sep='@VS@')
+			DEGs_list = c(DEGs_list,tmp_markers)
+		}
+	}
+	return(DEGs_list)
+}
+
+######## ########### ##########
+
+seurat_obj_DEGs_list = Prepare_the_Seurat_objects_Step2(seurat_obj)
+
+FN = paste(tag,'_DEG_list',sep='')
+
+saveRDS(seurat_obj_DEGs_list,FN)
+
+
+####### ########### ##########
+####### how many KNN replicates #######
+####### ###########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+
+seurat_obj = readRDS('pmid32386599_seurat_obj')
+
+get_smooth_gene_exp <- function(x,mat){
+	#####
+	mat_cl = mat[,x]
+	#####
+	vector = rowMeans(mat_cl)
+	#####
+	return(vector)
+}
+
+
+get_NonOverlap <- function(knnIdx,Sample_Numbers,non_overlapping_cutoff = 0.9){
+	counts = 0
+	index_list_ori = sample(1:dim(knnIdx)[1],1)
+	i = 1
+	while(i < (Sample_Numbers)){
+		######
+		tmp_index = sample(1:dim(knnIdx)[1],1)
+		######
+		counts = counts+1
+		#####
+		tmp_index_new_dat = as.vector(knnIdx[tmp_index,])
+		tmp_index_old_dat = as.vector(knnIdx[index_list_ori,])
+		######
+		tmp_overlap = 1-(length(which(tmp_index_new_dat %in% tmp_index_old_dat == T)) / length(knnIdx[tmp_index,]))
+		######
+		if(tmp_overlap > non_overlapping_cutoff){
+			index_list_ori = c(index_list_ori,tmp_index)
+			i = i+1
+		}
+		if(counts > 10000){
+			break
+		}
+	}
+	print(paste('clusters = ',length(index_list_ori)))
+	return(index_list_ori)
+}
+
+
+####### Not overlapping KNN list #########
+####### Not Non-overlapping KNN list #########
+
+
+Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 20, non_overlapping_cutoff = 0.9){
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	dims_tab = seurat_obj@meta.data
+	k = which(colnames(dims_tab) %in% c('dim1','dim2','dim3'))
+	dims_tab = dims_tab[,k]
+	######
+	###### using UMAPs as dim #################
+	All_mat = list()
+	######
+	for(i in 1:(length(celltype))){
+		print(i)
+		#############
+		tmp_k = which(seurat_obj$celltype == celltype[i])
+		print(length(tmp_k))
+		#####
+		tmp_mat = mat[,tmp_k]
+		#####
+		tmp_dims_tab = dims_tab[tmp_k,]
+		tmp_dims_tab = as.matrix(tmp_dims_tab)
+		############# decide KNN ##########
+		print(paste('KNN =',KNN))
+		#############
+		#############
+		knnObj <- FNN::get.knn(data = tmp_dims_tab,k = KNN)
+		knnIdx <- knnObj$nn.index
+		rownames(knnIdx) = 1:dim(knnIdx)[1]
+		############# sample cells #########################
+		Sample_Numbers = length(tmp_k)/KNN
+		if(Sample_Numbers > 50){Sample_Numbers=50}
+		if(Sample_Numbers < 5){Sample_Numbers=5}
+		print(paste('Sample_Numbers',Sample_Numbers))
+		#############
+		#### sample No overlapping KNN clusters #####
+		#############
+		Sample_index = get_NonOverlap(knnIdx,Sample_Numbers,non_overlapping_cutoff)
+		#############
+		sample_index_mat = knnIdx[Sample_index,]
+		#############
+		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
+		sample_index_mat_res = as.matrix(sample_index_mat_res,nrow=dim(tmp_mat)[1])
+		#############
+		rownames(sample_index_mat_res) = rownames(tmp_mat)
+		colnames(sample_index_mat_res) = paste(celltype[i],1:dim(sample_index_mat_res)[2],sep='@psedobulk')
+		#############
+		sample_index_mat_res = list(sample_index_mat_res)
+		#############
+		All_mat = c(All_mat,sample_index_mat_res)
+	}
+	##### 
+	#####
+	All_mat = do.call('cbind',All_mat)
+	All_mat = round(All_mat,3)
+	#####
+	return(All_mat)
+}
+
+
+All_mat = Prepare_the_Seurat_objects_Step3(seurat_obj,matrix_tag = 'data',non_overlapping_cutoff = 0.99,KNN=20)
+
+##########################################
+saveRDS(All_mat,file='pmid32386599_bulk')
+
+
+
+###############
+k = which(rowSums(All_mat) == 0)
+k = which(rownames(All_mat) %in% rownames(ACRPC_markers))
+All_mat_cl = All_mat[k,]
+
+######### test All_mat ###########
+RPCs_self_cor_mat = All_mat_cl[,grep('RPCs@',colnames(All_mat_cl))]
+
+RGCs_self_cor_mat = All_mat_cl[,grep('Retinal Ganglion Cells@',colnames(All_mat_cl))]
+
+AC_self_cor_mat = All_mat_cl[,grep('Amacrine Cells@',colnames(All_mat_cl))]
+
+######### see the DEGs ######################
+### DEGs = which()
+### k = which(rownames(RPCs_self_cor_mat))
+######### differential Genes ################
+
+summary(as.numeric((cor(AC_self_cor_mat[,1],RPCs_self_cor_mat[,-1],method='spearman'))))
+
+summary(as.numeric((cor(RPCs_self_cor_mat[,1],RPCs_self_cor_mat[,-1],method='spearman'))))
+
+summary(RPCs_self_cor_mat[which(rownames(RPCs_self_cor_mat) == 'TFAP2B'),])
+summary(AC_self_cor_mat[which(rownames(RPCs_self_cor_mat) == 'TFAP2B'),])
+
+
+
+
+#########
+cos_fun = function(x,y){
+		library(lsa)
+		res = lsa::cosine(x,y)
+		return(res)
+}
+
+res = cosine(RGCs_self_cor_mat[,1],RPCs_self_cor_mat[,-1])
+res = cosine(AC_self_cor_mat[,1],RPCs_self_cor_mat[,-1])
+res = cor(AC_self_cor_mat,RPCs_self_cor_mat,method='spearman')
+
+summary(as.numeric(res))
+
+######## Using AC and RPC DEGs ##########
+########
+
+library(Seurat)
+ACRPC_markers = FindMarkers(seurat_obj,min.pct=0.2,ident.1='Amacrine Cells',ident.2='RPCs',test.use='MAST',logfc.threshold = 0.5)
+
+########
+######## this is largely depending on gene sets !!! #########
+########
+
+
+Output_average_expression <- function(mat_Seurat){
+	mat = mat_Seurat[['RNA']]@counts
+	#########
+	## mean value of the average expression #
+	#########
+	celltype = mat_Seurat$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	#########
+	avg_total = c()
+	for(i in 1:length(celltype)){
+		#######
+		print(i)
+		k = which(mat_Seurat$celltype == celltype[i])
+		#######
+		mat_cl = mat[,k]
+		#######
+		avg = apply(mat_cl,1,mean)
+		avg_total = c(avg_total,avg)
+	}
+	avg_total = matrix(avg_total,ncol=length(celltype))
+	#####
+	colnames(avg_total) = celltype
+	rownames(avg_total) = rownames(mat_Seurat)
+	#####
+	k = which(rowSums(avg_total) == 0)
+	if(length(k) > 0){avg_total = avg_total[-k,]}
+	######
+	print(dim(avg_total))
+	######
+	return(avg_total)
+}
+
+avg_total = Output_average_expression(mat_Seurat)
+
+Mat_to_tabs <- function(avg_total,file='average_expression.txt'){
+	##########
+	avg_total_tab = data.frame(round(avg_total,5))
+	avg_total_tab$GENE = rownames(avg_total_tab)
+	avg_total_tab = avg_total_tab[,c(dim(avg_total_tab)[2],1:(dim(avg_total_tab)[2]-1))]
+	write.table(avg_total_tab,file=file,quote=F,sep='\t',col.names=T,row.names=F)
+}
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+Mat_to_tabs(avg_total,file='average_expression.txt')
+
+
+Seurat_to_tabs <- function(mat_Seurat,file='coordinates.txt'){
+	##########
+	cells = colnames(mat_Seurat)
+	cluster = mat_Seurat$celltype
+	dim1 = mat_Seurat$dim1
+	dim2 = mat_Seurat$dim2
+	##########
+	tab = data.frame(cell = cells, cluster=cluster,dim1=dim1,dim2=dim2)
+	write.table(tab,file=file,quote=F,sep='\t',col.names=T,row.names=F)
+}
+
+Seurat_to_tabs(mat_Seurat,file='coordinates.txt')
+
+
+
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+
+
+#### 首先仅仅输出两个数据，一个是平均的表达量，一个是差异基因 #########
+
+####
+#### precessing the project: 31995762_total ########
+####
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 20)
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+library(Seurat)
+library(tidyverse)
+
+RNA_mat = read_delim('PRJ0027145_ex.txt.gz')
+
+#### success!!!! ######
+
+RNA_mat_cl = as.matrix(RNA_mat[,-1])
+
+rownames(RNA_mat_cl) = RNA_mat$GENE
+
+seurat_obj_31995762 = CreateSeuratObject(RNA_mat_cl)
+
+#### needed to be normailzed to 1e6 and log2 fold ########
+
+#### first save the projects ######
+
+save(seurat_obj_31995762,file='seurat_obj_31995762')
+
+##### other cell type annotations are NA ########
+
+annotation = read_delim('GSE135133_clusterAssignments.txt.gz')
+
+dim(annotation)
+
+colnames(annotation)
+
+##### read the dims and annotations #############
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+load('seurat_obj_31995762')
+
+library(Seurat)
+library(tidyverse)
+annotation = read_delim('GSE135133_clusterAssignments.txt.gz')
+
+table(annotation$Cell_type_full)
+k = which(is.na(annotation$)
+
+##### head(annotation) #######
+
+##### 31995762_total #######
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+total_umap = read.table("Clusters_full_tSNE.txt",sep=',',header=T)
+total_umap = total_umap[-1,]
+
+##### pmid31995762_seurat_obj #####
+
+k = which(colnames(seurat_obj_31995762) %in% total_umap$NAME == T)
+pmid31995762_total_seurat_obj = seurat_obj_31995762[,k]
+
+
+pmid31995762_total_seurat_obj = Merge_celltype(pmid31995762_total_seurat_obj,annotation[,c(1,5)])
+pmid31995762_total_seurat_obj = Merge_dim(pmid31995762_total_seurat_obj,total_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_total_seurat_obj$celltype) == T)
+pmid31995762_total_seurat_obj = pmid31995762_total_seurat_obj[,-k]
+save(pmid31995762_total_seurat_obj,file='pmid31995762_total_seurat_obj')
+
+
+
+##### pmid31995762_sub1_seurat_obj #####
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+bipolar_umap = read.table("Clusters_bipolar_tSNE.txt",sep=',',header=T)
+bipolar_umap = bipolar_umap[-1,]
+
+k = which(colnames(seurat_obj_31995762) %in% bipolar_umap$NAME == T)
+pmid31995762_sub1_seurat_obj = seurat_obj_31995762[,k]
+
+pmid31995762_sub1_seurat_obj = Merge_celltype(pmid31995762_sub1_seurat_obj,annotation[,c(1,7)])
+pmid31995762_sub1_seurat_obj = Merge_dim(pmid31995762_sub1_seurat_obj,bipolar_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_sub1_seurat_obj$celltype) == T)
+pmid31995762_sub1_seurat_obj = pmid31995762_sub1_seurat_obj[,-k]
+save(pmid31995762_sub1_seurat_obj,file='pmid31995762_sub1_seurat_obj')
+
+
+##### pmid31995762_sub2_seurat_obj #####
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+AC_umap = read.table("Clusters_amacrine_tSNE.txt",sep=',',header=T)
+AC_umap = AC_umap[-1,]
+
+k = which(colnames(seurat_obj_31995762) %in% AC_umap$NAME == T)
+pmid31995762_sub2_seurat_obj = seurat_obj_31995762[,k]
+
+pmid31995762_sub2_seurat_obj = Merge_celltype(pmid31995762_sub2_seurat_obj,annotation[,c(1,8)])
+pmid31995762_sub2_seurat_obj = Merge_dim(pmid31995762_sub2_seurat_obj,AC_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_sub2_seurat_obj$celltype) == T)
+pmid31995762_sub2_seurat_obj = pmid31995762_sub2_seurat_obj[,-k]
+save(pmid31995762_sub2_seurat_obj,file='pmid31995762_sub2_seurat_obj')
+
+##### pmid31995762_sub3_seurat_obj #####
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+RGC_umap = read.table("Clusters_rgc_tSNE.txt",sep=',',header=T)
+RGC_umap = RGC_umap[-1,]
+
+k = which(colnames(seurat_obj_31995762) %in% RGC_umap$NAME == T)
+pmid31995762_sub3_seurat_obj = seurat_obj_31995762[,k]
+
+pmid31995762_sub3_seurat_obj = Merge_celltype(pmid31995762_sub3_seurat_obj,annotation[,c(1,13)])
+pmid31995762_sub3_seurat_obj = Merge_dim(pmid31995762_sub3_seurat_obj,RGC_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_sub3_seurat_obj$celltype) == T)
+pmid31995762_sub3_seurat_obj = pmid31995762_sub3_seurat_obj[,-k]
+save(pmid31995762_sub3_seurat_obj,file='pmid31995762_sub3_seurat_obj')
+
+
+
+##### pmid31995762_sub4_seurat_obj #####
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+HC_umap = read.table("Clusters_horizontal_tSNE.txt",sep=',',header=T)
+HC_umap = HC_umap[-1,]
+
+k = which(colnames(seurat_obj_31995762) %in% HC_umap$NAME == T)
+pmid31995762_sub4_seurat_obj = seurat_obj_31995762[,k]
+
+pmid31995762_sub4_seurat_obj = Merge_celltype(pmid31995762_sub4_seurat_obj,annotation[,c(1,10)])
+pmid31995762_sub4_seurat_obj = Merge_dim(pmid31995762_sub4_seurat_obj,HC_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_sub4_seurat_obj$celltype) == T)
+pmid31995762_sub4_seurat_obj = pmid31995762_sub4_seurat_obj[,-k]
+save(pmid31995762_sub4_seurat_obj,file='pmid31995762_sub4_seurat_obj')
+
+
+##### pmid31995762_sub5_seurat_obj #####
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+Cone_umap = read.table("Clusters_cones_tSNE.txt",sep=',',header=T)
+Cone_umap = Cone_umap[-1,]
+
+k = which(colnames(seurat_obj_31995762) %in% Cone_umap$NAME == T)
+pmid31995762_sub5_seurat_obj = seurat_obj_31995762[,k]
+
+pmid31995762_sub5_seurat_obj = Merge_celltype(pmid31995762_sub5_seurat_obj,annotation[,c(1,9)])
+pmid31995762_sub5_seurat_obj = Merge_dim(pmid31995762_sub5_seurat_obj,Cone_umap[,c(1,2,3)])
+k = which(is.na(pmid31995762_sub5_seurat_obj$celltype) == T)
+pmid31995762_sub5_seurat_obj = pmid31995762_sub5_seurat_obj[,-k]
+save(pmid31995762_sub5_seurat_obj,file='pmid31995762_sub5_seurat_obj')
+
+
+###### output the dims #########
+
+Output_dims(pmid31995762_total_seurat_obj,'pmid31995762_total')
+Output_dims(pmid31995762_sub1_seurat_obj,'pmid31995762_sub1')
+Output_dims(pmid31995762_sub2_seurat_obj,'pmid31995762_sub2')
+Output_dims(pmid31995762_sub3_seurat_obj,'pmid31995762_sub3')
+Output_dims(pmid31995762_sub4_seurat_obj,'pmid31995762_sub4')
+Output_dims(pmid31995762_sub5_seurat_obj,'pmid31995762_sub5')
+
+
+pmid31995762_total_seurat_obj = NormalizeData(pmid31995762_total_seurat_obj)
+pmid31995762_sub1_seurat_obj = NormalizeData(pmid31995762_sub1_seurat_obj)
+pmid31995762_sub2_seurat_obj = NormalizeData(pmid31995762_sub2_seurat_obj)
+pmid31995762_sub3_seurat_obj = NormalizeData(pmid31995762_sub3_seurat_obj)
+pmid31995762_sub4_seurat_obj = NormalizeData(pmid31995762_sub4_seurat_obj)
+pmid31995762_sub5_seurat_obj = NormalizeData(pmid31995762_sub5_seurat_obj)
+
+
+Prepare_the_Seurat_objects_Step1(pmid31995762_total_seurat_obj,'data','pmid31995762_total')
+Prepare_the_Seurat_objects_Step1(pmid31995762_sub1_seurat_obj,'data','pmid31995762_sub1')
+Prepare_the_Seurat_objects_Step1(pmid31995762_sub2_seurat_obj,'data','pmid31995762_sub2')
+Prepare_the_Seurat_objects_Step1(pmid31995762_sub3_seurat_obj,'data','pmid31995762_sub3')
+Prepare_the_Seurat_objects_Step1(pmid31995762_sub4_seurat_obj,'data','pmid31995762_sub4')
+Prepare_the_Seurat_objects_Step1(pmid31995762_sub5_seurat_obj,'data','pmid31995762_sub5')
+
+
+pmid31995762_total_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_total_seurat_obj)
+
+pmid31995762_sub1_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_sub1_seurat_obj)
+pmid31995762_sub2_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_sub2_seurat_obj)
+pmid31995762_sub3_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_sub3_seurat_obj)
+pmid31995762_sub4_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_sub4_seurat_obj)
+pmid31995762_sub5_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(pmid31995762_sub5_seurat_obj)
+
+
+saveRDS(pmid31995762_total_DEGs_list, file='pmid31995762_total_DEGs_list')
+
+saveRDS(pmid31995762_sub1_DEGs_list,file='pmid31995762_sub1_DEGs_list')
+saveRDS(pmid31995762_sub2_DEGs_list,file='pmid31995762_sub2_DEGs_list')
+saveRDS(pmid31995762_sub3_DEGs_list,file='pmid31995762_sub3_DEGs_list')
+saveRDS(pmid31995762_sub4_DEGs_list,file='pmid31995762_sub4_DEGs_list')
+saveRDS(pmid31995762_sub5_DEGs_list,file='pmid31995762_sub5_DEGs_list')
+
+
+saveRDS(seurat_obj_DEGs_list,file='pmid32386599_DEGs_list')
+####
+
+#### see is there raw datasets from GEO: ########
+Supplementary_files_format_and_content: tab-delimited text files include preMRNA_umi raw count values for each Sample
+#### raw datasets for UMI counts ################
+
+tar -xvf GSE135133_RAW.tar
+
+
+
+
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+#### yellow ####
+##### Shell_DEG_total.R #######
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+load('pmid31995762_total_seurat_obj')
+
+Prepare_the_Seurat_objects_Step2 <- function(seurat_obj,FN){
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	######
+	DEGs_list = list()
+	######
+	for(i in 1:(length(celltype)-1)){
+		for(j in (i+1):length(celltype)){
+			print(paste(celltype[i],celltype[j],sep='@VS@'))
+			library(future)
+			plan("multicore", workers = 30)
+			tmp_markers = FindMarkers(seurat_obj,ident.1=celltype[i],ident.2=celltype[j],test.use='MAST',logfc.threshold = 0.5)
+			tmp_markers = data.frame(tmp_markers)
+			tmp_markers$gene = rownames(tmp_markers)
+			k = which(tmp_markers$p_val_adj < 0.01)
+			tmp_markers = tmp_markers[k,]
+			tmp_markers = list(tmp_markers)
+			names(tmp_markers) = paste(celltype[i],celltype[j],sep='@VS@')
+			DEGs_list = c(DEGs_list,tmp_markers)
+		}
+	}
+	saveRDS(DEGs_list,file=FN)
+}
+
+Prepare_the_Seurat_objects_Step2(pmid31995762_total_seurat_obj,FN='pmid31995762_total_DEGs_long')
+
+##### Shell_DEG_sub1.R ####
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+load('pmid31995762_sub1_seurat_obj')
+
+cp Shell_DEG_total.R Shell_DEG_sub1.R
+cp Shell_DEG_total.R Shell_DEG_sub2.R
+cp Shell_DEG_total.R Shell_DEG_sub3.R
+cp Shell_DEG_total.R Shell_DEG_sub4.R
+cp Shell_DEG_total.R Shell_DEG_sub5.R
+
+
+
+#### Shell_DEG_sub2.R
+#### Shell_DEG_sub3.R
+#### Shell_DEG_sub4.R
+#### Shell_DEG_sub5.R
+
+
+####### great next study!!!! ##########
+
+
+
+
+
+
+#########
+Cell Atlas of The Human Fovea and Peripheral Retina
+#########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32555229')
+library(Seurat)
+library(tidyverse)
+
+exp_dat = read_delim('Human_retina_combined_all_expression_matrix.csv')
+
+exp_dat_mat = as.matrix(exp_dat[,-1])
+
+exp_dat_mat[1:5,1:5]
+
+rowN =  as.character(exp_dat[,1])
+
+rownames(exp_dat_mat) = as.character(exp_dat$"...1")
+
+
+pmid32555229_total_seurat_obj = CreateSeuratObject(exp_dat_mat)
+
+save(pmid32555229_total_seurat_obj,file='pmid32555229_total_seurat_obj')
+
+######## added total annotations ####
+
+meta = read_delim('Human_retina_combined_all_meta.csv')
+
+
+
+
+
+#########
+Next calculate the DEGs for 34584087_sub3 and 32386599 #######
+#########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+pmid34584087_sub3_seurat_obj = readRDS('pmid34584087_sub3_seurat_obj')
+
+touch Shell_DEG_pmid34584087_sub3.R 
+
+
+Prepare_the_Seurat_objects_Step2(pmid34584087_sub3_seurat_obj,FN='pmid34584087_sub3_DEGs_long')
+
+
+#########
+#########
+Next calculate the DEGs for 32386599 #######
+#########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+
+
+pmid32386599_seurat_obj = readRDS('pmid32386599_seurat_obj')
+
+
+touch Shell_DEG_pmid32386599.R 
+
+Prepare_the_Seurat_objects_Step2(pmid32386599_seurat_obj,FN='pmid32386599_DEGs_long')
+
+
+#########
+######### add the Celltypes in seurat_obj ############
+#########
+
+
+
+Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 5,non_overlapping_cutoff = 0.99){
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	dims_tab = seurat_obj@meta.data
+	k = which(colnames(dims_tab) %in% c('dim1','dim2','dim3'))
+	dims_tab = dims_tab[,k]
+	######
+	###### using UMAPs as dim #################
+	All_mat = list()
+	######
+	for(i in 1:(length(celltype))){
+		print(i)
+		#############
+		tmp_k = which(seurat_obj$celltype == celltype[i])
+		print(length(tmp_k))
+		#####
+		tmp_mat = mat[,tmp_k]
+		#####
+		tmp_dims_tab = dims_tab[tmp_k,]
+		tmp_dims_tab = as.matrix(tmp_dims_tab)
+		############# decide KNN ##########
+		print(paste('KNN =',KNN))
+		#############
+		#############
+		knnObj <- FNN::get.knn(data = tmp_dims_tab,k = KNN)
+		knnIdx <- knnObj$nn.index
+		rownames(knnIdx) = 1:dim(knnIdx)[1]
+		############# sample cells #########################
+		Sample_Numbers = round(length(tmp_k)/(KNN*5))
+		if(Sample_Numbers > 300){Sample_Numbers=300}
+		if(Sample_Numbers < 5){Sample_Numbers=5}
+		print(paste('Sample_Numbers',Sample_Numbers))
+		#############
+		#### sample No overlapping KNN clusters #####
+		#############
+		Sample_index = get_NonOverlap(knnIdx,Sample_Numbers,non_overlapping_cutoff)
+		#############
+		sample_index_mat = knnIdx[Sample_index,]
+		#############
+		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
+		sample_index_mat_res = as.matrix(sample_index_mat_res,nrow=dim(tmp_mat)[1])
+		#############
+		rownames(sample_index_mat_res) = rownames(tmp_mat)
+		colnames(sample_index_mat_res) = paste(celltype[i],1:dim(sample_index_mat_res)[2],sep='@psedobulk')
+		#############
+		sample_index_mat_res = list(sample_index_mat_res)
+		#############
+		All_mat = c(All_mat,sample_index_mat_res)
+	}
+	##### 
+	#####
+	All_mat = do.call('cbind',All_mat)
+	All_mat = round(All_mat,3)
+	#####
+	return(All_mat)
+}
+
+
+
+########
+######## Prepare_the_Seurat_objects_Step4 ###################
+######## output the dims ####################################
+########
+
+seurat_obj = pmid32386599_seurat_obj
+
+
+get_NonOverlap <- function(knnIdx,Sample_Numbers,non_overlapping_cutoff = 0.9){
+	counts = 0
+	index_list_ori = sample(1:dim(knnIdx)[1],1)
+	i = 1
+	while(i < (Sample_Numbers)){
+		######
+		tmp_index = sample(1:dim(knnIdx)[1],1)
+		######
+		counts = counts+1
+		#####
+		tmp_index_new_dat = as.vector(knnIdx[tmp_index,])
+		tmp_index_old_dat = as.vector(knnIdx[index_list_ori,])
+		######
+		tmp_overlap = 1-(length(which(tmp_index_new_dat %in% tmp_index_old_dat == T)) / length(knnIdx[tmp_index,]))
+		######
+		if(tmp_overlap > non_overlapping_cutoff){
+			index_list_ori = c(index_list_ori,tmp_index)
+			i = i+1
+		}
+		if(counts > 10000){
+			break
+		}
+	}
+	print(paste('clusters = ',length(index_list_ori)))
+	return(index_list_ori)
+}
+
+
+get_smooth_gene_exp <- function(x,mat){
+	#####
+	mat_cl = mat[,x]
+	#####
+	vector = rowMeans(mat_cl)
+	#####
+	return(vector)
+}
+
+
+Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99){
+	seurat_obj$pesudo_index = 'Non_Selected'
+	################
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	Idents(seurat_obj) = 'celltype'
+	###### added the pseudo-bulk to the single-cell RNA-seq datasets #######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	dims_tab = seurat_obj@meta.data
+	k = which(colnames(dims_tab) %in% c('dim1','dim2','dim3'))
+	dims_tab = dims_tab[,k]
+	######
+	###### using UMAPs as dim #################
+	All_mat = list()
+	######
+	for(i in 1:(length(celltype))){
+		print(i)
+		#############
+		tmp_k = which(seurat_obj$celltype == celltype[i])
+		print(length(tmp_k))
+		#####
+		tmp_mat = mat[,tmp_k]
+		#####
+		tmp_dims_tab = dims_tab[tmp_k,]
+		tmp_dims_tab = as.matrix(tmp_dims_tab)
+		############# decide KNN ##########
+		print(paste('KNN =',KNN))
+		#############
+		#############
+		knnObj <- FNN::get.knn(data = tmp_dims_tab,k = KNN)
+		knnIdx <- knnObj$nn.index
+		rownames(knnIdx) = 1:dim(knnIdx)[1]
+		############# sample cells #########################
+		Sample_Numbers = round(length(tmp_k)/(KNN*5))
+		if(Sample_Numbers > 300){Sample_Numbers=300}
+		if(Sample_Numbers < 5){Sample_Numbers=5}
+		print(paste('Sample_Numbers',Sample_Numbers))
+		#############
+		Sample_index = get_NonOverlap(knnIdx,Sample_Numbers,non_overlapping_cutoff)
+		#############
+		#############
+		sample_index_mat = knnIdx[Sample_index,]
+		rownames(sample_index_mat) = paste(celltype[i],1:dim(sample_index_mat)[1],sep='@psedobulk')
+		#############
+		for(j in 1:dim(Sample_index)[1]){
+			tmp_k = 
+		}
+		#############
+		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
+		sample_index_mat_res = as.matrix(sample_index_mat_res,nrow=dim(tmp_mat)[1])
+		#############
+		rownames(sample_index_mat_res) = rownames(tmp_mat)
+		colnames(sample_index_mat_res) = paste(celltype[i],1:dim(sample_index_mat_res)[2],sep='@psedobulk')
+		#############
+		sample_index_mat_res = list(sample_index_mat_res)
+		#############
+		All_mat = c(All_mat,sample_index_mat_res)
+	}
+	##### 
+	#####
+	All_mat = do.call('cbind',All_mat)
+	All_mat = round(All_mat,3)
+	#####
+	return(All_mat)
+}
+
+
+
+
+
+
+
+
+interdata test:
+
+###
+
+
+exterdata test:
+
+### postive control ###
+
+
+### negative control ###
+
+
+
+
+
+############ prepare the test datasets ################
+############ Reget the clusters dims=1:50 and for each cell types annotation resolution = 1 ########
+############ 
+
+
+
+
+
+
+
+
+
+
+

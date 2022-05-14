@@ -1,0 +1,1068 @@
+###### additional liver samples: ######
+
+http://shiny.baderlab.org/HumanLiverAtlas/
+
+Single cell RNA sequencing of human liver reveals distinct intrahepatic macrophage populations
+
+PMID:30348985
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+HumanLiverSeurat_dat = HumanLiverSeurat[['RNA']]@data
+
+HumanLiverSeurat_dat_raw = HumanLiverSeurat[['RNA']]@counts
+
+###### Yes, this is the log2 fold change ########
+
+######
+
+Merge_dim = function(seurat_obj,dims){
+	dims = data.frame(dims)
+	m = match(colnames(seurat_obj),dims[,1])
+	######
+	seurat_obj$dim1 = as.numeric(dims[m,2])
+	seurat_obj$dim2 = as.numeric(dims[m,3])
+	return(seurat_obj)
+}
+
+
+dims = data.frame(HumanLiverSeurat@reductions$tsne@cell.embeddings)
+
+dims$cells = rownames(dims)
+
+dims = dims[,c(3,1,2)]
+
+HumanLiverSeurat = Merge_dim(HumanLiverSeurat,dims)
+
+###### find the celltypes #######
+setwd('/zp1/data/plyu3/Human_liver')
+
+load('HumanLiver_savedRes.RData')
+
+###### additional liver samples: ######
+
+Plot_dims = function(seurat_obj){
+	####
+	tag = c('res.0.8','dim1','dim2')
+	m = match(tag,colnames(seurat_obj@meta.data))
+	plot_tab = seurat_obj@meta.data[,m]
+	####
+	library(ggplot2)
+	####
+	png_file = paste('cluster','dim.png',sep='_')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(ggplot(plot_tab,aes(x=dim1,y=dim2,color='res.0.8')) + geom_point())
+ 	dev.off()
+}
+
+
+Plot_dims(HumanLiverSeurat)
+
+
+"celltype"
+
+HumanLiverSeurat$celltype = "Unknown"
+Celltypes = list("Hepatocytes" = c(1,3,15,6,14,5),"Mature B cells" = c(16),"Cholangiocytes"=c(17),"Plasma cells"=c(7),"gd T cells"=c(9),'NK cells'=c(8),"ab T cells"=c(2),"Macrophages"=c(4,10),"LSECs"=c(11,12),"Hepatic Stellate Cells"=c(20),"portal endothelial cells" = c(13),"Erythoid Cells"=c(18,19))
+
+for(i in 1:length(Celltypes)){
+	tmp = Celltypes[[i]]
+	tmp_index = which(HumanLiverSeurat$'res.0.8' %in% tmp == T)
+	HumanLiverSeurat$celltype[tmp_index] = names(Celltypes)[i]
+}
+
+table(HumanLiverSeurat$celltype)
+
+######
+
+setwd('/zp1/data/plyu3/Human_liver')
+HumanLiverSeurat_PMID30348985 = HumanLiverSeurat
+save(HumanLiverSeurat_PMID30348985,file='HumanLiverSeurat_PMID30348985')
+
+
+###### 
+######
+
+head(HumanLiverSeurat_PMID30348985@meta.data)
+
+
+###### generate average expression datasets ############
+###### change it's format !!!! #########################
+
+'red' 'red' 'red'
+
+###### 
+
+setwd('/zp1/data/plyu3/Human_liver')
+saveRDS(HumanLiverSeurat_PMID30348985,file='pmid30348985_seurat_obj')
+
+
+######
+pmid30348985_seurat_obj = readRDS('pmid30348985_seurat_obj')
+
+Prepare_the_Seurat_objects_Step1 <- function(seurat_obj,matrix_tag = 'data',tag='pmid32386599'){
+	####### average expression ########
+	####### generate average expression for each celltype #########
+	####### key: celltype ######
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	####### 
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	#######
+	avg_total = c()
+	for(i in 1:length(celltype)){
+		#######
+		print(celltype[i])
+		k = which(seurat_obj$celltype == celltype[i])
+		#######
+		mat_cl = mat[,k]
+		#######
+		avg = Matrix::rowMeans(mat_cl)
+		avg_total = c(avg_total,avg)
+	}
+	avg_total = matrix(avg_total,ncol=length(celltype))
+	colnames(avg_total) = celltype
+	rownames(avg_total) = rownames(seurat_obj)
+	k = which(rowSums(avg_total) == 0)
+	if(length(k) > 0){avg_total = avg_total[-k,]}
+	print(dim(avg_total))
+	#####
+	FN = paste(tag,'_avg_expmat',sep='')
+	saveRDS(avg_total,FN)
+}
+
+Prepare_the_Seurat_objects_Step1(pmid30348985_seurat_obj,matrix_tag = 'data',tag='pmid30348985')
+
+
+Prepare_the_Seurat_objects_Step2 <- function(seurat_obj,tag){
+	Idents(seurat_obj) = 'celltype'
+	######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	######
+	DEGs_list = list()
+	######
+	for(i in 1:(length(celltype)-1)){
+		for(j in (i+1):length(celltype)){
+			print(paste(celltype[i],celltype[j],sep='@VS@'))
+			library(future)
+			plan("multicore", workers = 30)
+			tmp_markers = FindMarkers(seurat_obj,ident.1=celltype[i],ident.2=celltype[j],test.use='MAST',logfc.threshold = 0.5)
+			tmp_markers = data.frame(tmp_markers)
+			tmp_markers$gene = rownames(tmp_markers)
+			k = which(tmp_markers$p_val_adj < 0.01)
+			tmp_markers = tmp_markers[k,]
+			tmp_markers = list(tmp_markers)
+			names(tmp_markers) = paste(celltype[i],celltype[j],sep='@VS@')
+			DEGs_list = c(DEGs_list,tmp_markers)
+		}
+	}
+	FN = paste(tag,'DEGs_long',sep='_')
+	saveRDS(DEGs_list,file=FN)
+}
+
+Prepare_the_Seurat_objects_Step2(pmid30348985_seurat_obj,tag='pmid30348985')
+
+###### Then prepare the psesudo-bulk #########
+
+
+Output_dims <- function(seurat_obj,tag){
+	######
+	meta = seurat_obj@meta.data
+	######
+	###### key words: celltype,dim1,dim2,dim3 ########
+	k = which(colnames(meta) %in% c('celltype','dim1','dim2','dim3') == T)
+	meta_cl = meta[,k]
+	###### change celltype to cluster ######
+	k = which(colnames(meta_cl) == 'celltype')
+	colnames(meta_cl)[k] = 'cluster'
+	###### saveRDS #####
+	FN = paste(tag,'_Dimplot',sep='')
+	saveRDS(meta_cl,FN)
+}
+
+
+Output_dims(pmid30348985_seurat_obj,'pmid30348985')
+
+
+#######
+####### add the tracks on R-studio adding the tracks #######
+#######
+
+'yellow' on my computer:
+ 
+setwd('/Users/pin/Desktop/CellAlignment_Server_version2/database')
+
+dat_sheet = read.table('database_sheet.csv',sep=',',header=T)
+
+dat_sheet_add = data.frame(PMID='30348985',species='Human',sample='Liver',study='Single cell RNA sequencing of human liver reveals distinct intrahepatic macrophage populations')
+
+dat_sheet = rbind(dat_sheet,dat_sheet_add)
+
+write.csv(dat_sheet,file='database_sheet.csv',row.names=F,quote=F)
+
+dat_sheet = read.table('database_sheet.csv',sep=',',header=T)
+
+####### ################################
+####### OK! added the datasets! ########
+####### view the brower: ###############
+####### OK !!!! ########################
+####### ################################
+
+Next the presudo-bulk data for Human liver:
+
+####### for liver: #####################
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+pmid30348985_seurat_obj = readRDS('pmid30348985_seurat_obj')
+
+#######
+
+get_NonOverlap <- function(knnIdx,Sample_Numbers,non_overlapping_cutoff = 0.99){
+	counts = 0
+	index_list_ori = sample(1:dim(knnIdx)[1],1)
+	i = 1
+	while(i < (Sample_Numbers)){
+		######
+		tmp_index = sample(1:dim(knnIdx)[1],1)
+		######
+		counts = counts+1
+		#####
+		tmp_index_new_dat = as.vector(knnIdx[tmp_index,])
+		tmp_index_old_dat = as.vector(knnIdx[index_list_ori,])
+		######
+		tmp_overlap = length(which(tmp_index_new_dat %in% tmp_index_old_dat == T)) / length(tmp_index_new_dat)
+		######
+		if(tmp_overlap < (1-non_overlapping_cutoff)){
+			index_list_ori = c(index_list_ori,tmp_index)
+			i = i+1
+		}
+		if(counts > 10000){
+			break
+		}
+	}
+	print(paste('clusters = ',length(index_list_ori)))
+	return(index_list_ori)
+}
+
+
+get_smooth_gene_exp <- function(x,mat){
+	#####
+	mat_cl = mat[,x]
+	#####
+	vector = rowMeans(mat_cl)
+	#####
+	return(vector)
+}
+
+
+Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99, tag='pmid30348985'){
+	seurat_obj$pesudo_index = 'Non_Selected'
+	################
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	Idents(seurat_obj) = 'celltype'
+	###### added the pseudo-bulk to the single-cell RNA-seq datasets #######
+	###### calculate DEGs between cell types ##########
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	dims_tab = seurat_obj@meta.data
+	k = which(colnames(dims_tab) %in% c('dim1','dim2','dim3'))
+	dims_tab = dims_tab[,k]
+	######
+	###### using UMAPs as dim #################
+	All_mat = list()
+	######
+	for(i in 1:(length(celltype))){
+		print(i)
+		#############
+		tmp_k = which(seurat_obj$celltype == celltype[i])
+		print(length(tmp_k))
+		#####
+		tmp_mat = mat[,tmp_k]
+		#####
+		tmp_dims_tab = dims_tab[tmp_k,]
+		tmp_dims_tab = as.matrix(tmp_dims_tab)
+		############# decide KNN ##########
+		print(paste('KNN =',KNN))
+		#############
+		#############
+		knnObj <- FNN::get.knn(data = tmp_dims_tab,k = KNN)
+		knnIdx <- knnObj$nn.index
+		rownames(knnIdx) = 1:dim(knnIdx)[1]
+		############# sample cells #########################
+		Sample_Numbers = round(length(tmp_k)/(KNN*5))
+		if(Sample_Numbers > 300){Sample_Numbers=300}
+		if(Sample_Numbers < 5){Sample_Numbers=5}
+		print(paste('Sample_Numbers',Sample_Numbers))
+		#############
+		Sample_index = get_NonOverlap(knnIdx,Sample_Numbers,non_overlapping_cutoff)
+		#############
+		sample_index_mat = knnIdx[Sample_index,]
+		rownames(sample_index_mat) = paste(celltype[i],1:dim(sample_index_mat)[1],sep='@psedobulk')
+		############# problems with index ###############
+		#############
+		tmp_dims_tab = data.frame(tmp_dims_tab)
+		tmp_dims_tab$pesudo_index = 'Non_Selected'
+		for(j in 1:dim(sample_index_mat)[1]){
+			tmp_k = sample_index_mat[j,]
+			tmp_dims_tab$pesudo_index[tmp_k] = rownames(sample_index_mat)[j]
+			tmp_k_total = match(rownames(tmp_dims_tab),colnames(seurat_obj))
+			print(head(tmp_dims_tab$pesudo_index))
+			seurat_obj$pesudo_index[tmp_k_total] = tmp_dims_tab$pesudo_index
+		}
+		#############
+		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
+		sample_index_mat_res = as.matrix(sample_index_mat_res,nrow=dim(tmp_mat)[1])
+		#############
+		rownames(sample_index_mat_res) = rownames(tmp_mat)
+		colnames(sample_index_mat_res) = paste(celltype[i],1:dim(sample_index_mat_res)[2],sep='@pseudobulk')
+		#############
+		sample_index_mat_res = list(sample_index_mat_res)
+		#############
+		All_mat = c(All_mat,sample_index_mat_res)
+	}
+	##### 
+	#####
+	All_mat = do.call('cbind',All_mat)
+	All_mat = round(All_mat,3)
+	##### save the pseudo-matrix #########
+	FN_mat = paste(tag,'pseudo_bulk',sep='_')
+	save(All_mat,file=FN_mat)
+	##### save the seuratobj #############
+	FN = paste(tag,'seurat_obj',sep='_')
+	saveRDS(seurat_obj,file=FN)
+	#####
+	print('Done!')
+}
+
+
+###################
+###################
+
+Prepare_the_Seurat_objects_Step3(pmid30348985_seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99, tag='pmid30348985')
+
+###################
+###################
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+pmid30348985_seurat_obj = readRDS('pmid30348985_seurat_obj')
+
+k = which(pmid30348985_seurat_obj$pesudo_index == 'Non_Selected')
+
+table(pmid30348985_seurat_obj$pesudo_index)
+
+#### some problem !!! ######
+#### ################# #####
+
+seurat_obj = pmid30348985_seurat_obj
+
+Plot_dims = function(seurat_obj){
+	####
+	tag = c('pesudo_index','dim1','dim2')
+	m = match(tag,colnames(seurat_obj@meta.data))
+	plot_tab = seurat_obj@meta.data[,m]
+	####
+	plot_tab = plot_tab[which(plot_tab$pesudo_index != 'Non_Selected'),]
+	####
+	library(ggplot2)
+	pesudo_index_level = plot_tab$pesudo_index[!duplicated(plot_tab$pesudo_index)]
+	pesudo_index_level = pesudo_index_level[sample(1:length(pesudo_index_level),size=length(pesudo_index_level))]
+	plot_tab$pesudo_index = factor(plot_tab$pesudo_index,levels=as.character(pesudo_index_level))
+	####
+	png_file = paste('pesudo_index','dim.png',sep='_')
+	png(png_file,height=2500,width=3000,res=72*12)
+	print(ggplot(plot_tab,aes(x=dim1,y=dim2,color=pesudo_index)) + geom_point(size=0.01) + theme_classic() + theme(legend.position='None') )
+ 	dev.off()
+}
+
+Plot_dims(pmid30348985_seurat_obj)
+
+###### #### #####
+###### some between datasets #####
+###### #### #####
+
+seurat_obj = pmid30348985_seurat_obj
+
+Prepare_the_test_seurat_objects <- function(seurat_obj,tag){
+	#### dims = 1:50 #######
+	seurat_obj <- FindVariableFeatures(object = seurat_obj)
+	#############
+	seurat_obj <- ScaleData(object = seurat_obj)
+	seurat_obj <- RunPCA(object = seurat_obj)
+	#############
+	seurat_obj <- RunUMAP(seurat_obj,dims=1:5)
+	############# replace dims ################
+	seurat_obj@reductions$umap@cell.embeddings[,1] = seurat_obj$dim1
+	seurat_obj@reductions$umap@cell.embeddings[,2] = seurat_obj$dim2
+	#############
+	seurat_obj <- FindNeighbors(object = seurat_obj,reduction='umap',dims=1:2)
+	seurat_obj <- FindClusters(object = seurat_obj,resolution=0.5)
+	#############
+ 	#############
+ 	clusters = levels(seurat_obj$seurat_clusters)
+ 	#############
+ 	seurat_obj$gold = 'Not'
+ 	for(i in 1:length(clusters)){
+ 		tmp_clusters = clusters[i]
+ 		k = which(seurat_obj$seurat_clusters == tmp_clusters)
+ 		tmp_cts = table(seurat_obj$celltype[k])
+ 		tmp_cts = tmp_cts/sum(tmp_cts)
+ 		#######
+ 		if(max(tmp_cts) > 0.9){
+ 			tmp_gold = names(tmp_cts)[which(tmp_cts > 0.9)]
+ 			seurat_obj$gold[k] = tmp_gold
+ 			print(tmp_clusters)
+ 			print(tmp_gold)
+ 		}
+ 		########
+ 	}
+ 	index_No = which(seurat_obj$gold == 'Not')
+ 	head(seurat_obj@meta.data[index_No,])
+ 	#######
+ 	if(length(index_No) >0){
+ 		seurat_obj_cl = seurat_obj[,-index_No]
+ 	}else{seurat_obj_cl = seurat_obj}
+ 	#######
+ 	png_file = paste('tmp_gold','dim.png',sep='_')
+ 	#######
+	png(png_file,height=2500,width=4000,res=72*12)
+	print(DimPlot(seurat_obj_cl,group='gold'))
+ 	dev.off()
+ 	#######
+ 	png_file = paste('tmp_cluster','dim.png',sep='_')
+	png(png_file,height=2500,width=4000,res=72*12)
+	print(DimPlot(seurat_obj_cl))
+ 	dev.off()
+ 	########
+ 	########
+ 	FN = paste(tag,'seurat_obj_test',sep='_')
+ 	saveRDS(seurat_obj_cl,file=FN)
+}
+
+
+Prepare_the_test_seurat_objects(pmid30348985_seurat_obj,tag='pmid30348985')
+
+#########
+#########
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+pmid30348985_seurat_obj_test = readRDS('pmid30348985_seurat_obj_test')
+
+Prepare_the_test_seurat_objects_AvgExp(pmid30348985_seurat_obj_test,matrix_tag = 'data',tag='pmid30348985')
+
+
+######
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+###### Get the short list: #########
+
+pmid34584087_sub3_seurat_obj = readRDS('pmid34584087_sub3_seurat_obj')
+
+Prepare_the_test_seurat_objects(pmid34584087_sub3_seurat_obj,tag='pmid34584087_sub3')
+
+pmid34584087_sub3_seurat_obj_test = readRDS('pmid34584087_sub3_seurat_obj_test')
+
+length(table(pmid34584087_sub3_seurat_obj_test$seurat_clusters))
+
+Prepare_the_test_seurat_objects_AvgExp(pmid34584087_sub3_seurat_obj_test,matrix_tag = 'data',tag='pmid34584087_sub3')
+
+
+##########
+##########
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+load('pmid31995762_total_seurat_obj')
+
+Prepare_the_test_seurat_objects(pmid31995762_total_seurat_obj,tag='pmid31995762_total')
+
+pmid31995762_total_seurat_obj_test = readRDS('pmid31995762_total_seurat_obj_test')
+
+length(table(pmid31995762_total_seurat_obj_test$seurat_clusters))
+
+
+
+
+##########
+########## prepare the internal test !!!! ######################
+##########
+##########
+
+
+Prepare_the_Seurat_objects_Step1 <- function(seurat_obj,matrix_tag = 'data',tag='pmid32386599'){
+	####### average expression ########
+	####### generate average expression for each celltype #########
+	####### key: celltype ######
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	####### 
+	celltype = seurat_obj$celltype
+	celltype = as.character(celltype[!duplicated(celltype)])
+	#######
+	avg_total = c()
+	for(i in 1:length(celltype)){
+		#######
+		print(celltype[i])
+		k = which(seurat_obj$celltype == celltype[i])
+		#######
+		mat_cl = mat[,k]
+		#######
+		avg = Matrix::rowMeans(mat_cl)
+		avg_total = c(avg_total,avg)
+	}
+	avg_total = matrix(avg_total,ncol=length(celltype))
+	colnames(avg_total) = celltype
+	rownames(avg_total) = rownames(seurat_obj)
+	k = which(rowSums(avg_total) == 0)
+	if(length(k) > 0){avg_total = avg_total[-k,]}
+	print(dim(avg_total))
+	#####
+	FN = paste(tag,'_avg_expmat',sep='')
+	saveRDS(avg_total,FN)
+}
+
+
+
+###################################################
+###################################################
+
+
+seurat_obj = pmid31995762_total_seurat_obj_test
+
+
+Prepare_the_test_seurat_objects_AvgExp <- function(seurat_obj,matrix_tag = 'data',tag='pmid32386599'){
+	######## calculate the avg expression files for each sample #############
+	########
+	if(matrix_tag == 'data'){
+		mat = seurat_obj[['RNA']]@data
+	}
+	if(matrix_tag == 'counts'){
+		mat = seurat_obj[['RNA']]@counts
+	}
+	####### 
+	celltype = as.character(seurat_obj$seurat_clusters)
+	celltype = celltype[!duplicated(celltype)]
+	celltype = sort(celltype)
+	#######
+	avg_total = c()
+	for(i in 1:length(celltype)){
+		#######
+		print(celltype[i])
+		k = which(seurat_obj$seurat_clusters == celltype[i])
+		#######
+		mat_cl = mat[,k]
+		#######
+		avg = Matrix::rowMeans(mat_cl)
+		avg_total = c(avg_total,avg)
+	}
+	avg_total = matrix(avg_total,ncol=length(celltype))
+	colnames(avg_total) = celltype
+	rownames(avg_total) = rownames(seurat_obj)
+	k = which(rowSums(avg_total) == 0)
+	if(length(k) > 0){avg_total = avg_total[-k,]}
+	print(dim(avg_total))
+	#####
+	avg_total = data.frame(avg_total)
+	colnames(avg_total) = gsub('X','C',colnames(avg_total))
+	avg_total$GENE = rownames(avg_total)
+	avg_total = avg_total[,c(dim(avg_total)[2],1:dim(avg_total)[2]-1)]
+	#####
+	FN = paste(tag,'_avg_expmat_TEST.txt',sep='')
+	write.table(avg_total,file=FN,quote=F,sep='\t',row.names=F)
+}
+
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+Prepare_the_test_seurat_objects_AvgExp(pmid31995762_total_seurat_obj_test,matrix_tag = 'data',tag='pmid31995762_total')
+
+###################
+###################
+
+
+################### run the self test: #################
+###################
+################### Liver to liver mapping: ############
+###################
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+################### load the Query datasets: ############
+
+Human_liver_test = read.table('pmid30348985_avg_expmat_TEST.txt',sep='\t',header=T)
+rownames(Human_liver_test) = Human_liver_test$GENE
+Human_liver_test = Human_liver_test[,-1]
+Human_liver_test_seurat = readRDS('pmid30348985_seurat_obj_test')
+Human_liver_test_gold = Human_liver_test_seurat@meta.data[,which(colnames(Human_liver_test_seurat@meta.data) %in% c('seurat_clusters','gold'))]
+Human_liver_test_gold = Human_liver_test_gold[!duplicated(Human_liver_test_gold$seurat_clusters),]
+Human_liver_test_gold$seurat_clusters = paste('C',Human_liver_test_gold$seurat_clusters,sep='')
+rownames(Human_liver_test_gold) = Human_liver_test_gold$seurat_clusters
+
+################### load the Reference datasets ############
+setwd('/zp1/data/plyu3/Human_liver')
+##### load the longDEGs ####################################
+Human_liver_Query_longDEGs = readRDS('pmid30348985_DEGs_long')
+##### load the average exprssion mat ####################################
+Human_liver_Query_avgMat = readRDS('pmid30348985_avg_expmat')
+##### load the pseudo-bulk #########
+load('pmid30348985_pseudo_bulk')
+Human_liver_Query_bulk = All_mat
+
+Human_liver_Query_shortDEGs = DEGs_long_to_short(Human_liver_Query_longDEGs,Gene_Avg=Human_liver_Query_avgMat)
+
+
+
+#### "blue" "blue" "blue" #####
+#### Retina1 ##################
+#
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+pmid34584087_sub3_seurat_obj = readRDS('pmid34584087_sub3_seurat_obj')
+
+Prepare_the_Seurat_objects_Step3(pmid34584087_sub3_seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99, tag='pmid34584087_sub3')
+
+
+################### load the Query datasets: ############
+
+Retina1_test = read.table('pmid34584087_sub3_avg_expmat_TEST.txt',sep='\t',header=T)
+rownames(Retina1_test) = Retina1_test$GENE
+Retina1_test = Retina1_test[,-1]
+
+Retina1_test_seurat = readRDS('pmid34584087_sub3_seurat_obj_test')
+Retina1_test_gold = Retina1_test_seurat@meta.data[,which(colnames(Retina1_test_seurat@meta.data) %in% c('seurat_clusters','gold'))]
+Retina1_test_gold = Retina1_test_gold[!duplicated(Retina1_test_gold$seurat_clusters),]
+Retina1_test_gold$seurat_clusters = paste('C',Retina1_test_gold$seurat_clusters,sep='')
+rownames(Retina1_test_gold) = Retina1_test_gold$seurat_clusters
+
+################### load the Reference datasets ############
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+##### load the longDEGs ####################################
+Retina1_Query_longDEGs = readRDS('pmid34584087_sub3_DEGs_long')
+##### load the average exprssion mat ####################################
+Retina1_Query_avgMat = readRDS('pmid34584087_sub3_genes_avg_cl')
+##### load the pseudo-bulk #########
+load('pmid34584087_sub3_pseudo_bulk')
+Retina1_Query_bulk = All_mat
+Retina1_Query_shortDEGs = DEGs_long_to_short(Retina1_Query_longDEGs,Gene_Avg=Retina1_Query_avgMat)
+
+
+################### load the Reference datasets 2 'yellow' 'yellow' 'yellow'############
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+library(Seurat)
+load('pmid31995762_total_seurat_obj')
+Prepare_the_Seurat_objects_Step3(pmid31995762_total_seurat_obj,matrix_tag = 'data',KNN = 5, non_overlapping_cutoff = 0.99, tag='pmid31995762_total')
+
+
+##### load the longDEGs ####################################
+Retina2_Query_longDEGs = readRDS('pmid31995762_total_DEGs_long')
+##### load the average exprssion mat ####################################
+Retina2_Query_avgMat = readRDS('pmid31995762_total_avg_expmat')
+##### load the pseudo-bulk #########
+load('pmid31995762_total_pseudo_bulk')
+Retina2_Query_bulk = All_mat
+Retina2_Query_shortDEGs = DEGs_long_to_short(Retina2_Query_longDEGs,Gene_Avg=Retina2_Query_avgMat)
+
+
+
+table(Retina1_test_gold$gold)
+
+table(colnames(Retina2_Query_avgMat))
+
+left = c('Amacrine cells','Cones','Horizontal cells','Microglia','Muller glia','OFF bipolar cells','ON bipolar cells','RGCs','Rod bipolar cells','Rods')
+
+right = c('Amacrine','Cones','Horizontal','Myeloid','Bipolar','Bipolar','Bipolar','RGC','Bipolar','Rods')
+
+
+##### 'red' first DEGs long to short !!!! ####################
+
+
+
+DEGs_long_to_short <- function(DEGs_long,length=50,Gene_Avg){
+	######
+	for(i in 1:length(DEGs_long)){
+		DEGs_long[[i]]$tag = names(DEGs_long)[i]
+	}
+	DEGs_long_merge = do.call('rbind',DEGs_long)
+	######
+	sp = strsplit(DEGs_long_merge$tag,'@VS@')
+	DEGs_long_merge$cell1 = sapply(sp,function(x) x[[1]])
+	DEGs_long_merge$cell2 = sapply(sp,function(x) x[[2]])
+	######
+	all_cells = c(DEGs_long_merge$cell1,DEGs_long_merge$cell2)
+	all_cells = all_cells[!duplicated(all_cells)]
+	######
+	Markers_all = list()
+	for(j in 1:length(all_cells)){
+		print(j)
+		tmp_cells_index1 = which(DEGs_long_merge$cell1 == all_cells[j] & DEGs_long_merge$avg_log2FC > 0)
+		tmp_cells_index2 = which(DEGs_long_merge$cell2 == all_cells[j] & DEGs_long_merge$avg_log2FC < 0)
+		tmp_cells_all = c(tmp_cells_index1,tmp_cells_index2)
+		tmp_table = DEGs_long_merge[tmp_cells_all,]
+		tmp_table_list = split(tmp_table,tmp_table$tag)
+		Markers_all_sub = c()
+		for(k in 1:length(tmp_table_list)){
+			tmp_table_list_sub = tmp_table_list[[k]]
+			########## add ranks #####################
+			cell1_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell1[1])
+			cell1_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell1_index],ties.method='average'))
+			cell2_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell2[1])
+			cell2_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell2_index],ties.method='average'))
+			##########
+			m1 = match(tmp_table_list_sub$gene,cell1_index_tab$genes)
+			tmp_table_list_sub$rank1 = cell1_index_tab$ranks[m1]
+			m2 = match(tmp_table_list_sub$gene,cell2_index_tab$genes)
+			tmp_table_list_sub$rank2 = cell2_index_tab$ranks[m2]
+			#########
+			tmp_table_list_sub$delta_rank = tmp_table_list_sub$rank1-tmp_table_list_sub$rank2
+			##########
+			tmp_table_list_sub$score = tmp_table_list_sub$delta_rank*tmp_table_list_sub$avg_log2FC
+			##########
+			if(tmp_table_list_sub$avg_log2FC[1] > 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(tmp_table_list_sub$avg_log2FC[1] < 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(dim(tmp_table_list_sub)[1] > length){tmp_markers = tmp_table_list_sub$gene[1:length]}
+			if(dim(tmp_table_list_sub)[1] == length){tmp_markers = tmp_table_list_sub$gene}
+			Markers_all_sub = c(Markers_all_sub,tmp_markers)
+		}
+		Markers_all_sub = Markers_all_sub[!duplicated(Markers_all_sub)]
+		Markers_all = c(Markers_all,list(Markers_all_sub))
+	}
+	names(Markers_all) = all_cells
+	return(Markers_all)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###### Query datasets #######
+QgeneAvg = Retina1_test
+Qindex = 3
+
+######
+Rbulk = Retina1_Query_bulk
+DEGs = unlist(Retina1_Query_shortDEGs)
+DEGs = DEGs[!duplicated(DEGs)]
+
+RgeneAvg = Retina1_Query_avgMat
+
+
+
+
+Self_cor_fun <- function(x=merge_cor_results){
+	x = x[,-1]
+	x = x[-1,]
+	print(dim(x))
+	cts = sapply(strsplit(colnames(x),'@'),function(x) x[[1]])
+	cts = cts[!duplicated(cts)]
+	####
+	cts_cor_list = list()
+	####
+	for(i in 1:length(cts)){
+		temp_ct = cts[i]
+		temp_ct_index = grep(temp_ct,colnames(x))
+		#######
+		temp_ct_mat = x[temp_ct_index,temp_ct_index]
+		#######
+		temp_k = which(upper.tri(temp_ct_mat) == F)
+		temp_ct_mat[temp_k] = NA
+		#######
+		temp_ct_vect = as.vector(temp_ct_mat)
+		#######
+		temp_ct_vect_index = which(is.na(temp_ct_vect) == T)
+		temp_ct_vect = temp_ct_vect[-temp_ct_vect_index]
+		cts_cor_list = c(cts_cor_list,list(temp_ct_vect))
+	}
+	####
+	names(cts_cor_list) = cts
+	return(cts_cor_list)
+}
+
+
+Calculate_the_confidence <- function(score1,score2){
+	########
+	min = min(score1,score2)
+	max = max(score1,score2)
+	da <- density(score1, from=min, to=max)
+	db <- density(score2, from=min, to=max)
+	d <- data.frame(x=da$x, a=da$y, b=db$y)
+	d$w <- pmin(d$a, d$b)
+	# integrate areas under curves
+	library(sfsmisc)
+	total <- integrate.xy(d$x, d$a) + integrate.xy(d$x, d$b)
+	intersection <- integrate.xy(d$x, d$w)
+	overlap <- 2 * intersection / total
+	########
+	return(overlap)
+}
+
+
+Compare_cor_QandR_mini <- function(QgeneAvg,Qindex,Rbulk,DEGs){
+	QR_genes = rownames(QgeneAvg)[which(rownames(QgeneAvg) %in% rownames(Rbulk) == T)]
+	QR_genes = QR_genes[which(QR_genes %in% DEGs == T)]
+	########
+	QgeneAvg_cl = QgeneAvg[which(rownames(QgeneAvg) %in% QR_genes == T),]
+	m1 = match(QR_genes,rownames(QgeneAvg_cl))
+	QgeneAvg_cl = QgeneAvg_cl[m1,]
+	########
+	Rbulk_cl = Rbulk[which(rownames(Rbulk) %in% QR_genes == T),]
+	m2 = match(QR_genes,rownames(Rbulk_cl))
+	Rbulk_cl = Rbulk_cl[m2,]
+	######## Test: ##########
+	Rbulk_cl_Zero =  which(rowSums(Rbulk_cl) == 0)
+	QgeneAvg_cl_Zero = which(QgeneAvg_cl[,Qindex] == 0)
+	########
+	Zero_all = c(Rbulk_cl_Zero,QgeneAvg_cl_Zero)
+	Zero_all = Zero_all[!duplicated(Zero_all)]
+	########
+	merge_cor_mat = cbind(QgeneAvg_cl[,Qindex],Rbulk_cl)
+	colnames(merge_cor_mat)[1] = colnames(QgeneAvg_cl)[Qindex]
+	########
+	merge_cor_results = cor(merge_cor_mat,method = 'spearman')
+	######## Next get average correlations ###############
+	merge_cor_results_Q = merge_cor_results[1,]
+	########
+	merge_cor_results_Q = merge_cor_results_Q[-1]
+	########
+	return(merge_cor_results_Q)
+}
+
+
+Compare_cor_QandR_mini2 <- function(QgeneAvg,Qindex,Rbulk,DEGs,newCTs){
+	QR_genes = rownames(QgeneAvg)[which(rownames(QgeneAvg) %in% rownames(Rbulk) == T)]
+	QR_genes = QR_genes[which(QR_genes %in% DEGs == T)]
+	########
+	QgeneAvg_cl = QgeneAvg[which(rownames(QgeneAvg) %in% QR_genes == T),]
+	m1 = match(QR_genes,rownames(QgeneAvg_cl))
+	QgeneAvg_cl = QgeneAvg_cl[m1,]
+	########
+	########
+	Rbulk_cl = Rbulk[which(rownames(Rbulk) %in% QR_genes == T),]
+	########
+	Rbulk_cl_colindex = sapply(strsplit(colnames(Rbulk_cl),'@'),function(x) x[[1]])
+	########
+	Rbulk_cl = Rbulk_cl[,which(Rbulk_cl_colindex%in%newCTs==T)]
+	m2 = match(QR_genes,rownames(Rbulk_cl))
+	Rbulk_cl = Rbulk_cl[m2,]
+	######## Test: ##########
+	Rbulk_cl_Zero =  which(rowSums(Rbulk_cl) == 0)
+	QgeneAvg_cl_Zero = which(QgeneAvg_cl[,Qindex] == 0)
+	########
+	Zero_all = c(Rbulk_cl_Zero,QgeneAvg_cl_Zero)
+	Zero_all = Zero_all[!duplicated(Zero_all)]
+	########
+	merge_cor_mat = cbind(QgeneAvg_cl[,Qindex],Rbulk_cl)
+	colnames(merge_cor_mat)[1] = colnames(QgeneAvg_cl)[Qindex]
+	########
+	tmp_colSum = colSums(merge_cor_mat)
+	tmp_colSum_index = which(tmp_colSum == 0)
+	if(length(tmp_colSum_index) >0){merge_cor_mat = merge_cor_mat[,-tmp_colSum_index]}
+	########
+	merge_cor_results = cor(merge_cor_mat,method = 'spearman')
+	######## Next get average correlations ###############
+	merge_cor_results_Q = merge_cor_results[1,]
+	########
+	merge_cor_results_Q = merge_cor_results_Q[-1]
+	########
+	return(merge_cor_results_Q)
+}
+
+
+
+Get_DEGs_CT <- function(newCTs,DEGs_long,length=100,Gene_Avg){
+	###########
+	for(i in 1:length(DEGs_long)){
+		DEGs_long[[i]]$tag = names(DEGs_long)[i]
+	}
+	DEGs_long_merge = do.call('rbind',DEGs_long)
+	######
+	sp = strsplit(DEGs_long_merge$tag,'@VS@')
+	DEGs_long_merge$cell1 = sapply(sp,function(x) x[[1]])
+	DEGs_long_merge$cell2 = sapply(sp,function(x) x[[2]])
+	###########
+	k = which(DEGs_long_merge$cell1 %in% newCTs == T & DEGs_long_merge$cell2 %in% newCTs == T)
+	DEGs_long_merge_cl = DEGs_long_merge[k,]
+	###########
+	Markers_all = c()
+	tmp_table_list = split(DEGs_long_merge_cl,DEGs_long_merge_cl$tag)
+	for(k in 1:length(tmp_table_list)){
+			tmp_table_list_sub = tmp_table_list[[k]]
+			########## add ranks #####################
+			cell1_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell1[1])
+			cell1_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell1_index],ties.method='average'))
+			cell2_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell2[1])
+			cell2_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell2_index],ties.method='average'))
+			##########
+			m1 = match(tmp_table_list_sub$gene,cell1_index_tab$genes)
+			tmp_table_list_sub$rank1 = cell1_index_tab$ranks[m1]
+			m2 = match(tmp_table_list_sub$gene,cell2_index_tab$genes)
+			tmp_table_list_sub$rank2 = cell2_index_tab$ranks[m2]
+			#########
+			tmp_table_list_sub$delta_rank = (tmp_table_list_sub$rank1-tmp_table_list_sub$rank2) / dim(Gene_Avg)[1]
+			tmp_table_list_sub$delta_pct = (tmp_table_list_sub$pct.1-tmp_table_list_sub$pct.2) 
+			##########
+			tmp_table_list_sub$score = tmp_table_list_sub$delta_rank*tmp_table_list_sub$delta_pct
+			##########
+			### using cuoff ######
+			##########
+			k1 = which(abs(tmp_table_list_sub$avg_log2FC) > 1)
+			tmp_table_list_sub = tmp_table_list_sub[k1,]
+			k2 = which(abs(tmp_table_list_sub$delta_pct) > 0.3)
+			tmp_table_list_sub = tmp_table_list_sub[k2,]
+			k3 = which(abs(tmp_table_list_sub$delta_rank) > 0.2)
+			tmp_table_list_sub = tmp_table_list_sub[k3,]
+			##########
+			########## tmp_table_list_sub[which(tmp_table_list_sub$gene=='GLB1L2'),]
+			tmp_table_list_sub1 = tmp_table_list_sub[which(tmp_table_list_sub$avg_log2FC >0 & tmp_table_list_sub$delta_pct >0 & tmp_table_list_sub$delta_rank > 0),]
+			tmp_table_list_sub2 = tmp_table_list_sub[which(tmp_table_list_sub$avg_log2FC <0 & tmp_table_list_sub$delta_pct <0 & tmp_table_list_sub$delta_rank < 0),]
+			########## tmp_table_list_sub1[which(tmp_table_list_sub1$gene=='ISL1'),]
+			k1 = which(tmp_table_list_sub1$gene %in% rownames(QgeneAvg) == T)
+			tmp_table_list_sub1 = tmp_table_list_sub1[k1,]
+			k2 = which(tmp_table_list_sub2$gene %in% rownames(QgeneAvg) == T)
+			tmp_table_list_sub2 = tmp_table_list_sub2[k2,]
+			##########
+			tmp_table_list_sub1 = tmp_table_list_sub1[order(tmp_table_list_sub1$avg_log2FC,decreasing=T),]
+			tmp_table_list_sub2 = tmp_table_list_sub2[order(tmp_table_list_sub2$avg_log2FC,decreasing=T),]
+			##########
+			if(dim(tmp_table_list_sub1)[1] < length){tmp_markers_1 = tmp_table_list_sub1$gene}else{
+			tmp_markers_1 = tmp_table_list_sub1$gene[1:length]}
+			if(dim(tmp_table_list_sub2)[1] < length){tmp_markers_2 = tmp_table_list_sub2$gene}else{
+			tmp_markers_2 = tmp_table_list_sub2$gene[1:length]}
+			##########
+			Markers_all = c(Markers_all,tmp_markers_1,tmp_markers_2)
+		}
+		Markers_all = Markers_all[!duplicated(Markers_all)]
+		return(Markers_all)
+}
+
+
+Compare_cor_QandR <- function(QgeneAvg,Qindex,Rbulk,DEGs,Corr_cutoff,Confident_cutoff,DEGs_long,RgeneAvg){
+	########
+	########
+	merge_cor_results_Q = Compare_cor_QandR_mini(QgeneAvg,Qindex,Rbulk,DEGs)
+	Q_index_cor = sapply(strsplit(names(merge_cor_results_Q),'@'),function(x) x[[1]])
+	merge_cor_results_Q_median = tapply(merge_cor_results_Q,Q_index_cor,mean)
+	########
+	merge_cor_results_Q_list = split(merge_cor_results_Q,Q_index_cor)
+	########
+	########
+	######## see the candidates ########
+	########
+	########
+	Passed_index = which(merge_cor_results_Q_median > Corr_cutoff)
+	if(length(Passed_index) == 0){
+		res_tab = data.frame(cluster=colnames(QgeneAvg)[Qindex],res='Unidentified',cor=max(merge_cor_results_Q_median))
+		return(res_tab)
+	}
+	print('Yes1')
+	######## while ###################
+	if(length(Passed_index) > 0){
+		Qmerge_cor_results_list = merge_cor_results_Q_list
+		Qmerge_cor_results = merge_cor_results_Q_median
+		determined = 'No'
+		while(determined == 'No'){
+			##### find the largest celltypes #######
+			Qmerge_cor_results = Qmerge_cor_results[order(Qmerge_cor_results,decreasing=T)]
+			##### for loops ########################
+			ct_max = names(Qmerge_cor_results)[1]
+			overlap = c()
+			for(k in 2:length(names(Qmerge_cor_results))){
+				tmp_name = names(Qmerge_cor_results)[k]
+				score1 = Qmerge_cor_results_list[[which(names(Qmerge_cor_results_list) == ct_max)]]
+				score2 = Qmerge_cor_results_list[[which(names(Qmerge_cor_results_list) == tmp_name)]]
+				overlap = c(overlap,round(Calculate_the_confidence(score1,score2),2))
+			}
+			print('Yes2')
+			conf_index = which((1-overlap) < Confident_cutoff)
+			if(length(conf_index) == 0){
+				res_tab = data.frame(cluster=colnames(QgeneAvg)[Qindex],res=ct_max,cor=merge_cor_results_Q_median[which(names(merge_cor_results_Q_median)==ct_max)])
+				return(res_tab)
+				determined = 'Yes'
+			}else if(length(conf_index) == (length(Qmerge_cor_results)-1)){
+				######
+				res_tab = data.frame(cluster=colnames(QgeneAvg)[Qindex],res=paste(names(Qmerge_cor_results),collapse = '&'),cor=mean(merge_cor_results_Q_median[which(names(merge_cor_results_Q_median)%in%names(Qmerge_cor_results)==T)]))
+				return(res_tab)
+				determined = 'Yes'
+			}else{
+				print('Yes3')
+				newCTs = names(Qmerge_cor_results)[1:(length(conf_index)+1)]
+				###### newCTs = c('Bipolar','Rods')
+				newDEGs = Get_DEGs_CT(newCTs,DEGs_long,length=100,Gene_Avg=RgeneAvg)
+				######
+				####### newDEGs = DEGs_long$"Bipolar@VS@Rods"$gene
+				Qmerge_cor_results_ori = Compare_cor_QandR_mini2(QgeneAvg,Qindex,Rbulk,newDEGs,newCTs)
+				######
+				Q_index_cor2 = sapply(strsplit(names(Qmerge_cor_results_ori),'@'),function(x) x[[1]])
+				Qmerge_cor_results = tapply(Qmerge_cor_results_ori,Q_index_cor2,mean)
+				Qmerge_cor_results_list = split(Qmerge_cor_results_ori,Q_index_cor2)
+				######
+
+			}
+		}
+	}
+}
+
+
+######## Get the total results: ###########
+
+Results_tab = list()
+
+for(i in 1:dim(QgeneAvg)[2]){
+	print(i)
+	res_tab = Compare_cor_QandR(QgeneAvg,i,Rbulk,DEGs,Corr_cutoff=0.4,Confident_cutoff=0.8,DEGs_long=Retina1_Query_longDEGs,RgeneAvg=Retina1_Query_avgMat)
+	Results_tab = c(Results_tab,list(res_tab))
+}
+
+Results_tab = do.call('rbind',Results_tab)
+
+####### merge with Human_liver_test_gold ########
+
+m = match(Results_tab$cluster,Retina1_test_gold$seurat_clusters)
+Results_tab$gold = Retina1_test_gold$gold[m]
+
+head(Results_tab)
+
+k = which(Results_tab$res == Results_tab$gold)
+
+length(k)/length(Results_tab$res)
+####### merge into the 
+
+m = match(paste('C',Retina1_test_seurat$seurat_clusters,sep=''),Results_tab$cluster)
+
+Retina1_test_seurat$test = Results_tab$res[m]
+
+#######
+
+png_file = paste('Retina1_test','dim.png',sep='_')
+png(png_file,height=4000,width=8000,res=72*12)
+print(DimPlot(Retina1_test_seurat,group.by='test'))
+dev.off()
+
+
+
+
