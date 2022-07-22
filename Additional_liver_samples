@@ -762,14 +762,13 @@ DEGs_long_to_short <- function(DEGs_long,length=50,Gene_Avg){
 
 ###### Query datasets #######
 QgeneAvg = Retina1_test
-Qindex = 3
 
 ######
-Rbulk = Retina1_Query_bulk
-DEGs = unlist(Retina1_Query_shortDEGs)
+Rbulk = Retina2_Query_bulk
+DEGs = unlist(Retina2_Query_shortDEGs)
 DEGs = DEGs[!duplicated(DEGs)]
 
-RgeneAvg = Retina1_Query_avgMat
+RgeneAvg = Retina2_Query_avgMat
 
 
 
@@ -1028,13 +1027,36 @@ Compare_cor_QandR <- function(QgeneAvg,Qindex,Rbulk,DEGs,Corr_cutoff,Confident_c
 }
 
 
+################### load the Reference datasets ############
+setwd('/zp1/data/plyu3/Human_liver')
+##### load the longDEGs ####################################
+Human_liver_Query_longDEGs = readRDS('pmid30348985_DEGs_long')
+##### load the average exprssion mat ####################################
+Human_liver_Query_avgMat = readRDS('pmid30348985_avg_expmat')
+##### load the pseudo-bulk #########
+load('pmid30348985_pseudo_bulk')
+Human_liver_Query_bulk = All_mat
+
+Human_liver_Query_shortDEGs = DEGs_long_to_short(Human_liver_Query_longDEGs,Gene_Avg=Human_liver_Query_avgMat)
+
+
+
+Rbulk = Human_liver_Query_bulk
+DEGs = unlist(Human_liver_Query_shortDEGs)
+DEGs = DEGs[!duplicated(DEGs)]
+
+RgeneAvg = Human_liver_Query_avgMat
+
+
+
+
 ######## Get the total results: ###########
 
 Results_tab = list()
 
 for(i in 1:dim(QgeneAvg)[2]){
 	print(i)
-	res_tab = Compare_cor_QandR(QgeneAvg,i,Rbulk,DEGs,Corr_cutoff=0.4,Confident_cutoff=0.8,DEGs_long=Retina1_Query_longDEGs,RgeneAvg=Retina1_Query_avgMat)
+	res_tab = Compare_cor_QandR(QgeneAvg,i,Rbulk,DEGs,Corr_cutoff=0.1,Confident_cutoff=0.6,DEGs_long=Retina2_Query_longDEGs,RgeneAvg=Retina2_Query_avgMat)
 	Results_tab = c(Results_tab,list(res_tab))
 }
 
@@ -1044,6 +1066,17 @@ Results_tab = do.call('rbind',Results_tab)
 
 m = match(Results_tab$cluster,Retina1_test_gold$seurat_clusters)
 Results_tab$gold = Retina1_test_gold$gold[m]
+
+####### replace gold ######
+
+for(i in 1:length(left)){
+	k = which(Results_tab$gold == left[i])
+	if(length(k) >0){Results_tab$gold[k] = right[i]}
+}
+
+
+
+#######
 
 head(Results_tab)
 
@@ -1059,9 +1092,263 @@ Retina1_test_seurat$test = Results_tab$res[m]
 #######
 
 png_file = paste('Retina1_test','dim.png',sep='_')
-png(png_file,height=4000,width=8000,res=72*12)
+png(png_file,height=5000,width=12000,res=72*12)
 print(DimPlot(Retina1_test_seurat,group.by='test'))
 dev.off()
+
+
+
+
+
+
+####### load 3 eye samples: ########
+
+library(Seurat)
+
+#### 'red' ######
+
+setwd('/zp1/data/plyu3/CellAlignment_database/34584087_scRNA_Human Ocular_Retina')
+
+load('pmid34584087_sub3_pseudo_bulk')
+
+pmid34584087_sub3_pseudo_bulk = All_mat
+
+pmid34584087_sub3_DEGs_long = readRDS('pmid34584087_sub3_DEGs_long')
+
+pmid34584087_sub3_geneAvg = readRDS('pmid34584087_sub3_geneAvg')
+
+pmid34584087_sub3_DEGs_short = DEGs_long_to_short(pmid34584087_sub3_DEGs_long,50,pmid34584087_sub3_geneAvg)
+
+#### 'red' ######
+
+setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
+
+pmid32386599_bulk = readRDS('pmid32386599_bulk')
+
+pmid32386599_DEGs_long = readRDS('pmid32386599_DEGs_long')
+
+pmid32386599_geneAvg = readRDS('pmid32386599_avg_expmat')
+
+pmid32386599_DEGs_short = DEGs_long_to_short(pmid32386599_DEGs_long,50,pmid32386599_geneAvg)
+
+#### 'red' ######
+
+setwd('/zp1/data/plyu3/CellAlignment_database/31995762')
+
+load('pmid31995762_total_pseudo_bulk')
+
+pmid31995762_total_pseudo_bulk = All_mat
+
+pmid31995762_total_DEGs_long  = readRDS("pmid31995762_total_DEGs_long")
+
+
+
+####### load 3 other tissue samples: #########
+
+setwd('/zp1/data/plyu3/Human_liver')
+
+load('pmid30348985_pseudo_bulk')
+
+pmid30348985_pseudo_bulk = All_mat
+
+####### Using retina DEGs ####################
+####### 不管了 就这一个 ！！！！ #################
+
+mat = pmid34584087_sub3_pseudo_bulk
+
+celltypes = colnames(mat)
+
+gettags <- function(mat){
+	########
+	tag = colnames(mat)
+	tag_sp = strsplit(tag,split='@')
+	ct = sapply(tag_sp,function(x) x[[1]])
+	ct = ct[!duplicated(ct)]
+	########
+	print(ct)
+}
+
+
+
+
+DEGs_long_to_short <- function(DEGs_long,length=50,Gene_Avg){
+	######
+	for(i in 1:length(DEGs_long)){
+		DEGs_long[[i]]$tag = names(DEGs_long)[i]
+	}
+	DEGs_long_merge = do.call('rbind',DEGs_long)
+	######
+	sp = strsplit(DEGs_long_merge$tag,'@VS@')
+	DEGs_long_merge$cell1 = sapply(sp,function(x) x[[1]])
+	DEGs_long_merge$cell2 = sapply(sp,function(x) x[[2]])
+	######
+	all_cells = c(DEGs_long_merge$cell1,DEGs_long_merge$cell2)
+	all_cells = all_cells[!duplicated(all_cells)]
+	######
+	Markers_all = list()
+	for(j in 1:length(all_cells)){
+		print(j)
+		tmp_cells_index1 = which(DEGs_long_merge$cell1 == all_cells[j] & DEGs_long_merge$avg_log2FC > 0)
+		tmp_cells_index2 = which(DEGs_long_merge$cell2 == all_cells[j] & DEGs_long_merge$avg_log2FC < 0)
+		tmp_cells_all = c(tmp_cells_index1,tmp_cells_index2)
+		tmp_table = DEGs_long_merge[tmp_cells_all,]
+		tmp_table_list = split(tmp_table,tmp_table$tag)
+		Markers_all_sub = c()
+		for(k in 1:length(tmp_table_list)){
+			tmp_table_list_sub = tmp_table_list[[k]]
+			########## add ranks #####################
+			cell1_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell1[1])
+			cell1_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell1_index],ties.method='average'))
+			cell2_index = which(colnames(Gene_Avg)==tmp_table_list_sub$cell2[1])
+			cell2_index_tab = data.frame(genes = rownames(Gene_Avg),ranks = rank(Gene_Avg[,cell2_index],ties.method='average'))
+			##########
+			m1 = match(tmp_table_list_sub$gene,cell1_index_tab$genes)
+			tmp_table_list_sub$rank1 = cell1_index_tab$ranks[m1]
+			m2 = match(tmp_table_list_sub$gene,cell2_index_tab$genes)
+			tmp_table_list_sub$rank2 = cell2_index_tab$ranks[m2]
+			#########
+			tmp_table_list_sub$delta_rank = tmp_table_list_sub$rank1-tmp_table_list_sub$rank2
+			##########
+			tmp_table_list_sub$score = tmp_table_list_sub$delta_rank*tmp_table_list_sub$avg_log2FC
+			##########
+			if(tmp_table_list_sub$avg_log2FC[1] > 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(tmp_table_list_sub$avg_log2FC[1] < 0){tmp_table_list_sub = tmp_table_list_sub[order(tmp_table_list_sub$score,decreasing=T),]}
+			if(dim(tmp_table_list_sub)[1] > length){tmp_markers = tmp_table_list_sub$gene[1:length]}
+			if(dim(tmp_table_list_sub)[1] == length){tmp_markers = tmp_table_list_sub$gene}
+			Markers_all_sub = c(Markers_all_sub,tmp_markers)
+		}
+		Markers_all_sub = Markers_all_sub[!duplicated(Markers_all_sub)]
+		Markers_all = c(Markers_all,list(Markers_all_sub))
+	}
+	names(Markers_all) = all_cells
+	return(Markers_all)
+}
+
+
+DEGs = as.character(c(unlist(pmid34584087_sub3_DEGs_short),unlist(pmid34584087_sub3_DEGs_short)))
+DEGs = DEGs[!duplicated(DEGs)]
+
+mat1 = pmid34584087_sub3_pseudo_bulk
+mat2 = pmid30348985_pseudo_bulk
+
+gettags(mat2)
+
+tag1 = 'Cones'
+tag2 = 'Cones'
+
+Calculate_corr <- function(DEGs,mat1,mat2,tag1,tag2){
+	k1 = which(rownames(mat1) %in% rownames(mat2) == T)
+	k2 = which(rownames(mat2) %in% rownames(mat1) == T)
+	mat1_cl = mat1[k1,]
+	mat2_cl = mat2[k2,]
+	######
+	k3 = which(rownames(mat1_cl) %in% DEGs == T)
+	k4 = which(rownames(mat2_cl) %in% DEGs == T)
+	mat1_clcl = mat1_cl[k3,]
+	mat2_clcl = mat2_cl[k4,]
+	###### merge mat1 and mat2 #################
+	m = match(rownames(mat1_clcl),rownames(mat2_clcl))
+	mat2_clcl = mat2_clcl[m,]
+	######
+	match1 = grep(tag1,colnames(mat1_clcl))
+	match2 = grep(tag2,colnames(mat2_clcl))
+	######
+	mat_merge = cbind(mat1_clcl[,match1],mat2_clcl[,match2])
+	cors = cor(mat_merge,method='spearman')
+	######
+	L1 = length(match1)
+	L2 = length(match2)
+	######
+	rows = 1:L1
+	cols = (L1+1):(L1+L2)
+	######
+	cors_cl = cors[rows,cols]
+	######
+	return(as.vector(cors_cl))
+}
+
+
+gettags(mat1)
+gettags(mat2)
+
+
+retina_cor1 = Calculate_corr(DEGs,mat1,mat2,tag1='Cones',tag2='Cones')
+
+retina_cor2 = Calculate_corr(DEGs,mat1,mat2,tag1='Rods',tag2='Rods')
+
+retina_cor3 = Calculate_corr(DEGs,mat1,mat2,tag1='RGCs',tag2='RGC')
+
+retina_cor4 = Calculate_corr(DEGs,mat1,mat2,tag1='Muller glia',tag2='Muller')
+
+retina_cor5 = Calculate_corr(DEGs,mat1,mat2,tag1='Amacrine cells',tag2='Amacrine')
+
+retina_cor6 = Calculate_corr(DEGs,mat1,mat2,tag1='Muller glia',tag2='Muller')
+
+retina_cor7 = Calculate_corr(DEGs,mat1,mat2,tag1='Microglia',tag2='Myeloid')
+
+retina_cor = c(retina_cor1,retina_cor2,retina_cor3,retina_cor4,retina_cor5,retina_cor6,retina_cor7)
+
+##### liver to retina ######
+
+
+gettags(mat1)
+gettags(mat2)
+
+
+Cretina_cor1 = Calculate_corr(DEGs,mat1,mat2,tag1='Cones',tag2='LSECs')
+
+Cretina_cor2 = Calculate_corr(DEGs,mat1,mat2,tag1='Rods',tag2='gd T cells')
+
+Cretina_cor3 = Calculate_corr(DEGs,mat1,mat2,tag1='RGCs',tag2='ortal endothelial cells')
+
+Cretina_cor4 = Calculate_corr(DEGs,mat1,mat2,tag1='Muller glia',tag2='Mature B cells')
+
+Cretina_cor5 = Calculate_corr(DEGs,mat1,mat2,tag1='Amacrine cells',tag2='Plasma cells')
+
+Cretina_cor6 = Calculate_corr(DEGs,mat1,mat2,tag1='Muller glia',tag2='Erythoid Cells')
+
+Cretina_cor7 = Calculate_corr(DEGs,mat1,mat2,tag1='Microglia',tag2='Macrophages')
+
+
+mat1 = pmid32386599_bulk
+mat2 = pmid30348985_pseudo_bulk
+
+
+gettags(mat1)
+gettags(mat2)
+
+
+Cretina_cor8 = Calculate_corr(DEGs,mat1,mat2,tag1='RPCs',tag2='LSECs')
+
+Cretina_cor9 = Calculate_corr(DEGs,mat1,mat2,tag1='Cones',tag2='gd T cells')
+
+Cretina_cor10 = Calculate_corr(DEGs,mat1,mat2,tag1='Horizontal Cells',tag2='ortal endothelial cells')
+
+Cretina_cor11 = Calculate_corr(DEGs,mat1,mat2,tag1='Retinal Ganglion Cells',tag2='Mature B cells')
+
+Cretina_cor12 = Calculate_corr(DEGs,mat1,mat2,tag1='Neurogenic Cells',tag2='Plasma cells')
+
+Cretina_cor13 = Calculate_corr(DEGs,mat1,mat2,tag1='Bipolar Cells',tag2='Erythoid Cells')
+
+Cretina_cor14 = Calculate_corr(DEGs,mat1,mat2,tag1='Muller Glia',tag2='Macrophages')
+
+
+
+Cretina_cor <- c(Cretina_cor7,Cretina_cor8,Cretina_cor9,Cretina_cor10,Cretina_cor11,Cretina_cor12,Cretina_cor13,Cretina_cor14)
+
+summary(Cretina_cor)
+
+retina_cor = data.frame(tag='postive',score=retina_cor)
+
+Cretina_cor = data.frame(tag='negative',score=Cretina_cor)
+
+plot = rbind(retina_cor,Cretina_cor)
+
+library(ggplot2)
+
+ggplot(plot,aes(x=score)) + geom_histogram(binwidth=0.01,aes(fill=tag),alpha=0.5)
+
+ggsave('test.png')
 
 
 
