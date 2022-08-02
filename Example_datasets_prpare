@@ -1,0 +1,192 @@
+#######
+
+
+Read_data_from_Tabula_Muris <- function(file){
+	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data')
+	load(file)
+	x = tiss
+	x <- UpdateSeuratObject(object = x)
+	x$celltype = x$cell_ontology_class
+	return(x)
+}
+
+
+#######
+#######
+
+
+RNA_process_UMAP_Cluster <- function(x,res){
+	#####
+	DefaultAssay(x) = 'RNA'
+	#####
+	x <- NormalizeData(x)
+    x <- FindVariableFeatures(x,selection.method ='vst',nfeatures = 5000)
+    x <- ScaleData(x,  verbose = FALSE)
+    x <- RunPCA(x, verbose = FALSE,npcs=100)
+    x <- RunUMAP(x, reduction = "pca", dims = 1:100)
+	x <- FindNeighbors(x, reduction = "pca", dims = 1:100)
+	x <- FindClusters(x, resolution = res)
+	#####
+	return(x)
+}
+
+
+#######
+
+#####
+##### 更改 cluster的编号 而不是 cell types ######
+#####
+
+RNA_process_Cluster_to_CT <- function(x,tag){
+	#### rm NA #####
+	k = which(is.na(x$celltype) == T)
+	if(length(k)>0){x = x[,-k]}
+	####
+	png_file = paste(tag,'_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#### count the Seurat clusters ##########
+	x_cluster = names(table(as.character(x$seurat_clusters)))
+	#### remove cluster < 20 cells ##########
+	x_cluster_rm = table(x$seurat_clusters)
+	k = which(x_cluster_rm > 20)
+	x_cluster_need = names(x_cluster_rm)[k]
+	####
+	k = which(x$seurat_clusters %in% x_cluster_need == T)
+	x = x[,k]
+	####
+	x_cluster = names(table(as.character(x$seurat_clusters)))
+    x$seurat_clusters = as.character(x$seurat_clusters)
+	for(i in 1:length(x_cluster)){
+		print(i)
+		#### 
+		temp_cluster = x_cluster[i]
+		temp_cluster_index = which(x$seurat_clusters == temp_cluster)
+		#### count cell types in this cluster ####
+        #### 1 ####
+		temp_count_CT = table(x$celltype[temp_cluster_index])
+		#### 2 ####
+		temp_count_CT_ratio = temp_count_CT/sum(temp_count_CT)
+		####
+        print(temp_count_CT)
+        print(temp_count_CT_ratio)
+        index = which((temp_count_CT > 100 | temp_count_CT_ratio > 0.3) & (temp_count_CT > 20))
+        ####
+        ####
+		if(length(index) >0){
+            ######
+            k = which(x$celltype %in% names(index) == F & x$seurat_clusters == temp_cluster)
+            x$seurat_clusters[k] = 'remove'
+            ######
+            new_feature = paste('C',temp_cluster,sep='')
+            ######
+            for(i in 1:length(index)){
+                k = which(x$celltype == names(index)[i] & x$seurat_clusters == temp_cluster)
+                new_feature_sub = paste(new_feature,i,sep='_')
+                x$seurat_clusters[k] = new_feature_sub
+            }
+		}else{
+			##### remove the cluster #####
+			print(paste('Cluster',temp_cluster,'Removed'))
+			k = which(x$seurat_clusters == temp_cluster)
+            x$seurat_clusters[k] = 'remove'
+		}
+	}
+    x = subset(x,subset= seurat_clusters != 'remove')
+	#######
+	png_file = paste(tag,'_cluster','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	return(x)
+}
+
+
+
+
+####
+
+avg_Exp <- function(x,cluster,matrix_exp){
+	k = which(cluster == x)
+	matrix_exp_sub = matrix_exp[,k]
+	####
+	avg_vector = apply(matrix_exp_sub,1,mean)
+	####
+	return(avg_vector)
+}
+
+
+prepare_CellAnn <- function(Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name){
+	###### output dims ######
+	reductions_index = names(Seurat_Obj@reductions)
+	k = which(reductions_index == dims_name)
+	reductions_table = Seurat_Obj@reductions[[k]]@cell.embeddings
+	######
+	###### format: "cell" "cluster" "dim1" "dim2" #####
+	Meta = Seurat_Obj@meta.data
+	######
+	cell = colnames(Seurat_Obj)
+	k = which(colnames(Meta) == cluster_name)
+	cluster = Meta[,k]
+	###### add a "C" tag to each cluster ####
+	if(length(grep(pattern = "^C", x = cluster[1])) == 0){
+		cluster = paste('C',cluster,sep='')
+		Meta[,k] = cluster
+		#### ####
+		####
+	}
+	######
+	dim1 = reductions_table[,1]
+	dim2 = reductions_table[,2]
+	######
+	dim_table = data.frame(cell,cluster,dim1,dim2)
+	######
+	if(dim(reductions_table)[2] == 3){
+		dim3 = reductions_table[,3]
+		dim_table = data.frame(cell_id,cluster,dim1,dim2,dim3)
+	}
+	######
+	file_output = paste(sample_name,'_CellAnn_Step4_Input.txt',sep='')
+	setwd(folder)
+	######
+	write.table(dim_table,file=file_output,sep='\t',row.names=F,quote=F)
+	######
+	###### calculate average expression 
+	######
+	###### matrix ######
+	######
+	######
+	k = which(names(Seurat_Obj@assays) == matrix_name)
+	matrix_exp = Seurat_Obj@assays[[k]]@data
+	######
+	clusters_list = as.list(levels(as.factor(cluster)))
+	######
+	matrix_exp_avg = sapply(clusters_list,avg_Exp,cluster=cluster,matrix_exp=matrix_exp)
+	colnames(matrix_exp_avg) = unlist(clusters_list)
+	matrix_exp_avg = round(matrix_exp_avg,3)
+	######
+	matrix_exp_avg = data.frame(matrix_exp_avg)
+	######
+	matrix_exp_avg$GENE = rownames(matrix_exp_avg)
+	matrix_exp_avg = matrix_exp_avg[,c(dim(matrix_exp_avg)[2],2:(dim(matrix_exp_avg)[2]-1))]
+	######
+	######
+	file_output = paste(sample_name,'_CellAnn_Step1_Input.txt',sep='')
+	setwd(folder)
+	write.table(matrix_exp_avg,file=file_output,sep='\t',row.names=F,quote=F)
+}
+
+
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+
+
+

@@ -662,8 +662,9 @@ RNA_process_UMAP_Cluster <- function(x,res){
 
 x = PBMC1_SeqWell
 
-
+#####
 ##### 更改 cluster的编号 而不是 cell types ######
+#####
 
 RNA_process_Cluster_to_CT <- function(x,tag){
 	#### rm NA #####

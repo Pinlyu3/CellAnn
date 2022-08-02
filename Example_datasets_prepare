@@ -1,0 +1,886 @@
+#######
+
+Tabula Muris mouse data
+
+folder: /zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data
+
+#######
+
+conda activate Signac2
+
+R
+
+library(Seurat)
+
+#######
+#######
+#######
+
+
+facs_Bladder <- Read_data_from_Tabula_Muris('facs_Bladder_seurat_tiss.robj')
+facs_Bladder <- RNA_process_UMAP_Cluster(facs_Bladder,res=2)
+facs_Bladder <- RNA_process_Cluster_to_CT(facs_Bladder,'Tabula_Muris_mouse_facs_Bladder')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(facs_Bladder,file='Tabula_Muris_mouse_facs_Bladder')
+
+
+droplet_Bladder <- Read_data_from_Tabula_Muris('droplet_Bladder_seurat_tiss.robj')
+droplet_Bladder <- RNA_process_UMAP_Cluster(droplet_Bladder,res=2)
+droplet_Bladder <- RNA_process_Cluster_to_CT(droplet_Bladder,'Tabula_Muris_mouse_droplet_Bladder')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(droplet_Bladder,file='Tabula_Muris_mouse_droplet_Bladder')
+
+
+droplet_Heart_and_Aorta <- Read_data_from_Tabula_Muris('droplet_Heart_and_Aorta_seurat_tiss.robj')
+droplet_Heart_and_Aorta <- RNA_process_UMAP_Cluster(droplet_Heart_and_Aorta,res=2)
+droplet_Heart_and_Aorta <- RNA_process_Cluster_to_CT(droplet_Heart_and_Aorta,'Tabula_Muris_mouse_droplet_Heart_and_Aorta')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(droplet_Heart_and_Aorta,file='Tabula_Muris_mouse_droplet_Heart_and_Aorta')
+
+
+facs_Aorta <- Read_data_from_Tabula_Muris('facs_Aorta_seurat_tiss.robj')
+facs_Aorta <- RNA_process_UMAP_Cluster(droplet_Heart_and_Aorta,res=2)
+facs_Aorta <- RNA_process_Cluster_to_CT(facs_Aorta,'Tabula_Muris_mouse_facs_Aorta')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(facs_Aorta,file='Tabula_Muris_mouse_facs_Aorta')
+
+
+facs_Heart <- Read_data_from_Tabula_Muris('facs_Heart_seurat_tiss.robj')
+facs_Heart <- RNA_process_UMAP_Cluster(facs_Heart,res = 2)
+facs_Heart <- RNA_process_Cluster_to_CT(facs_Heart,'Tabula_Muris_mouse_facs_Heart')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(facs_Heart,file='Tabula_Muris_mouse_facs_Heart')
+
+
+##### droplet_Kidney facs_Kidney ##########
+droplet_Kidney <- Read_data_from_Tabula_Muris('droplet_Kidney_seurat_tiss.robj')
+droplet_Kidney <- RNA_process_UMAP_Cluster(droplet_Kidney,res = 2)
+droplet_Kidney <- RNA_process_Cluster_to_CT(droplet_Kidney,'Tabula_Muris_mouse_droplet_Kidney')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(droplet_Kidney,file='Tabula_Muris_mouse_droplet_Kidney')
+
+
+
+facs_Kidney <- Read_data_from_Tabula_Muris('facs_Kidney_seurat_tiss.robj')
+facs_Kidney <- RNA_process_UMAP_Cluster(facs_Kidney,res = 2)
+facs_Kidney <- RNA_process_Cluster_to_CT(facs_Kidney,'Tabula_Muris_mouse_facs_Kidney')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+save(facs_Kidney,file='Tabula_Muris_mouse_facs_Kidney')
+
+
+
+Process <- function(tag){
+	file = paste(tag,'_seurat_tiss.robj',sep='')
+	x <- Read_data_from_Tabula_Muris(file)
+	x <- RNA_process_UMAP_Cluster(x,res = 2)
+	file2 = paste('Tabula_Muris_mouse_',tag,sep='')
+	x <- RNA_process_Cluster_to_CT(x,file2)
+	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+	save(x,file=file2)
+}
+
+
+
+######### "yellow" #########
+######### "yellow" #########
+######### "yellow" #########
+
+######### droplet_Mammary_Gland facs_Mammary_Gland #########
+Process("droplet_Mammary_Gland")
+Process("facs_Mammary_Gland")
+
+
+######### droplet_Liver facs_Liver #########
+Process("droplet_Liver")
+Process("facs_Liver")
+
+
+######### droplet_Lung facs_Lung #########
+Process("droplet_Lung")
+Process("facs_Lung")
+
+
+######### droplet_Trachea facs_Trachea #########
+Process("droplet_Trachea")
+Process("facs_Trachea")
+
+
+######### droplet_Spleen facs_Spleen ##########
+Process("droplet_Spleen")
+Process("facs_Spleen")
+
+
+######### droplet_Tongue facs_Tongue ############
+Process("droplet_Tongue")
+Process("facs_Tongue")
+
+
+######### droplet_Limb_Muscle facs_Limb_Muscle ############
+Process("droplet_Limb_Muscle")
+Process("facs_Limb_Muscle")
+
+
+######### droplet_Marrow facs_Marrow ############
+Process("droplet_Marrow")
+Process("facs_Marrow")
+
+
+######### droplet_Thymus facs_Thymus ############
+Process("droplet_Thymus")
+Process("facs_Thymus")
+
+
+
+#########
+######### Next is output the cluster maps 
+#########
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+
+k = grep('png',files)
+
+files = files[-k]
+
+index = gsub('Tabula_Muris_mouse_','',files)
+
+tag = index[1]
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+Process_output_the_dim_png <- function(tag){
+	file = paste('Tabula_Muris_mouse_',tag,sep='')
+	#### load file into a #####
+	x = loadRData(file)
+	####
+	####
+	x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste('Tabula_Muris_mouse_',tag,'_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste('Tabula_Muris_mouse_',tag,'_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+}
+
+
+for(i in 1:length(index)){
+	Process_output_the_dim_png(index[i])
+}
+
+
+
+
+########
+
+#########
+######### Next is output the input file maps 
+#########
+
+
+#########
+######### Output dim file and Output avg exp tables ##########
+######### 
+
+tag = index[1]
+file = paste('Tabula_Muris_mouse_',tag,sep='')
+#### load file into a #####
+Seurat_Obj = loadRData(file)
+
+dims_name = 'umap'
+folder = '/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare'
+sample_name = tag
+cluster_name = 'seurat_clusters'
+matrix_name = 'RNA'
+
+grep(pattern = "^C", x = cluster[1])
+
+Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name
+
+prepare_CellAnn(Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name)
+
+for(i in 1:length(index)){
+	#####
+	tag = index[i]
+	print(tag)
+	file = paste('Tabula_Muris_mouse_',tag,sep='')
+	Seurat_Obj = loadRData(file)
+	#####
+	dims_name = 'umap'
+	folder = '/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare'
+	sample_name = tag
+	cluster_name = 'seurat_clusters'
+	matrix_name = 'RNA'
+	#####
+	prepare_CellAnn(Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name)
+}
+
+######
+for(i in 1:length(index)){
+	command = paste('mkdir',index[i])
+	system(command)
+}
+
+#####
+for(i in 1:length(index)){
+	file1 = paste(index[i],'_CellAnn_Step1_Input.txt',sep='')
+	file2 = paste(index[i],'_CellAnn_Step4_Input.txt',sep='')
+	command1 = paste('mv',file1,index[i])
+	command2 = paste('mv',file2,index[i])
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+#####
+#####
+#####
+
+for(i in 1:length(index)){
+	######
+	file1 = paste('Tabula_Muris_mouse_',index[i],'_clusters.png',sep='')
+	file2 = paste('Tabula_Muris_mouse_',index[i],'_author_annotation.png',sep='')
+	file3 = paste(index[i],'_clusters.png',sep='')
+	file4 = paste(index[i],'_author_annotation.png',sep='')
+	######
+	file3 = paste(index[i],file3,sep='/')
+	file4 = paste(index[i],file4,sep='/')
+	######
+	command1 = paste('mv',file1,file3)
+	command2 = paste('mv',file2,file4)
+	######
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+
+
+######## ########
+## Next is the Human Pancreas datasets ##
+######## ########
+
+Human_pancreas
+
+######## 
+######## datasets ##########
+######## save methods ######
+########
+
+/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare
+
+######## datasets ##########
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Xin_pancreas')
+
+library(Seurat)
+
+Mat = Matrix::readMM('E-MTAB-5061.aggregated_filtered_counts.mtx')
+Col = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_cols')
+Row = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_rows')
+colnames(Mat) = Col$V1
+rownames(Mat) = Row$V1
+
+Xin_pancreas_seurat_human = CreateSeuratObject(Mat)
+Anno <- read.table('ExpDesign-E-MTAB-5061.tsv',sep='\t',header=T)
+k = which(colnames(Xin_pancreas_seurat_human) %in% Anno$Assay)
+Xin_pancreas_seurat_human = Xin_pancreas_seurat_human[,k]
+m = match(colnames(Xin_pancreas_seurat_human),Anno$Assay)
+Xin_pancreas_seurat_human$celltype = Anno$"Factor.Value.inferred.cell.type...authors.labels."[m]
+k = which(Xin_pancreas_seurat_human$celltype=='')
+Xin_pancreas_seurat_human = Xin_pancreas_seurat_human[,-k]
+
+#######
+
+k = which(Xin_pancreas_seurat_human$celltype %in% c('co-expression cell','unclassified cell','unclassified endocrine cell') == T)
+
+Xin_pancreas_seurat_human$celltype = as.character(Xin_pancreas_seurat_human$celltype)
+
+Xin_pancreas_seurat_human = RNA_process_UMAP_Cluster(Xin_pancreas_seurat_human,res = 2)
+Xin_pancreas_seurat_human = RNA_process_Cluster_to_CT(Xin_pancreas_seurat_human,tag='Xin_pancreas_human')
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+save(Xin_pancreas_seurat_human,file='Xin_pancreas_seurat_human')
+
+#######
+#######
+#######
+
+
+######## datasets ##########
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Wang_pancreas')
+
+library(Seurat)
+
+load('Wang_pancreas_seurat_human')
+
+Wang_pancreas_seurat_human = RNA_process_UMAP_Cluster(Wang_pancreas_seurat_human,res = 2)
+Wang_pancreas_seurat_human = RNA_process_Cluster_to_CT(Wang_pancreas_seurat_human,tag='Wang_pancreas_human')
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+save(Wang_pancreas_seurat_human,file='Wang_pancreas_seurat_human')
+
+####### datasets ############
+
+
+library(Seurat)
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Muraro_pancreas')
+
+Muraro_pancreas_seurat_human = readRDS('Muraro_pancreas_seurat_human')
+
+Muraro_pancreas_seurat_human = RNA_process_UMAP_Cluster(Muraro_pancreas_seurat_human,res = 2)
+Muraro_pancreas_seurat_human = RNA_process_Cluster_to_CT(Muraro_pancreas_seurat_human,tag='Muraro_pancreas_human')
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+save(Muraro_pancreas_seurat_human,file='Muraro_pancreas_seurat_human')
+
+
+####### datasets ############
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Segerstolpe_pancreas')
+
+Segerstolpe_pancreas_seurat_human = readRDS('Segerstolpe_pancreas_seurat_human')
+
+table(Segerstolpe_pancreas_seurat_human$celltype)
+
+Segerstolpe_pancreas_seurat_human = RNA_process_UMAP_Cluster(Segerstolpe_pancreas_seurat_human,res = 2)
+
+Segerstolpe_pancreas_seurat_human$celltype = as.character(Segerstolpe_pancreas_seurat_human$celltype)
+
+Segerstolpe_pancreas_seurat_human = RNA_process_Cluster_to_CT(Segerstolpe_pancreas_seurat_human,tag='Segerstolpe_pancreas_human')
+
+table(Segerstolpe_pancreas_seurat_human$celltype)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+save(Segerstolpe_pancreas_seurat_human,file='Segerstolpe_pancreas_seurat_human')
+
+####### datasets ############
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Enge_pancreas')
+
+Enge_pancreas_seurat_human = readRDS('Enge_pancreas_seurat_human')
+
+table(Enge_pancreas_seurat_human$celltype)
+
+Enge_pancreas_seurat_human = RNA_process_UMAP_Cluster(Enge_pancreas_seurat_human,res = 2)
+
+Enge_pancreas_seurat_human = RNA_process_Cluster_to_CT(Enge_pancreas_seurat_human,tag='Enge_pancreas_seurat')
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+save(Enge_pancreas_seurat_human,file='Enge_pancreas_seurat_human')
+
+######
+###### datasets #####
+######
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Baron_pancreas')
+
+load('Baron_pancreas_seurat_human')
+
+Baron_pancreas_seurat_human = RNA_process_UMAP_Cluster(Baron_pancreas_seurat_human,res = 2)
+
+Baron_pancreas_seurat_human = RNA_process_Cluster_to_CT(Baron_pancreas_seurat_human,tag='Baron_pancreas_seurat')
+
+table(Baron_pancreas_seurat_human$celltype)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+
+save(Baron_pancreas_seurat_human,file='Baron_pancreas_seurat_human')
+
+###### pseudo-bulk ######
+
+#########################
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+
+files = list.files()
+
+k = grep('png',files)
+
+files = files[-k]
+
+index = gsub('_seurat_human','',files)
+
+tag = index[1]
+
+Process_output_the_dim_png <- function(tag){
+	file = paste(tag,'_seurat_human',sep='')
+	#### load file into a #####
+	x = loadRData(file)
+	####
+	####
+	x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste(tag,'_Human_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste(tag,'_Human_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+}
+
+
+for(i in 1:length(index)){
+	Process_output_the_dim_png(index[i])
+}
+
+#####
+#####
+#####
+for(i in 1:length(index)){
+	#####
+	tag = index[i]
+	print(tag)
+	file = paste(tag,'_seurat_human',sep='')
+	Seurat_Obj = loadRData(file)
+	#####
+	dims_name = 'umap'
+	folder = '/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare'
+	sample_name = paste(tag,'_Human',sep='')
+	cluster_name = 'seurat_clusters'
+	matrix_name = 'RNA'
+	#####
+	setwd(folder)
+	prepare_CellAnn(Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name)
+}
+
+
+#####
+#####
+#####
+
+for(i in 1:length(index)){
+	command = paste('mkdir',index[i])
+	system(command)
+}
+
+#####
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+
+files = list.files()
+
+k = grep('png',files)
+
+files = files[-k]
+
+index = gsub('_seurat_human','',files)
+
+tag = index[1]
+
+#######################
+
+for(i in 1:length(index)){
+	file1 = paste(index[i],'_Human_CellAnn_Step1_Input.txt',sep='')
+	file2 = paste(index[i],'_Human_CellAnn_Step4_Input.txt',sep='')
+	command1 = paste('mv',file1,index[i])
+	command2 = paste('mv',file2,index[i])
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+#######################
+
+index
+
+for(i in 1:length(index)){
+	######
+	file1 = paste(index[i],'_Human_clusters.png',sep='')
+	file2 = paste(index[i],'_Human_author_annotation.png',sep='')
+	file3 = paste(index[i],'_Human_clusters.png',sep='')
+	file4 = paste(index[i],'_Human_author_annotation.png',sep='')
+	######
+	file3 = paste(index[i],file3,sep='/')
+	file4 = paste(index[i],file4,sep='/')
+	######
+	command1 = paste('mv',file1,file3)
+	command2 = paste('mv',file2,file4)
+	######
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+#####
+##### Next is the Human PMBC datasets: ######
+#####
+
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PBMC_bench')
+
+library(Seurat)
+
+########
+
+counts = Matrix::readMM('counts.read.txt.gz')
+
+Colnames = read.table('cells.read.new.txt',sep='\t')
+
+Rownames = read.table('genes.read.txt',sep='\t')
+
+colnames(counts) = Colnames$V1
+
+rownames(counts) = Rownames$V1
+
+PBMC_all2 = CreateSeuratObject(counts)
+
+head(PBMC_all2)
+
+Metadata = read.table('meta.counts.new.txt',sep='\t',header=T)
+
+m = match(colnames(PBMC_all2),Metadata$Name)
+
+PBMC_all2$Experiment = Metadata$Experiment[m]
+
+PBMC_all2$Method = Metadata$Method[m]
+
+table(PBMC_all2$Method)
+
+#########
+Anno = read.table('meta.txt',header=T,sep='\t')
+Anno = Anno[-1,]
+
+Add_anno_PBMC <- function(x,Anno){
+    ####
+    k = which(Anno$CellType == 'Unassigned')
+    Anno_cl = Anno[-k,]
+    ####
+    ####
+    k1 = which(colnames(x) %in% Anno_cl$NAME == T)
+    print(length(k1))
+    x_cl = x[,k1]
+    ####
+    m = match(colnames(x_cl),Anno_cl$NAME)
+    x_cl$celltype = Anno_cl$CellType[m]
+    #####
+    return(x_cl)
+}
+
+##########
+
+PBMC_Chromium_V2 <- subset(PBMC_all2,subset = Method %in% c('10x Chromium V2') == T)
+PBMC_Chromium_V2 <- Add_anno_PBMC(PBMC_Chromium_V2,Anno)
+PBMC_Chromium_V2 <- RNA_process_UMAP_Cluster(PBMC_Chromium_V2,res=2)
+PBMC_Chromium_V2 <- RNA_process_Cluster_to_CT(PBMC_Chromium_V2,'PBMC_Chromium_V2')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC_Chromium_V2,file='PBMC_Chromium_V2')
+
+
+PBMC_Chromium_V2A <- subset(PBMC_all2,subset = Method %in% c('10x Chromium V2 A') == T)
+PBMC_Chromium_V2A <- Add_anno_PBMC(PBMC_Chromium_V2A,Anno)
+PBMC_Chromium_V2A <- RNA_process_UMAP_Cluster(PBMC_Chromium_V2A,res=2)
+PBMC_Chromium_V2A <- RNA_process_Cluster_to_CT(PBMC_Chromium_V2A,'PBMC_Chromium_V2A')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC_Chromium_V2A,file='PBMC_Chromium_V2A')
+
+
+
+
+PBMC_Chromium_V2B <- subset(PBMC_all2,subset = Method %in% c('10x Chromium V2 B') == T)
+PBMC_Chromium_V2B <- Add_anno_PBMC(PBMC_Chromium_V2B,Anno)
+PBMC_Chromium_V2B <- RNA_process_UMAP_Cluster(PBMC_Chromium_V2B,res=2)
+PBMC_Chromium_V2B <- RNA_process_Cluster_to_CT(PBMC_Chromium_V2B,'PBMC_Chromium_V2B')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC_Chromium_V2B,file='PBMC_Chromium_V2B')
+
+
+PBMC_Chromium_V3 <- subset(PBMC_all2,subset = Method %in% c('10x Chromium V3') == T)
+PBMC_Chromium_V3 <- Add_anno_PBMC(PBMC_Chromium_V3,Anno)
+PBMC_Chromium_V3 <- RNA_process_UMAP_Cluster(PBMC_Chromium_V3,res=2)
+PBMC_Chromium_V3 <- RNA_process_Cluster_to_CT(PBMC_Chromium_V3,'PBMC_Chromium_V3')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC_Chromium_V3,file='PBMC_Chromium_V3')
+
+######
+
+PBMC1_Drop <- subset(PBMC_all2,subset = Method %in% c('Drop-seq') == T & Experiment %in% c('pbmc1') == T)
+PBMC1_Drop <- Add_anno_PBMC(PBMC1_Drop,Anno)
+PBMC1_Drop <- RNA_process_UMAP_Cluster(PBMC1_Drop,res=2)
+PBMC1_Drop <- RNA_process_Cluster_to_CT(PBMC1_Drop,'PBMC1_Drop')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC1_Drop,file='PBMC1_Drop')
+
+
+
+PBMC2_Drop <- subset(PBMC_all2,subset = Method %in% c('Drop-seq') == T & Experiment %in% c('pbmc2') == T)
+PBMC2_Drop <- Add_anno_PBMC(PBMC2_Drop,Anno)
+PBMC2_Drop <- RNA_process_UMAP_Cluster(PBMC2_Drop,res=2)
+PBMC2_Drop <- RNA_process_Cluster_to_CT(PBMC2_Drop,'PBMC2_Drop')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC2_Drop,file='PBMC2_Drop')
+
+#######
+
+PBMC1_inDrops <- subset(PBMC_all2,subset = Method %in% c('inDrops') == T & Experiment %in% c('pbmc1') == T)
+PBMC1_inDrops <- Add_anno_PBMC(PBMC1_inDrops,Anno)
+PBMC1_inDrops <- RNA_process_UMAP_Cluster(PBMC1_inDrops,res=2)
+PBMC1_inDrops <- RNA_process_Cluster_to_CT(PBMC1_inDrops,'PBMC1_inDrops')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC1_inDrops,file='PBMC1_inDrops')
+
+
+PBMC2_inDrops <- subset(PBMC_all2,subset = Method %in% c('inDrops') == T & Experiment %in% c('pbmc2') == T)
+PBMC2_inDrops <- Add_anno_PBMC(PBMC2_inDrops,Anno)
+PBMC2_inDrops <- RNA_process_UMAP_Cluster(PBMC2_inDrops,res=2)
+PBMC2_inDrops <- RNA_process_Cluster_to_CT(PBMC2_inDrops,'PBMC2_inDrops')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC2_inDrops,file='PBMC2_inDrops')
+
+
+PBMC1_SeqWell <- subset(PBMC_all2,subset = Method %in% c('Seq-Well') == T & Experiment %in% c('pbmc1') == T)
+PBMC1_SeqWell <- Add_anno_PBMC(PBMC1_SeqWell,Anno)
+PBMC1_SeqWell <- RNA_process_UMAP_Cluster(PBMC1_SeqWell,res=2)
+PBMC1_SeqWell <- RNA_process_Cluster_to_CT(PBMC1_SeqWell,'PBMC1_SeqWell')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC1_SeqWell,file='PBMC1_SeqWell')
+
+
+
+PBMC2_SeqWell <- subset(PBMC_all2,subset = Method %in% c('Seq-Well') == T & Experiment %in% c('pbmc2') == T)
+PBMC2_SeqWell <- Add_anno_PBMC(PBMC2_SeqWell,Anno)
+PBMC2_SeqWell <- RNA_process_UMAP_Cluster(PBMC2_SeqWell,res=2)
+PBMC2_SeqWell <- RNA_process_Cluster_to_CT(PBMC2_SeqWell,'PBMC2_SeqWell')
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+save(PBMC2_SeqWell,file='PBMC2_SeqWell')
+
+
+
+#############
+############# annotations ################
+#############
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+
+files = list.files()
+
+index = files
+
+############# annotations ###############
+
+
+Process_output_the_dim_png <- function(tag){
+	file = paste(tag,sep='')
+	#### load file into a #####
+	x = loadRData(file)
+	####
+	####
+	x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste(tag,'_Human_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste(tag,'_Human_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+}
+
+
+for(i in 1:length(index)){
+	Process_output_the_dim_png(index[i])
+}
+
+
+############
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+
+for(i in 1:length(index)){
+	#####
+	tag = index[i]
+	print(tag)
+	file = paste(tag,sep='')
+	Seurat_Obj = loadRData(file)
+	#####
+	dims_name = 'umap'
+	folder = '/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare'
+	sample_name = paste(tag,'_Human',sep='')
+	cluster_name = 'seurat_clusters'
+	matrix_name = 'RNA'
+	#####
+	setwd(folder)
+	prepare_CellAnn(Seurat_Obj,folder,sample_name,dims_name,cluster_name,matrix_name)
+}
+
+#############
+#############
+
+
+for(i in 1:length(index)){
+	command = paste('mkdir',paste(index[i],'_Human',sep=''))
+	system(command)
+}
+
+#############
+#############
+#############
+
+for(i in 1:length(index)){
+	file1 = paste(index[i],'_Human_CellAnn_Step1_Input.txt',sep='')
+	file2 = paste(index[i],'_Human_CellAnn_Step4_Input.txt',sep='')
+	command1 = paste('mv',file1,paste(index[i],'_Human',sep=''))
+	command2 = paste('mv',file2,paste(index[i],'_Human',sep=''))
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+
+for(i in 1:length(index)){
+	######
+	file1 = paste(index[i],'_Human_clusters.png',sep='')
+	file2 = paste(index[i],'_Human_author_annotation.png',sep='')
+	file3 = paste(index[i],'_Human_clusters.png',sep='')
+	file4 = paste(index[i],'_Human_author_annotation.png',sep='')
+	######
+	index3 = paste(index[i],'_Human',sep='')
+	index4 = paste(index[i],'_Human',sep='')
+	file3 = paste(index3,file3,sep='/')
+	file4 = paste(index4,file4,sep='/')
+	######
+	command1 = paste('mv',file1,file3)
+	command2 = paste('mv',file2,file4)
+	######
+	print(command1)
+	print(command2)
+	system(command1)
+	system(command2)
+}
+
+
+
+#######
+####### Next we generate example tables for: #######
+#######
+
+#######
+####### first is the PMBC table ######
+#######
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+
+files = list.files()
+
+k = grep('_Human',files)
+
+index = files[k]
+
+########
+########
+########
+
+Species = 'Human'
+
+PMID = 'PMID:32341560'
+
+File_Tag = index
+
+Tissue = 'Blood'
+
+library = c('10xChromium V2','10xChromium V2A','10xChromium V2B','10x Chromium V3','Drop-Seq','inDrops','SeqWell','Drop-Seq','inDrops','SeqWell')
+
+dat = data.frame(File_Tag=index,Species=Species,Tissue=Tissue,library=library,PMID=PMID)
+
+write.table(dat,file='PBMC_download_table.txt',sep='\t',quote=F,row.names=F)
+
+
+########
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
+
+files = list.files()
+
+k = grep('_human',files)
+
+index = files[-k]
+
+index = paste(index,'_Human',sep='')
+
+#########
+########
+#######
+
+
+Species = 'Human'
+
+PMID = c('PMID:27667365','PMID:28965763','PMID:27693023','PMID:27667667','PMID:27364731','PMID:27667665')
+
+File_Tag = index
+
+Tissue = 'Pancreas'
+
+library = c('inDrops','','CEL-Seq2','Smart-seq2','Smart-seq2','')
+
+dat = data.frame(File_Tag=index,Species=Species,Tissue=Tissue,library=library,PMID=PMID)
+
+write.table(dat,file='Pancreas_download_table.txt',sep='\t',quote=F,row.names=F)
+
+########
+###########
+
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+
+k = grep('Tabula_Muris_',files)
+
+index = files[k]
+
+Species = 'Mouse'
+
+PMID = c('PMID:30283141')
+
+File_Tag = index
+
+Tissue = gsub('Tabula_Muris_mouse_droplet_','',index)
+
+Tissue = gsub('Tabula_Muris_mouse_facs_','',Tissue)
+
+library = c(rep('droplet',12),rep('facs',))
+
+dat = data.frame(File_Tag=index,Species=Species,Tissue=Tissue,library=library,PMID=PMID)
+
+
+
+
