@@ -1,0 +1,526 @@
+#### ROC many methods code ###
+#### we test mutiple methods at cluster level ####
+####
+
+
+#### on the windows computer in the office ####
+
+####
+#### first we use Seurat V4 method #####
+####
+#### in the folder CellAnn_methods_test #####
+
+
+eagersupervised(train,test,label_train,method='Seurat')
+
+setwd('C:/Users/plyu3/Desktop/CellAnn_methods_test/')
+
+#####
+#####  In this tutorial, we'll use the scRNA-seq of Liver tissue in Tabular Muris as training (10X) and testing (SM2) dataset. The demo data could be download from testdata. 
+#####
+
+library("AutomaticCellTypeIdentification")
+library("Seurat")
+
+##### load the test datasets #####
+load('Liver_GSE109774_10X.RData')
+load('Liver_GSE109774_SM2.RData')
+
+##### raw counts ####
+train = as.matrix(GetAssayData(train_object,slot='counts'))
+test = as.matrix(GetAssayData(test_object,slot='counts'))
+label_train = train_object$celltyperaw
+markers = diffmarker(train,label_train,only.pos=T)
+
+
+######
+###### they choose different markers #####
+######
+
+diffmarker <- function (train, label_train, only.pos = F) {
+	#### this step the markers were calculte on the normdatasets #####
+    reference = CreateSeuratObject(train)
+    reference = NormalizeData(reference)
+    reference@active.ident = as.factor(label_train)
+    markers = FindAllMarkers(reference, only.pos = only.pos)
+    celltype = unique(markers$cluster)
+    marker_5 = lapply(celltype, function(x) {
+        markers[markers[, 6] == x, 7][1:5]
+    })
+    marker_15 = lapply(celltype, function(x) {
+        markers[markers[, 6] == x, 7][1:15]
+    })
+    names(marker_5) = celltype
+    names(marker_15) = celltype
+    result = list()
+    result$marker_5 = marker_5
+    result$marker_15 = marker_15
+    return(result)
+}
+
+markers = diffmarker(train,label_train,only.pos=T)
+
+########
+
+predict_label = eagersupervised(train,test,label_train,method='seurat')
+
+eagersupervised = function(train,
+                           test,
+                           label_train,
+                           method,
+                           ...){
+  ##### gene names #####
+  rownames(train) = make.unique(toupper(rownames(train)))
+  rownames(test) = make.unique(toupper(rownames(test)))
+  #####
+  common_gene = intersect(rownames(train),rownames(test))
+
+  if(length(common_gene) < 500){
+    stop('Please convert the gene name of training dataset and testing dataset into the same format!')
+  }
+
+  train = train[common_gene,]
+  test = test[common_gene,]
+  ##### method tags ######
+  method = tolower(method)
+  #####
+  predict_label = switch(method,
+                         actinn = actinn(train,test,label_train,...),
+                         castle = castle(train,test,label_train,...),
+                         chetah = chetah(train,test,label_train,...),
+                         clustifyr = clustifyr(train,test,label_train,...),
+                         garnett = garnett(train,test,label_train,...),
+                         schpl = schpl(train,test,label_train,...),
+                         scibet = scibet(train,test,label_train,...),
+                         scid = scid(train,test,label_train,...),
+                         sclearn = sclearn(train,test,label_train,...),
+                         scmapcluster = scmapcluster(train,test,label_train,...),
+                         scpred = scpred(train,test,label_train,...),
+                         scvi = scvi(train,test,label_train,...),
+                         seurat = seurat(train,test,label_train,...),
+                         singlecellnet = singlecellnet(train,test,label_train,...),
+                         singler = singler(train,test,label_train,...),
+                         markercount = markercount(train,test,label_train,...),
+                         mars = mars(train,test,label_train,...),
+                         scclassifr = scclassifr(train,test,label_train,...),
+                         stop('Please input valid classifier method, check the method description!'))
+
+  return(predict_label)
+
+}
+
+
+
+##### seurat = seurat(train,test,label_train,...) ???
+#####
+##### did not use the markers for cell type alignment #####
+
+seurat(train,test,label_train)
+
+
+seurat = function(train,
+                  test,
+                  label_train,
+                  k.filter = 50,
+                  time = F,
+                  min.cells = 0,
+                  min.features = 0,
+                  normalization.method = 'LogNormalize',
+                  scale.factor = 10000,
+                  selection.method = 'vst',
+                  nfeatures = 2000,
+                  mean.cutoff = c(0.1, 8),
+                  dispersion.cutoff = c(1, Inf)){
+
+  start_time = Sys.time()
+
+  reference = CreateSeuratObject(train,
+                                 min.cells = min.cells,
+                                 min.features = min.features)
+  reference = NormalizeData(reference,
+                            normalization.method = normalization.method,
+                            scale.factor = scale.factor,
+                            verbose = F)
+  reference = FindVariableFeatures(reference,
+                                   selection.method = selection.method,
+                                   nfeatures = nfeatures,
+                                   mean.cutoff = mean.cutoff,
+                                   dispersion.cutoff = dispersion.cutoff,
+                                   verbose = F)
+  reference$celltype = label_train
+  query = CreateSeuratObject(test,
+                             min.cells = min.cells,
+                             min.features = min.features)
+  query = NormalizeData(query,
+                        normalization.method = normalization.method,
+                        scale.factor = scale.factor,
+                        verbose = F)
+  query = FindVariableFeatures(query,
+                               selection.method = selection.method,
+                               nfeatures = nfeatures,
+                               mean.cutoff = mean.cutoff,
+                               dispersion.cutoff = dispersion.cutoff,
+                               verbose = F)
+  if(min(ncol(reference),ncol(test))<200){
+    k.filter=50
+    print(1)
+  }
+  if(min(ncol(reference),ncol(test))<50){
+    return(NULL)
+  }
+  anchors = FindTransferAnchors(reference,query,k.filter = k.filter)
+  predictions = TransferData(anchors,reference$celltype)
+  query = AddMetaData(query, metadata = predictions)
+  predict_label = unname(query$predicted.id)
+  ######
+  end_time = Sys.time()
+  ######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+
+
+#####
+##### Then use our functions: ########
+#####
+
+##### droplet ####
+input = read.table(file = 'Tabula_Muris_mouse_example_input/droplet_Lung/droplet_Lung_CellAnn_Step1_Input.txt',header=T)
+
+transfer_our_table_to_dataframe <- function(input){
+	mat = as.matrix(input[,-1])
+	rownames(mat) = input$GENE
+	#####
+	print(dim(mat))
+	return(mat)
+}
+
+test = transfer_our_table_to_dataframe(input)
+
+#####
+##### we need train test and label_train #####
+##### input is the matrix #######
+##### in the folder ####
+##### facs #####
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+
+
+input2 = loadRData('Tabula_Muris_mouse_facs_Lung')
+
+
+train = as.matrix(GetAssayData(input2,slot='data'))
+
+label_train = input2$celltype
+
+file='Tabula_Muris_mouse_droplet_Lung'
+
+get_test_label <- function(file,test){
+	input3 = loadRData(file)
+	#####
+	#####
+	test_label1 = input3$seurat_clusters
+	test_label2 = input3$celltype
+	#####
+	k = which(test_label1 %in% colnames(test) == T)
+	test_label1 = test_label1[k]
+	test_label2 = test_label2[k]
+	k = which(duplicated(test_label1) == T)
+	test_label1 = test_label1[-k]
+	test_label2 = test_label2[-k]
+	#####
+	dat = data.frame(cluster = as.character(test_label1),turth_celltype=as.character(test_label2))
+	#####
+	m = match(colnames(test),dat$cluster)
+	dat = dat[m,]
+	#####
+	return(dat)
+}
+
+label_test = get_test_label('Tabula_Muris_mouse_droplet_Lung',test)
+
+
+##### ##### #####
+##### droplet_lung and facs_lung #####
+##### ##### ##### ##### no test data should be the Seurat ######
+##### we should found the Seurat objects #####
+#####
+
+Next_is_cellAnn_seurat
+
+
+
+Cell_Ann_seurat = function(train,
+                  test,
+                  label_train,
+                  k.filter = NA,
+                  time = F,
+                  selection.method = 'vst',
+                  nfeatures = 2000,
+                  mean.cutoff = c(0.1, 8),
+                  dispersion.cutoff = c(1, Inf),
+                  prediction.score.max = 0.5){
+
+  start_time = Sys.time()
+
+  reference = CreateSeuratObject(train)
+  #reference = NormalizeData(reference,
+                            #normalization.method = normalization.method,
+                            #scale.factor = scale.factor,
+                            #verbose = F)
+  reference = FindVariableFeatures(reference,
+                                   mean.cutoff = mean.cutoff,
+                                   dispersion.cutoff = dispersion.cutoff,
+                                   verbose = F)
+  reference$celltype = label_train
+  query = CreateSeuratObject(test)
+  #query = NormalizeData(query,
+                        #normalization.method = normalization.method,
+                        #scale.factor = scale.factor,
+                        #verbose = F)
+  query = FindVariableFeatures(query,
+                               mean.cutoff = mean.cutoff,
+                               dispersion.cutoff = dispersion.cutoff,
+                               verbose = F)
+  #if(min(ncol(reference),ncol(test))<200){
+  #  k.filter=50
+  #  print(1)
+  #}
+  #if(min(ncol(reference),ncol(test))<50){
+  #  return(NULL)
+  #}
+  anchors = FindTransferAnchors(reference,query,k.filter = NA,k.score=5)
+  predictions = TransferData(anchors,as.character(reference$celltype),k.weight=5)
+  query = AddMetaData(query, metadata = predictions)
+  ######
+  print(summary(query$prediction.score.max))
+  query$predicted.id[which(query$prediction.score.max < prediction.score.max)] <- 'ND'
+  #######
+  predict_label = unname(query$predicted.id)
+  ######
+  end_time = Sys.time()
+  ######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+
+
+Cell_Ann_seurat_res = Cell_Ann_seurat(train,test,label_train,time=T)
+
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+#### OK! then calculate the AUC #######
+#### Next is how to calculate the accuracy ######
+#### let us try the next!!!! ##########
+
+
+#### self predict #####
+#### 
+then we switch to another study ####
+####
+####
+
+Next: 
+
+SingleCellNet singlecellnet
+
+scn_predict <- 
+
+
+Cell_Ann_scn_train <- function(stTrain, 
+		      expTrain, 
+		      dLevel, 
+          	  colName_samp="row.names", 
+	  	      nTopGenes = 10, 
+		      nTopGenePairs = 25, 
+		      nRand = 70, 
+		      nTrees = 1000,
+          	      stratify=FALSE, 
+		      weightedDown_total = 1e4, 
+ 	 	      weightedDown_dThresh = 0.25) {
+
+   if (class(stTrain) != "data.frame") {
+      stTrain<-as.data.frame(stTrain)
+      #### class(stTrain) ###
+   }
+
+   if (colName_samp != "row.names") {
+     rownames(stTrain)<-stTrain[, colName_samp]
+     #### class(stTrain) ####
+   }
+
+   x = grep("_", rownames(expTrain))
+   if(is.integer(x) && length(x) != 0L){
+      cat("converting _ in gene names to .\n")
+      rownames(expTrain) = gsub("_",".",rownames(expTrain))
+   }
+
+   cat("Sample table has been prepared\n")
+
+   ### expTnorm<-trans_prop(expTrain, weightedDown_total, dThresh = weightedDown_dThresh)
+   expTnorm <- expTrain
+   cat("Expression data has been normalized\n")
+
+   cat("Finding classification genes\n")
+   system.time(cgenes<-findClassyGenes(expDat = expTnorm, sampTab = stTrain, dLevel = dLevel, topX = nTopGenes))
+
+   cgenesA<-cgenes[['cgenes']]
+   cat("There are ", length(cgenesA), " classification genes\n")
+
+   grps<-cgenes[['grps']]
+
+   #catch errors when there is NA or emtpy string in cluster or cell type label
+   if(sum(grps == "") >1 | sum(is.na(grps)) >1 ){
+    stop("There is NA or empty string in your dLevel. Please remove them before proceeding.")
+   }
+   
+   cat("Finding top pairs\n")
+
+   system.time(xpairs<-ptGetTop(expDat = expTrain[cgenesA,], cell_labels = grps, cgenes_list = cgenes[['cgenes_list']], topX=nTopGenePairs, sliceSize=5000))
+   cat("There are", length(xpairs), "top gene pairs\n")
+
+   system.time(pdTrain<-query_transform(expTrain[cgenesA, ], xpairs))
+   cat("Finished pair transforming the data\n")
+
+   tspRF<-sc_makeClassifier(pdTrain[xpairs,], genes=xpairs, groups=grps, nRand = nRand, ntrees = nTrees, stratify=stratify)
+   cnProc<-list("cgenes"= cgenesA, "xpairs"=xpairs, "grps"= grps, "classifier" = tspRF)
+
+   returnList<-list("sampTab" = stTrain, "cgenes_list" = cgenes[['cgenes_list']], "cnProc" = cnProc)
+
+   cat("All Done\n")
+   #return
+   returnList
+}
+
+
+
+
+Cell_Ann_singlecellnet = function(train,
+                         test,
+                         label_train,
+                         colName_samp="row.names",
+                         nTopGenes = 10,
+                         nTopGenePairs = 25,
+                         nRand = 70,
+                         nTrees = 1000,
+                         nrand = 5,
+                         time = F){
+
+  library(singleCellNet)
+  train = as.matrix(train)
+  test = as.matrix(test)
+
+  start_time = Sys.time()
+
+  label_train = as.data.frame(label_train)
+
+  class_info = Cell_Ann_scn_train(stTrain = label_train,
+                         expTrain = train,
+                         nTopGenes = nTopGenes,
+                         nRand = nRand,
+                         nTrees = nTrees,
+                         nTopGenePairs = nTopGenePairs,
+                         dLevel = "label_train",
+                         colName_samp = colName_samp)
+
+  classRes_val_all = scn_predict(cnProc=class_info[['cnProc']],
+                                 expDat=test,
+                                 nrand = 3)
+
+  predict_label = c()
+  predict_label = unlist(assign_cate(classRes_val_all,predict_label))
+  #### nrand ####
+  predict_label = predict_label[1:(length(predict_label)-3)]
+  end_time = Sys.time()
+  ####
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ####
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  ####
+  return(predict_label)
+
+}
+
+Cell_Ann_seurat_res = Cell_Ann_singlecellnet(train,test,label_train,time=T)
+
+################
+################
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+############
+############
+############### OK! then next tool #######
+############
+########### scPred tools ####
+
+
+Cell_Ann_scpred = function(train,
+                  test,
+                  label_train,
+                  model = 'svmRadial',
+                  reclassify = NULL,
+                  time = F,
+                  threshold = 0.55){
+
+  library()
+
+  start_time = Sys.time()
+
+  reference = CreateSeuratObject(train)
+  query = CreateSeuratObject(test)
+
+  reference = reference %>%
+    #NormalizeData() %>%
+    FindVariableFeatures() %>%
+    ScaleData() %>%
+    RunPCA() %>%
+    RunUMAP(dims = 1:30)
+
+  #query = NormalizeData(query)
+
+  reference$cell_type = label_train
+
+  reference = getFeatureSpace(reference, "cell_type")
+
+  reference = trainModel(reference,
+                         model = model,
+                         reclassify = reclassify)
+
+  query = scPredict(query,
+                    reference,
+                    threshold = threshold)
+
+  predict_label = unname(query$scpred_prediction)
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+
