@@ -3,11 +3,33 @@
 sum(counts) should be 1e6 
 
 #######
-
-
+check the sum(counts) #### !!!!
 #######
 
-Tabula Muris mouse data
+getwd()
+
+files = list.files()
+
+m1 = grep('val_1.fq.gz$', files)
+
+files[m1]
+
+m2 = grep('val_2.fq.gz$', files)
+
+files[m2]
+
+files_m1 = files[m1]
+files_m2 = files[m2]
+
+for(i in 1:length(files_m1)){
+	command = paste("nohup bismark  -non_directional --genome /zp1/data/plyu3/Mouse_DNA_meth/Mouse_mm10_genome","-1",files_m1[i],"-2",files_m2[i],'&')
+	print(command)
+}
+
+#######
+Tabula Muris mouse datasets !!!! ########
+#######
+
 
 folder: /zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data
 
