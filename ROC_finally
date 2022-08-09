@@ -5,7 +5,6 @@
 
 #### on the windows computer in the office ####
 
-####
 #### first we use Seurat V4 method #####
 ####
 #### in the folder CellAnn_methods_test #####
@@ -225,8 +224,7 @@ label_train = input2$celltype
 
 file='Tabula_Muris_mouse_droplet_Lung'
 
-get_test_label <- function(file,test){
-	input3 = loadRData(file)
+get_test_label <- function(input3,test){
 	#####
 	#####
 	test_label1 = input3$seurat_clusters
@@ -264,7 +262,7 @@ Cell_Ann_seurat = function(train,
                   test,
                   label_train,
                   k.filter = NA,
-                  time = F,
+                  time = T,
                   selection.method = 'vst',
                   nfeatures = 2000,
                   mean.cutoff = c(0.1, 8),
@@ -299,8 +297,21 @@ Cell_Ann_seurat = function(train,
   #if(min(ncol(reference),ncol(test))<50){
   #  return(NULL)
   #}
-  anchors = FindTransferAnchors(reference,query,k.filter = NA,k.score=5)
-  predictions = TransferData(anchors,as.character(reference$celltype),k.weight=5)
+  k.score=5
+  k.anchor=5
+  if(dim(query)[2] < 6){
+  	k.score= dim(query)[2]-1
+  	k.anchor= dim(query)[2]-1
+  }
+  anchors = FindTransferAnchors(reference,query,k.filter = NA,k.score=k.score,k.anchor = k.anchor)
+  k.weight = dim(anchors@anchors)[1]
+  if(k.weight > 50){k.weight=50}
+  predictions = try(TransferData(anchors,as.character(reference$celltype),k.weight=k.weight))
+  while(inherits(predictions,'try-error')){
+  	k.weight=k.weight-1
+  	print(k.weight)
+  	predictions = try(TransferData(anchors,as.character(reference$celltype),k.weight=k.weight))
+  }
   query = AddMetaData(query, metadata = predictions)
   ######
   print(summary(query$prediction.score.max))
@@ -481,7 +492,7 @@ Cell_Ann_scpred = function(train,
                   time = F,
                   threshold = 0.55){
 
-  library()
+  library(scPred)
 
   start_time = Sys.time()
 
@@ -495,6 +506,7 @@ Cell_Ann_scpred = function(train,
     RunPCA() %>%
     RunUMAP(dims = 1:30)
 
+  ## don't need to normalize ####
   #query = NormalizeData(query)
 
   reference$cell_type = label_train
@@ -522,5 +534,953 @@ Cell_Ann_scpred = function(train,
   return(predict_label)
 
 }
+
+Cell_Ann_seurat_res = Cell_Ann_scpred(train,test,label_train,time=T)
+
+################
+################
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+################  OK worked !!!!! ######################
+
+##### Then next tools ####
+##### CaSTLe #############
+
+input = read.table(file = 'Tabula_Muris_mouse_example_input/droplet_Lung/droplet_Lung_CellAnn_Step1_Input.txt',header=T)
+test = transfer_our_table_to_dataframe(input)
+
+summary(as.numeric(test))
+
+input2 = loadRData('Tabula_Muris_mouse_facs_Lung')
+train = as.matrix(GetAssayData(input2,slot='data'))
+
+label_train = input2$celltype
+
+castle_test = 2^test-1
+summary(as.numeric(castle_test))
+
+
+castle_train = 2^train-1
+summary(as.numeric(castle_train))
+
+"red"
+"red"
+
+Using provided results:
+
+setwd('C:/Users/plyu3/Desktop/CellAnn_methods_test/')
+
+#####
+#####  In this tutorial, we'll use the scRNA-seq of Liver tissue in Tabular Muris as training (10X) and testing (SM2) dataset. The demo data could be download from testdata. 
+#####
+
+library("AutomaticCellTypeIdentification")
+library("Seurat")
+
+#load('Liver_GSE109774_10X.RData')
+#load('Liver_GSE109774_SM2.RData')
+
+#train = as.matrix(GetAssayData(train_object,slot='counts'))
+#test = as.matrix(GetAssayData(test_object,slot='counts'))
+#label_train = train_object$celltyperaw
+
+Cell_Ann_seurat_res = Cell_Ann_castle(train,test,label_train,time=T)
+
+
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+Cell_Ann_castle = function(train,
+                  test,
+                  label_train,
+                  threshold = 0.3,
+                  time = F,
+                  eta = 0.7,
+                  max_depth = 5,
+                  gamma = 0.001,
+                  verbose = 0,
+                  min_child_weight = 10,
+                  nrounds = 20,
+                  nthread = 1){
+
+  #########
+  common = rownames(train)[which(rownames(train) %in% rownames(test) == T)]
+  train = train[common,]
+  test = test[common,]
+  #########
+
+  library(igraph)
+  #####
+  train = t(train)
+  test = t(test)
+  #####
+
+  #####
+  start_time = Sys.time()
+
+  label_train = as.factor(label_train)
+
+  BREAKS = c(-1:20,Inf)
+  nFeatures = 1000
+  #######
+  train_nfeature = colSums(train>0)
+  test_nfeature = colSums(test>0)
+  ###################################
+
+  ###################################
+  counts = rbind(train, test)
+
+  is_train = c(rep(TRUE,nrow(train)), rep(FALSE,nrow(test)))
+
+  top_mean = colnames(counts)[order(apply(counts, 2, mean), decreasing = T)]
+
+  celltype_number = length(levels(label_train))
+
+  targetClassification = as.data.frame(matrix(rep(0,celltype_number*sum(!is_train)), nrow=celltype_number), row.names = levels(label_train))
+
+  for (cell_type in levels(label_train)) {
+
+    cell_type_binary = as.factor(ifelse(label_train == cell_type, cell_type, paste0("NOT",cell_type)))
+
+    top_mutual = names(sort(apply(train,2,function(x) { compare(cut(x,breaks=BREAKS),cell_type_binary,method = "nmi") }), decreasing = T))
+
+    selected_feature = union(head(top_mean, nFeatures) , head(top_mutual, nFeatures) )
+
+    tmp = cor(counts[,selected_feature], method = "pearson")
+    tmp[!lower.tri(tmp)] = 0
+
+    selected_feature = selected_feature[apply(tmp,2,function(x) any(x < 0.9))]
+
+    dsBins = apply(counts[, selected_feature], 2, cut, breaks= BREAKS)
+
+    nUniq = apply(dsBins, 2, function(x) { length(unique(x)) })
+
+    ds0 = model.matrix(~ . , as.data.frame(dsBins[,nUniq>1]))
+
+    ds0 = ds0[,-1]
+
+    cat(paste0("<h2>Classifier for ",cell_type,"</h2>"))
+
+    inTypeSource = label_train == cell_type
+
+    xg = xgboost(data = ds0[is_train,] ,
+                 label = inTypeSource,
+                 objective = "binary:logistic",
+                 eta = eta ,
+                 nthread = nthread,
+                 nrounds = nrounds,
+                 verbose = verbose,
+                 gamma = gamma,
+                 max_depth = max_depth,
+                 min_child_weight = min_child_weight)
+
+    inTypeProb = predict(xg, ds0[!is_train, ])
+
+    targetClassification[cell_type,] = inTypeProb
+
+  }
+
+  predict_label = rownames(targetClassification)[apply(targetClassification,2,which.max)]
+  if(threshold > 0){
+    predict_label[which(apply(targetClassification,2,max) < threshold)] = "Unknown"
+  }
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+
+
+#### "worked!" ######
+#### Next tool: #####
+
+#### CHETAH ### important !!!! #####
+
+
+
+Cell_Ann_seurat_res = Cell_Ann_chetah(train,test,label_train,time=T)
+
+
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+
+Cell_Ann_chetah = function(train,
+                  test,
+                  label_train,
+                  time = F){
+  #####
+  library(SingleCellExperiment)
+  library(CHETAH)
+  #####
+  train = as.matrix(train)
+  test = as.matrix(test)
+  ##### to counts ##########
+  train = 2^train-1
+  test = 2^test-1
+  ###########
+  start_time = Sys.time()
+  ###########
+  sce = SingleCellExperiment(assays = list(counts = train),colData = data.frame(celltypes = label_train))
+  sce_test = SingleCellExperiment(assays = list(counts = test))
+
+  sce_test = CHETAHclassifier(input = sce_test, ref_cells = sce)
+
+  predict_label = unname(sce_test$celltype_CHETAH)
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+
+#######
+####### OK !!! then next method !!!! #########
+#######
+
+
+Cell_Ann_seurat_res = Cell_Ann_scid(train,test,label_train,time=T)
+
+scid = function(train,
+                test,
+                label_train,
+                logFC = 0.6,
+                only_pos = FALSE,
+                estimate_weights_from_target = FALSE,
+                time = F){
+
+  #train = log2(train + 1)
+  #test = log2(test + 1)
+
+  start_time = Sys.time()
+
+  scID_output = scid_multiclass(target_gem = test,
+                                reference_gem = train,
+                                reference_clusters = label_train,
+                                logFC = logFC,
+                                only_pos = only_pos,
+                                estimate_weights_from_target = estimate_weights_from_target,
+                                normalize_reference=F)
+
+  predict_label = unname(scID_output$labels)
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+
+####### 
+#######
+Cell_Ann_seurat_res = Cell_Ann_scmapcell(train,test,label_train,time=T)
+
+
+Cell_Ann_scmapcell = function(train,
+                     test,
+                     label_train,
+                     w1 = 10,
+                     w2 = 3,
+                     threshold = 0.5,
+                     time = T,
+                     M = 200,
+                     k = 1
+
+                     ){
+
+  train = as.matrix(train)
+  test = as.matrix(test)
+
+  library(scmap)
+
+  train = 2^train-1
+  test = 2^test-1
+
+  start_time = Sys.time()
+
+  sce = SingleCellExperiment(list(counts = train),colData = data.frame(cell_type1 = label_train))
+  logcounts(sce) = log2(counts(sce) + 1)
+  rowData(sce)$feature_symbol = rownames(sce)
+  sce = selectFeatures(sce)
+
+  sce_test = SingleCellExperiment(list(counts = test))
+  logcounts(sce_test) = log2(counts(sce_test) + 1)
+  rowData(sce_test)$feature_symbol = rownames(sce_test)
+
+  sce = indexCell(sce)
+  scmapCell_results = scmapCell(sce_test,list(sce@metadata$scmap_cell_index),w = w1)
+  scmapCell_clusters = scmapCell2Cluster(scmapCell_results,list(as.character(colData(sce)$cell_type1)),w = w2,threshold = threshold)
+  predict_label = scmapCell_clusters$combined_labs
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+#########################
+#### OK scmapcluster ####
+#########################
+
+Cell_Ann_seurat_res = scmapcluster(train,test,label_train,time=T)
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+Cell_Ann_scmapcluster = function(train,
+                        test,
+                        label_train,
+                        threshold = 0.7,
+                        time = T){
+
+  train = as.matrix(train)
+  test = as.matrix(test)
+
+  train = 2^train-1
+  test = 2^test-1
+
+  start_time = Sys.time()
+
+  sce = SingleCellExperiment(list(counts = train),colData = data.frame(cell_type1 = label_train))
+  logcounts(sce) = log2(counts(sce) + 1)
+  rowData(sce)$feature_symbol = rownames(sce)
+  sce = selectFeatures(sce)
+
+  sce_test = SingleCellExperiment(list(counts = test))
+  logcounts(sce_test) = log2(counts(sce_test) + 1)
+  rowData(sce_test)$feature_symbol = rownames(sce_test)
+
+  sce = indexCluster(sce)
+  scmapCluster_results = scmapCluster(projection = sce_test,index_list = list(sce@metadata$scmap_cluster_index),threshold = threshold)
+  predict_label = scmapCluster_results$combined_labs
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  ####
+  return(predict_label)
+}
+
+
+######## ###########
+######## ###########
+library(SingleR)
+
+Cell_Ann_seurat_res = Cell_Ann_singler(train,test,label_train,time=T)
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+Cell_Ann_singler = function(train,
+                   test,
+                   label_train,
+                   clusters = NULL,
+                   genes = "de",
+                   sd.thresh = 1,
+                   quantile = 0.8,
+                   fine.tune = TRUE,
+                   tune.thresh = 0.05,
+                   prune = TRUE,
+                   assay.type.test = "logcounts",
+                   assay.type.ref = "logcounts",
+                   check.missing=TRUE,
+                   time = F,
+                   min.cells = 0,
+                   min.features = 0,
+                   normalization.method = 'LogNormalize',
+                   scale.factor = 10000,
+                   selection.method = 'vst',
+                   nfeatures = 2000,
+                   mean.cutoff = c(0.1, 8),
+                   dispersion.cutoff = c(1, Inf)){
+
+  #train_object = CreateSeuratObject(train,
+                                    #min.cells = min.cells,
+                                    #min.features = min.features)
+  #test_object = CreateSeuratObject(test,
+                                   #min.cells = min.cells,
+                                   #min.features = min.features)
+  #train_object = NormalizeData(train_object,
+                               #normalization.method = normalization.method,
+                               #scale.factor = scale.factor,
+                               #verbose = F)
+  #test_object = NormalizeData(test_object,
+                              #normalization.method = normalization.method,
+                              #scale.factor = scale.factor,
+                              #verbose = F)
+  #train = as.matrix(GetAssayData(train_object,slot = 'data'))
+  #test = as.matrix(GetAssayData(test_object,slot = 'data'))
+
+  start_time = Sys.time()
+
+  model = SingleR(test = test,
+                  ref = train,
+                  labels = label_train,
+                  clusters = clusters,
+                  genes = genes,
+                  sd.thresh = sd.thresh,
+                  quantile = quantile,
+                  fine.tune = fine.tune,
+                  tune.thresh = tune.thresh,
+                  prune = prune,
+                  assay.type.test = assay.type.test,
+                  assay.type.ref = assay.type.ref,
+                  check.missing = check.missing)
+
+  predict_label = model$labels
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+##### Then next: ################
+##### Then next: ################
+
+SciBet
+#####
+
+
+Cell_Ann_seurat_res = Cell_Ann_singler(train,test,label_train,time=T)
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+
+
+Cell_Ann_scibet = function(train,
+                  test,
+                  label_train,
+                  norm = F,
+                  time = F){
+
+  label_train = as.factor(label_train)
+  library(scibetR)
+
+  start_time = Sys.time()
+
+  exp = cbind(as.data.frame(t(train)),label_train)
+
+  colnames(exp)[ncol(exp)] = 'label'
+
+  test = t(test)
+
+  predict_label = SciBet_R(exp,test)
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+
+
+Cell_Ann_seurat_res = Cell_Ann_singler(train,test,label_train,time=T)
+
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+
+###### ######## scClassify
+######
+
+Next: scClassify
+
+##### First, let us check basic information relating to our pretrained model. ######
+
+
+
+Cell_Ann_scClassify <- function(test = test,
+                  ref = train,
+                  labels = label_train,
+                  time=T,
+                  prob_threshold=0.5
+                  ){
+	#### first train the model ####
+	####
+	trainClass <- suppressWarnings(train_scClassify(exprsMat_train = train,
+                               cellTypes_train = label_train,
+                               selectFeatures = c("limma", "BI"),
+                               returnList = FALSE,
+                               weightsCal = F
+	))
+	####
+	####
+	start_time = Sys.time()
+	pred_res <- suppressWarnings(predict_scClassify(exprsMat_test = test,
+                               trainRes = trainClass,
+                               cellTypes_test = NULL,
+                               algorithm = "WKNN",
+                               features = c("limma","BI"),
+                               similarity = c("pearson", "spearman"),
+                               prob_threshold = prob_threshold,
+                               verbose = TRUE))
+	#####
+	end_time = Sys.time()
+	times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+	if(time){
+    	return(list(predict_label = pred_res$ensembleRes,times = times))
+  	}
+
+	return(pred_res$ensembleRes)
+
+}
+
+
+
+Cell_Ann_seurat_res = Cell_Ann_scClassify(ref=train,test=test,labels=label_train,time=T,prob_threshold=0.7)
+
+label_test$predicted = Cell_Ann_seurat_res$predict_label
+
+########## good! Next! #########
+
+
+########## 
+########## callR ###########
+##########
+########## not finished !!!!! #########
+##########
+##########
+
+
+
+Cell_Ann_callR <- function(test = test,
+                  ref = train,
+                  labels = label_train,
+                  time=T,
+                  prob_threshold=0.5
+                  ){
+	#### first train the model ####
+	#k = which(rowSums(train) == 0)
+	#train_cl = train[-k,]
+	#k = which(rowSums(test) == 0)
+	#test_cl = test[-k,]
+	####
+	trainClass <- suppressWarnings(train_scClassify(exprsMat_train = train,
+                               cellTypes_train = label_train,
+                               selectFeatures = c("limma", "BI"),
+                               returnList = FALSE,
+                               weightsCal = T
+	))
+	####
+	####
+	start_time = Sys.time()
+	pred_res <- suppressWarnings(predict_scClassify(exprsMat_test = test,
+                               trainRes = trainClass,
+                               cellTypes_test = NULL,
+                               algorithm = "WKNN",
+                               features = c("limma","BI"),
+                               similarity = c("pearson", "spearman"),
+                               prob_threshold = prob_threshold,
+                               verbose = TRUE))
+	#####
+	end_time = Sys.time()
+	times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+	if(time){
+    	return(list(predict_label = pred_res$ensembleRes,times = times))
+  	}
+
+	return(pred_res$ensembleRes)
+
+}
+
+####### #######
+####### #######
+
+
+########## 
+########## scMAGIC 先不去做 这个 太复杂 ！！！ ###########
+########## ROSG ########
+########## not finished !!!!! #########
+##########
+##########
+
+summary(as.vector(test))
+summary(as.vector(train))
+
+
+input = read.table(file = 'Tabula_Muris_mouse_example_input/droplet_Lung/droplet_Lung_CellAnn_Step1_Input.txt',header=T)
+test = transfer_our_table_to_dataframe(input)
+summary(as.numeric(test))
+
+input2 = loadRData('Tabula_Muris_mouse_facs_Lung')
+train = as.matrix(GetAssayData(input2,slot='data'))
+label_train = input2$celltype
+
+
+train_raw = as.matrix(GetAssayData(input2,slot='counts'))
+input2 = NormalizeData(input2)
+train = as.matrix(GetAssayData(input2,slot='data'))
+
+
+summary(as.vector(test))
+summary(as.vector(train))
+
+
+Cell_Ann_callR <- function(test = test,ref = train,labels = label_train,time=T){
+	#### library #######
+	train = as.matrix(train)
+  	test = as.matrix(test)
+  	####
+  	train = exp(train)-1
+  	test = exp(test)-1
+	####
+	#### first train the model ####
+	####
+	ref.mtx <- train
+	ref.labels <- label_train
+	exp_sc_mat <- test
+	####
+	output.scMAGIC <- scMAGIC(ref.mtx, ref.mtx, ref.labels, atlas = 'MCA', num_threads = 1)
+	pred.scMAGIC <- output.scMAGIC$scMAGIC.tag
+
+
+
+}
+
+####
+exp_ref_label = NULL
+single_round = F
+identify_unassigned = T
+atlas = NULL
+use_RUVseq = T
+method_findmarker = 'COSG'
+percent_high_exp = 0.7
+num_marker_gene = 100
+cluster_num_pc = 50
+cluster_resolution = 3
+combine_num_cell = NULL
+min_cell = 1
+method1 = 'kendall'
+method2 = NULL
+corr_use_HVGene1 = 2000
+corr_use_HVGene2 = 2000
+threshold = 5
+num_threads = 4
+cluster_assign = F
+simple_output = T
+
+
+
+
+
+
+#### ####
+#### ####
+########## scMAGIC 修改 script ###########
+#### ####
+#### ####
+
+library(scMAGIC)
+library(Seurat)
+#### pink ####
+#### pink ####
+#### pink ####
+
+setwd('C:/Users/plyu3/Desktop/CellAnn_methods_test/')
+
+transfer_our_table_to_dataframe <- function(input){
+  mat = as.matrix(input[,-1])
+  rownames(mat) = input$GENE
+  print(dim(mat))
+  return(mat)
+}
+
+loadRData <- function(fileName){
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+
+######
+input = read.table(file = 'Tabula_Muris_mouse_example_input/droplet_Lung/droplet_Lung_CellAnn_Step1_Input.txt',header=T)
+test = transfer_our_table_to_dataframe(input)
+
+summary(as.numeric(test))
+
+
+input2 = loadRData('Tabula_Muris_mouse_facs_Lung')
+train = as.matrix(GetAssayData(input2,slot='data'))
+
+label_train = input2$celltype
+
+scMAGIC_test = exp(test)-1
+sum(scMAGIC_test[,1])
+
+scMAGIC_train = exp(train)-1
+sum(scMAGIC_train[,1])
+
+#######
+####### we should first correct the training and testing datasets: #######
+#######
+
+library(scMAGIC)
+library(Seurat)
+library(scibetR)
+
+
+
+#######
+####### sums should be 1e6 / 1e5 ##########
+#######
+
+source('scMAGIC.R')
+
+ref.mtx <- scMAGIC_train
+ref.labels <- unname(label_train)
+# load target dataset
+exp_sc_mat <- scMAGIC_test
+
+library(scibet) --> library(scibetR)
+
+source('scMAGIC.R')
+
+output.scMAGIC <- scMAGIC(exp_sc_mat, ref.mtx, ref.labels, atlas = 'MCA', num_threads = 4)
+
+[1] "Start clustering :"
+
+ref.mtx <- scMAGIC_train
+ref.labels <- unname(label_train)
+# load target dataset
+exp_sc_mat <- scMAGIC_test
+
+
+#######
+exp_sc_mat = exp_sc_mat
+exp_ref_mat = ref.mtx
+exp_ref_label = ref.labels
+
+#### 重新开始！
+
+
+
+
+
+single_round = F
+identify_unassigned = T
+atlas = NULL
+use_RUVseq = T
+method_findmarker = 'COSG'
+percent_high_exp = 0.7
+num_marker_gene = 100
+cluster_num_pc = 50
+cluster_resolution = 3
+combine_num_cell = NULL
+min_cell = 1
+method1 = 'kendall'
+method2 = NULL
+corr_use_HVGene1 = 2000
+corr_use_HVGene2 = 2000
+threshold = 5
+num_threads = 4
+cluster_assign = F
+simple_output = T
+
+
+library(parallel, verbose = F)
+library(scibetR)
+library(Matrix)
+
+cutoff.1 = 'default'
+cutoff.2 = 'default'
+mod = ''
+# simple_output = T
+type_ref = 'sc-counts'
+out.group = atlas
+opt_speed = F
+
+#### 多少个cells ####
+
+
+num_cell <- ncol(exp_sc_mat)
+
+#### 27 clusters #####
+num_cell = 27 
+
+combine_num_cell = 1
+
+#    if (is.null(combine_num_cell)) {
+#        if (num_cell > 3000) {
+#            combine_num_cell = 5
+#        } else {
+#            combine_num_cell = 3
+#        }
+#    }
+
+
+# get sum-counts format
+#### process the reference #####
+#### 
+    if (type_ref == 'sc-counts') {
+        print('Sum single cell counts matrix:')
+        label.in <- data.frame(cell_id = colnames(exp_ref_mat),
+                               tag = as.character(exp_ref_label))
+        exp_ref_mat.cell <- exp_ref_mat
+        exp_ref_mat.sum <- generate_ref(exp_ref_mat, label.in, M = 'SUM')
+        exp_ref_mat <- exp_ref_mat.sum
+        type_ref <- 'sum-counts'
+    }
+
+
+# get overlap genes
+    out.overlap <- get_overlap_genes(exp_sc_mat, exp_ref_mat)
+    exp_sc_mat <- out.overlap$exp_sc_mat
+    exp_ref_mat <- out.overlap$exp_ref_mat
+    gene_over <- out.overlap$gene_over
+    # print('Number of overlapped genes:')
+    # print(nrow(exp_sc_mat))
+
+
+##  then redo the overlap genes with altas ####
+
+    if (!is.null(out.group)) {
+        seurat.out.group <- .imoprt_outgroup(out.group = out.group, use_RUVseq = use_RUVseq)
+        # overlap genes
+        gene.overlap <- intersect(gene_over, rownames(seurat.out.group@assays$RNA@counts))
+        exp_sc_mat <- exp_sc_mat[gene.overlap, ]
+        exp_ref_mat <- exp_ref_mat[gene.overlap, ]
+        exp_ref_mat.cell <- exp_ref_mat.cell[gene.overlap,]
+    } else {
+        seurat.out.group <- NULL
+    }
+
+    print('Number of overlapped genes:')
+    print(nrow(exp_sc_mat))
+
+
+#######
+
+
+
+    # cluster analysis
+    # cluster_num_pc = 10
+    print('Start clustering :')
+    list_out.cluster <-
+        .cluster_sc(exp_sc_mat,
+                    cluster_num_pc = cluster_num_pc,
+                    cluster_resolution = cluster_resolution)
+    df.cluster <- list_out.cluster$out.cluster
+    seurat.query <- list_out.cluster$seurat.query
+
+
+#########
+
+ print('Clustering completed!')
+    # speed calculation
+    if (opt_speed) {
+        print('Speed calculation by clustering:')
+        # out.merge <-
+        #     .cluster_increase_speed(exp_sc_mat, df.cluster,
+        #                             combine_num_cell = combine_num_cell, num_threads = num_threads)
+        # df.dict <- out.merge$df.dict
+        df.exp.merge <- out.merge$df.exp.merge
+        df.dict.merge <- unique(df.dict[,c('cluster.level1', 'cluster.merge.id')])
+        rownames(df.dict.merge) <- df.dict.merge$cluster.merge.id
+        df.dict.merge <- df.dict.merge[colnames(df.exp.merge),]
+        min_cell <- ceiling(min_cell / combine_num_cell)
+        # query_set <- as.data.frame(t(df.exp.merge))/1.0
+        # query_set$label <- df.dict.merge$cluster.level1
+    } else {
+        df.exp.merge <- exp_sc_mat
+    }
+
+
+ gene_not0 <- rownames(df.exp.merge)[Matrix::rowSums(df.exp.merge)!=0]
+    df.exp.merge <- df.exp.merge[gene_not0, ]
+    exp_ref_mat <- exp_ref_mat[gene_not0, ]
+    exp_ref_mat.cell <- exp_ref_mat.cell[gene_not0, ]
+
+
+
+ # find markers of cell types in reference
+    topN = num_marker_gene
+    percent.high.exp = percent_high_exp
+    print('Find marker genes of cell types in reference:')
+    out.markers <-
+        .find_markers_first(
+            exp_ref_mat, exp_ref_mat.cell, exp_ref_label,
+            seurat.out.group,
+            type_ref = 'sum-counts',
+            use_RUVseq = use_RUVseq,
+            method_findmarker = method_findmarker, base.topN = topN,
+            percent.high.exp = percent.high.exp, num_threads = 1
+        )
+    list.cell.genes <- out.markers[['list.cell.genes']]
+    list_near_cell <- out.markers[['list_near_cell']]
+    df.exp.merge <- exp_sc_mat
+
+
+
+.find_markers_first
+
+exp_ref_mat
+exp_ref_mat.cell
+exp_ref_label
+seurat.out.group
+type_ref = 'sum-counts'
+use_RUVseq = T
+method_findmarker = 'COSG'
+base.topN = 50
+percent.high.exp = 0.8
+num_threads = 6
+
+
+
+# check parameters
+topN <- base.topN
+if (type_ref == 'sum-counts') {
+        seurat.Ref <- CreateSeuratObject(counts = exp_ref_mat, project = "Ref")
+        seurat.Ref <- NormalizeData(seurat.Ref,normalization.method = "LogNormalize",
+                                    scale.factor = 1e6, verbose = F)
+        exp_ref_mat <- as.matrix(seurat.Ref@assays$RNA@data)
+    }
+
+
+exp_ref_mat <- na.omit(exp_ref_mat)
+cell.ref <- dimnames(exp_ref_mat)[[2]]
+
+
+
+
+
+
+
+
 
 

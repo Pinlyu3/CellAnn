@@ -1,0 +1,384 @@
+#### ROC finally pipline ######3
+####
+
+#### for Mouse datasets ####
+#### first we found the table for compare ########
+
+####
+####
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+
+
+#### on windows ####
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test")
+
+setwd('Tabula_Muris_mouse_data_prepare/')
+
+Mouse_download_table = read.table('Mouse_download_table.txt',header=T)
+
+index = paste(Mouse_download_table$library,Mouse_download_table$Tissue,sep='_')
+
+index = c(index,index[2])
+
+index = sort(index)
+index=data.frame(index)
+
+query1 = c(index$index[1:13])
+
+ref1 = c(index$index[15],index$index[14],index$index[16],index$index[17:26])
+
+dat1 = data.frame(query=query1,ref=ref1)
+dat2 = data.frame(query=ref1,ref=query1)
+
+dat3 = rbind(dat1,dat2)
+
+#####
+dat = dat3
+
+
+#####
+between_tissue_dat = merge(data.frame(query=query1),data.frame(ref=query1))
+k = which(between_tissue_dat$query == between_tissue_dat$ref)
+
+between_tissue_dat = between_tissue_dat[-k,]
+
+index2 = paste(between_tissue_dat$query,between_tissue_dat$ref)
+
+between_tissue_dat =between_tissue_dat[!duplicated(index2),]
+
+between_tissue_dat = between_tissue_dat[1:24,]
+#####
+
+transfer_our_table_to_dataframe <- function(input){
+	mat = as.matrix(input[,-1])
+	rownames(mat) = input$GENE
+	#####
+	print(dim(mat))
+	return(mat)
+}
+input = read.table(file = 'Tabula_Muris_mouse_example_input/droplet_Lung/droplet_Lung_CellAnn_Step1_Input.txt',header=T)
+
+test = transfer_our_table_to_dataframe(input)
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+
+Prepare_sample_list_Tabula_Muris = function(dat){
+	outlist = list()
+	for(i in 1:dim(dat)[1]){
+		query_index=dat$query[i]
+		ref_index=dat$ref[i]
+		print(paste(query_index,ref_index,sep='-->'))
+		#####
+		##### load query ####
+		#####
+		setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test")
+		file = paste('Tabula_Muris_mouse_data_prepare','/',query_index,'/',query_index,'_CellAnn_Step1_Input.txt',sep='')
+		test = transfer_our_table_to_dataframe(read.table(file,header=T))
+		#####
+		file = paste('Tabula_Muris_mouse','_',ref_index,sep='')
+		input2 = loadRData(file)
+		train = as.matrix(GetAssayData(input2,slot='data'))
+		label_train = unname(input2$celltype)
+		##### 
+		file = paste('Tabula_Muris_mouse','_',query_index,sep='')
+		input3 = loadRData(file)
+		query_celltypes = levels(as.factor(input3$celltype))
+		ref_celltypes = levels(as.factor(input2$celltype))
+		######
+		test_groundT = get_test_label(input3,test)
+		#####
+		tmp_list = list(train=train,label_train=label_train,test=test,query_celltypes=query_celltypes,ref_celltypes=ref_celltypes,test_groundT=test_groundT)
+		######
+		tmp_list = list(tmp_list)
+		names(tmp_list) = paste(query_index,ref_index,sep='-->')
+		outlist = c(outlist,tmp_list)
+	}
+	return(outlist)
+}
+
+#####
+sample_list_Tabula_Muris = Prepare_sample_list_Tabula_Muris(dat)
+
+sample_list_Tabula_Muris_between = Prepare_sample_list_Tabula_Muris(dat)
+
+######
+######
+
+length(sample_list_Tabula_Muris)
+
+###### Next runpiple ####
+
+Seurat_time = c()
+
+for(i in 1:length(sample_list_Tabula_Muris)){
+	print(i)
+	train = sample_list_Tabula_Muris[[i]]$train
+	test = sample_list_Tabula_Muris[[i]]$test
+	label_train = sample_list_Tabula_Muris[[i]]$label_train
+	label_test = sample_list_Tabula_Muris[[i]]$test_groundT
+	print(dim(test))
+	res = Run_the_analysis(train,test,label_train,method='seurat',time = T)
+	#######
+	label_test$Seurat_res = res[[1]]
+	#######
+	sample_list_Tabula_Muris[[i]]$test_groundT = label_test
+	Seurat_time = c(Seurat_time,res[[2]])
+}
+
+names(Seurat_time) = names(sample_list_Tabula_Muris)
+
+library(Seurat)
+library(scmap)
+
+Scmapcluster_time = c()
+
+for(i in 1:length(sample_list_Tabula_Muris)){
+	print(i)
+	train = sample_list_Tabula_Muris[[i]]$train
+	test = sample_list_Tabula_Muris[[i]]$test
+	label_train = sample_list_Tabula_Muris[[i]]$label_train
+	label_test = sample_list_Tabula_Muris[[i]]$test_groundT
+	print(dim(test))
+	res = Run_the_analysis(train,test,label_train,method='scmapcluster',time = T)
+	#######
+	label_test$Scmapcluster_res = res[[1]]
+	#######
+	sample_list_Tabula_Muris[[i]]$test_groundT = label_test
+	Scmapcluster_time = c(Scmapcluster_time,res[[2]])
+}
+names(Scmapcluster_time) = names(sample_list_Tabula_Muris)
+
+
+
+
+Run_the_analysis = function(train,
+                           test,
+                           label_train,
+                           method,
+                           ...){
+  ##### gene names #####
+  #####
+  common_gene = intersect(rownames(train),rownames(test))
+
+  if(length(common_gene) < 500){
+    stop('Please convert the gene name of training dataset and testing dataset into the same format!')
+  }
+
+  train = train[common_gene,]
+  test = test[common_gene,]
+  ##### method tags ######
+  method = tolower(method)
+  #####
+  predict_label = switch(method,
+                         callr = Cell_Ann_callR(train,test,label_train,...),
+                         sclearn = sclearn(train,test,label_train,...),
+                         scmapcluster = Cell_Ann_scmapcluster(train,test,label_train,...),
+                         scvi = scvi(train,test,label_train,...),
+                         seurat = Cell_Ann_seurat(train,test,label_train,...),
+                         scpred = Cell_Ann_scpred(train,test,label_train,...),
+                         singler = Cell_Ann_singler(train,test,label_train,...),
+                         scibet = Cell_Ann_scibet(train,test,label_train,...),
+                         chetah = Cell_Ann_chetah(train,test,label_train,...),
+                         scclassify = Cell_Ann_scClassify(train,test,label_train,...),
+                         stop('Please input valid classifier method, check the method description!'))
+
+  return(predict_label)
+}
+
+### Cell_Ann_singler ###
+
+Chetah_time = c()
+
+for(i in 1:length(sample_list_Tabula_Muris)){
+	print(i)
+	train = sample_list_Tabula_Muris[[i]]$train
+	test = sample_list_Tabula_Muris[[i]]$test
+	label_train = sample_list_Tabula_Muris[[i]]$label_train
+	label_test = sample_list_Tabula_Muris[[i]]$test_groundT
+	print(dim(test))
+	res = Run_the_analysis(train,test,label_train,method='chetah',time = T)
+	#######
+	label_test$Chetah_res = res[[1]]
+	#######
+	sample_list_Tabula_Muris[[i]]$test_groundT = label_test
+	Chetah_time = c(Chetah_time,res[[2]])
+}
+
+
+names(Chetah_time) = names(sample_list_Tabula_Muris)
+
+
+
+###### Next #########
+
+Scpred_time = c()
+
+for(i in 1:length(sample_list_Tabula_Muris)){
+	print(i)
+	train = sample_list_Tabula_Muris[[i]]$train
+	test = sample_list_Tabula_Muris[[i]]$test
+	label_train = sample_list_Tabula_Muris[[i]]$label_train
+	label_test = sample_list_Tabula_Muris[[i]]$test_groundT
+	print(dim(test))
+	res = Run_the_analysis(train,test,label_train,method='scpred',time = T)
+	#######
+	label_test$Scpred_res = res[[1]]
+	#######
+	sample_list_Tabula_Muris[[i]]$test_groundT = label_test
+	Scpred_time = c(Scpred_time,res[[2]])
+}
+
+
+names(Scpred_time) = names(sample_list_Tabula_Muris)
+
+
+
+######
+
+
+######
+###### decide the results for the celltypes #############
+######
+
+first: 1st
+second: 2nd
+third: 3rd
+
+
+first: whether the celltype in reference ?
+
+second: whether assigned ?
+
+third: whether correct ?
+
+#######
+
+turth_celltype = 'turth_celltype'
+
+exp_celltype = 'Seurat_res'
+
+NDtag = 'ND'
+
+
+analysis_res <- function(sample_list_Tabula_Muris,turth_celltype,exp_celltype,NDtag){
+
+Total_res = list()
+
+for(i in 1:length(sample_list_Tabula_Muris)){
+	 index = names(sample_list_Tabula_Muris)[i]
+	 print(index)
+	 ######
+	 res_table = sample_list_Tabula_Muris[[i]]$test_groundT
+	 ######
+	 res_table_cl = res_table[,which(colnames(res_table) %in% c(turth_celltype,exp_celltype) == T)]
+	 ######
+	 res_table_cl$class1 = 'ND'
+	 res_table_cl$class2 = 'ND'
+	 ######
+	 tmp_ref_ct = sample_list_Tabula_Muris[[i]]$ref_celltypes
+	 for(j in 1:dim(res_table_cl)[1]){
+	 		print(j)
+	 		######
+	 		res_table_cl_tmp_truth = res_table_cl[j,1]
+	 		res_table_cl_tmp_res = res_table_cl[j,2]
+	 		######
+	 		if(res_table_cl_tmp_truth %in% tmp_ref_ct == T){
+	 				if(res_table_cl_tmp_res == res_table_cl_tmp_truth){
+	 						res_table_cl$class1[j] = 'Correct_Classify'
+	 						res_table_cl$class2[j] = 'Correct'
+	 				}
+	 				if(res_table_cl_tmp_res != res_table_cl_tmp_truth & res_table_cl_tmp_res == NDtag){
+	 						res_table_cl$class1[j] = 'Failed_Classify'
+	 						res_table_cl$class2[j] = 'Wrong'
+	 				}
+	 				if(res_table_cl_tmp_res != res_table_cl_tmp_truth & res_table_cl_tmp_res != NDtag){
+	 						res_table_cl$class1[j] = 'Wrong_Classify'
+	 						res_table_cl$class2[j] = 'Wrong'
+	 				}
+	 		}
+	 		#######
+	 		if(res_table_cl_tmp_truth %in% tmp_ref_ct == F){
+	 				if(res_table_cl_tmp_res != res_table_cl_tmp_truth & res_table_cl_tmp_res == NDtag){
+	 						res_table_cl$class1[j] = 'Correct_unClassify'
+	 						res_table_cl$class2[j] = 'Correct'
+	 				}
+	 				if(res_table_cl_tmp_res != res_table_cl_tmp_truth & res_table_cl_tmp_res != NDtag){
+	 						res_table_cl$class1[j] = 'Wrong_unClassify'
+	 						res_table_cl$class2[j] = 'Wrong'
+	 				}
+
+	 		}
+
+	 }
+	 Total_res = c(Total_res,list(res_table_cl))
+	 #####
+}
+
+names(Total_res) = names(sample_list_Tabula_Muris)
+
+return(Total_res)
+
+}
+
+Seurat_Total_res = analysis_res(sample_list_Tabula_Muris,'turth_celltype','Seurat_res','ND')
+
+Scmapcluster_Total_res = analysis_res(sample_list_Tabula_Muris,'turth_celltype','Scmapcluster_res','unassigned')
+
+Singler_Total_res = analysis_res(sample_list_Tabula_Muris,'turth_celltype','Singler_res','unassigned')
+
+Chetah_Total_res = analysis_res(sample_list_Tabula_Muris,'turth_celltype','Chetah_res','unassigned')
+
+Scpred_Total_res = analysis_res(sample_list_Tabula_Muris,'turth_celltype','Scpred_res','unassigned')
+
+
+##### Then output the res to plots ######
+#####
+
+Output_to_plot = function(Total_res,tag = 'SeuratV4'){
+		######
+		out_list = list()
+		len = length(Total_res)
+		######
+		for(i in 1:len){
+				#####
+				tmp_res = Total_res[[i]]
+				#####
+				tmp_dat = data.frame(align=names(Total_res)[i],tag=tag,class=c('Correct_Classify','Failed_Classify','Wrong_Classify','Correct_unClassify','Wrong_unClassify'),counts=0)
+				tmp_count = table(tmp_res$class1)
+				m = match(names(tmp_count),tmp_dat$class)
+				tmp_dat$counts[m] = as.numeric(tmp_count)
+				out_list = c(out_list,list(tmp_dat))
+		}
+		####
+		out_list = do.call('rbind',out_list)
+		return(out_list)
+}
+
+SeuratV4_out_list_tab = Output_to_plot(Seurat_Total_res,'SeuratV4')
+
+Scmapcluster_out_list_tab = Output_to_plot(Scmapcluster_Total_res,'Scmapcluster')
+
+Singler_out_list_tab = Output_to_plot(Singler_Total_res,'Singler')
+
+Chetah_out_list_tab = Output_to_plot(Chetah_Total_res,'Chetah')
+
+Scpred_out_list_tab = Output_to_plot(Scpred_Total_res,'Scpred')
+
+##### merge all the plot ####
+
+library(ggplot2)
+
+all_tab = rbind(SeuratV4_out_list_tab,Scmapcluster_out_list_tab,Singler_out_list_tab,Chetah_out_list_tab,Scpred_out_list_tab)
+
+ggplot(all_tab,aes(x=align,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + facet_wrap(tag~.,nrow = 5) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+
+
+
