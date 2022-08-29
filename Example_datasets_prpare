@@ -2,7 +2,7 @@
 
 
 Read_data_from_Tabula_Muris <- function(file){
-	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data')
+	setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data')
 	load(file)
 	x = tiss
 	x <- UpdateSeuratObject(object = x)
@@ -13,7 +13,7 @@ Read_data_from_Tabula_Muris <- function(file){
 
 #######
 #######
-
+#######
 
 RNA_process_UMAP_Cluster <- function(x,res){
 	#####
@@ -32,75 +32,93 @@ RNA_process_UMAP_Cluster <- function(x,res){
 
 
 #######
+#######
+#######
 
 #####
 ##### 更改 cluster的编号 而不是 cell types ######
+##### 根据celltypes 生成 cluster ###############
 #####
 
+
+
 RNA_process_Cluster_to_CT <- function(x,tag){
+	x$seurat_clusters = as.numeric(x$seurat_clusters)
 	#### rm NA #####
 	k = which(is.na(x$celltype) == T)
 	if(length(k)>0){x = x[,-k]}
 	####
-	png_file = paste(tag,'_author_annotation','.png',sep='')
-	library(ggplot2)
-	png(png_file,height=4000,width=5000,res=72*12)
-	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
-	dev.off()
-	#### count the Seurat clusters ##########
-	x_cluster = names(table(as.character(x$seurat_clusters)))
-	#### remove cluster < 20 cells ##########
-	x_cluster_rm = table(x$seurat_clusters)
-	k = which(x_cluster_rm > 20)
-	x_cluster_need = names(x_cluster_rm)[k]
+	#png_file = paste(tag,'_author_annotation','.png',sep='')
+	#library(ggplot2)
+	#png(png_file,height=4000,width=5000,res=72*12)
+	#print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	#dev.off()
+	#### see the celltype and seurat_clusters table ####
+	m = match(c('celltype','seurat_clusters'),colnames(x@meta.data))
 	####
-	k = which(x$seurat_clusters %in% x_cluster_need == T)
-	x = x[,k]
+	tab = x@meta.data[,m]
+	allcelltypes = levels(as.factor(tab$celltype))
 	####
-	x_cluster = names(table(as.character(x$seurat_clusters)))
-    x$seurat_clusters = as.character(x$seurat_clusters)
-	for(i in 1:length(x_cluster)){
-		print(i)
-		#### 
-		temp_cluster = x_cluster[i]
-		temp_cluster_index = which(x$seurat_clusters == temp_cluster)
-		#### count cell types in this cluster ####
-        #### 1 ####
-		temp_count_CT = table(x$celltype[temp_cluster_index])
-		#### 2 ####
-		temp_count_CT_ratio = temp_count_CT/sum(temp_count_CT)
-		####
-        print(temp_count_CT)
-        print(temp_count_CT_ratio)
-        index = which((temp_count_CT > 100 | temp_count_CT_ratio > 0.3) & (temp_count_CT > 20))
-        ####
-        ####
-		if(length(index) >0){
-            ######
-            k = which(x$celltype %in% names(index) == F & x$seurat_clusters == temp_cluster)
-            x$seurat_clusters[k] = 'remove'
-            ######
-            new_feature = paste('C',temp_cluster,sep='')
-            ######
-            for(i in 1:length(index)){
-                k = which(x$celltype == names(index)[i] & x$seurat_clusters == temp_cluster)
-                new_feature_sub = paste(new_feature,i,sep='_')
-                x$seurat_clusters[k] = new_feature_sub
-            }
-		}else{
-			##### remove the cluster #####
-			print(paste('Cluster',temp_cluster,'Removed'))
-			k = which(x$seurat_clusters == temp_cluster)
-            x$seurat_clusters[k] = 'remove'
+	align_table = list()
+	for(i in 1:length(allcelltypes)){
+		print(allcelltypes[i])
+		tab_tmp = tab[which(tab$celltype == allcelltypes[i]),]
+		tab_tmp_table = table(as.numeric(tab_tmp$seurat_clusters))
+		print(tab_tmp_table)
+		print(paste('total',sum(tab_tmp_table)))
+		#######
+		tab_tmp_res = tab_tmp
+		rownames(tab_tmp_res) = NULL
+		#######
+		tab_tmp_res$index = paste(tab_tmp_res$celltype,as.numeric(tab_tmp_res$seurat_clusters),sep='@')
+		tab_tmp_res = tab_tmp_res[!duplicated(tab_tmp_res$index),]
+		m = match(tab_tmp_res$seurat_clusters,names(tab_tmp_table))
+		tab_tmp_res$cellcount = as.numeric(tab_tmp_table)[m]
+		#######
+		####### added new clusters #######
+		tab_tmp_res$new_clusters = paste(tab_tmp_res$seurat_clusters,i,sep='_')
+		######## rm the cluster with too few cells #######
+		k = which(tab_tmp_res$cellcount < 15)
+		if(length(k) > 0 & sum(tab_tmp_table) > 50 & length(k) != length(tab_tmp_res$cellcount)){
+			tab_tmp_res = tab_tmp_res[-k,]
 		}
+		if(length(k) > 0 & sum(tab_tmp_table) > 50 & length(k) == length(tab_tmp_res$cellcount)){
+			tab_tmp_res$new_clusters = tab_tmp_res$new_clusters[1]
+		}
+		if(sum(tab_tmp_table) < 50){
+			tab_tmp_res$new_clusters = tab_tmp_res$new_clusters[1]
+		}
+		########
+		align_table = c(align_table,list(tab_tmp_res))
 	}
-    x = subset(x,subset= seurat_clusters != 'remove')
+	align_table = do.call('rbind',align_table)
+	####
+	#### Then replace the seurat clusters ######
+	x$seurat_clusters_new = 'removed'
+	for(i in 1:dim(align_table)[1]){
+		tmp_celltype = align_table$celltype[i]
+		tmp_seurat_clusters = align_table$seurat_clusters[i]
+		k = which(x$celltype == tmp_celltype & x$seurat_clusters == tmp_seurat_clusters)
+		x$seurat_clusters_new[k] = align_table$new_clusters[i]
+	}
+	x = subset(x,subset=seurat_clusters_new != 'removed')
+	x$seurat_clusters_new = paste('C',x$seurat_clusters_new,sep='')
+	####
+	####
+	x$seurat_clusters = x$seurat_clusters_new
+	####
 	#######
 	png_file = paste(tag,'_cluster','.png',sep='')
 	library(ggplot2)
 	png(png_file,height=4000,width=5000,res=72*12)
-	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters_new',label = FALSE, label.size = 2.5, repel = TRUE))
 	dev.off()
+	png_file = paste(tag,'_celltype_author','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#######
 	return(x)
 }
 
@@ -189,4 +207,100 @@ loadRData <- function(fileName){
 
 
 
+CellAnn_Avg_Mat <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	###### normalized back datasets ######
+	if(log == 'log'){
+		data_mat_exp = exp(data_mat)
+		data_mat_exp = data_mat_exp-1
+	}
+	if(log == 'log2'){
+		data_mat_exp = 2^(data_mat)
+		data_mat_exp = data_mat_exp-1
+	}
+	print(paste('Sums:',head(colSums(data_mat_exp[,c(1:5)]))))
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat_exp[,index]
+		######
+		index_sum = rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+
+Avg_mat_to_df <- function(mat){
+	df_1 = data.frame(GENE=rownames(mat))
+	##
+	df_2 = data.frame(mat)
+	##
+	out = cbind(df_1,df_2)
+	##
+	return(out)
+}
+
+
+df_to_mat <- function(df){
+	rowN = df$GENE
+	##
+	mat = as.matrix(df[,-1])
+	##
+	rownames(mat) = rowN
+	##
+	return(mat)
+}
+
+
+
+
+
+Cell_Ann_scmapcluster = function(train,
+                        test,
+                        label_train,
+                        threshold = 0.7,
+                        time = T){
+  train = as.matrix(train)
+  test = as.matrix(test)
+  ######
+  start_time = Sys.time()
+  ######
+  sce = SingleCellExperiment(list(counts = train),colData = data.frame(cell_type1 = label_train))
+  logcounts(sce) = log(counts(sce) + 1)
+  rowData(sce)$feature_symbol = rownames(sce)
+  sce = selectFeatures(sce)
+  ######
+  sce_test = SingleCellExperiment(list(counts = test))
+  logcounts(sce_test) = log(counts(sce_test) + 1)
+  rowData(sce_test)$feature_symbol = rownames(sce_test)
+
+  sce = indexCluster(sce)
+  scmapCluster_results = scmapCluster(projection = sce_test,index_list = list(sce@metadata$scmap_cluster_index),threshold = threshold)
+  predict_label = scmapCluster_results$combined_labs
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  ####
+  return(predict_label)
+}
 

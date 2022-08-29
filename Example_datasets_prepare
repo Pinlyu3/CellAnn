@@ -1,3 +1,4 @@
+#### blue #####
 ####### revise the datasets ########
 #######
 sum(counts) should be 1e6 
@@ -35,7 +36,9 @@ folder: /zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data
 
 #######
 
-conda activate Signac2
+####### conda activate Signac2
+
+conda activate seurat4
 
 R
 
@@ -45,57 +48,7 @@ library(Seurat)
 #######
 #######
 
-
-facs_Bladder <- Read_data_from_Tabula_Muris('facs_Bladder_seurat_tiss.robj')
-facs_Bladder <- RNA_process_UMAP_Cluster(facs_Bladder,res=2)
-facs_Bladder <- RNA_process_Cluster_to_CT(facs_Bladder,'Tabula_Muris_mouse_facs_Bladder')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(facs_Bladder,file='Tabula_Muris_mouse_facs_Bladder')
-
-
-droplet_Bladder <- Read_data_from_Tabula_Muris('droplet_Bladder_seurat_tiss.robj')
-droplet_Bladder <- RNA_process_UMAP_Cluster(droplet_Bladder,res=2)
-droplet_Bladder <- RNA_process_Cluster_to_CT(droplet_Bladder,'Tabula_Muris_mouse_droplet_Bladder')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(droplet_Bladder,file='Tabula_Muris_mouse_droplet_Bladder')
-
-
-droplet_Heart_and_Aorta <- Read_data_from_Tabula_Muris('droplet_Heart_and_Aorta_seurat_tiss.robj')
-droplet_Heart_and_Aorta <- RNA_process_UMAP_Cluster(droplet_Heart_and_Aorta,res=2)
-droplet_Heart_and_Aorta <- RNA_process_Cluster_to_CT(droplet_Heart_and_Aorta,'Tabula_Muris_mouse_droplet_Heart_and_Aorta')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(droplet_Heart_and_Aorta,file='Tabula_Muris_mouse_droplet_Heart_and_Aorta')
-
-
-facs_Aorta <- Read_data_from_Tabula_Muris('facs_Aorta_seurat_tiss.robj')
-facs_Aorta <- RNA_process_UMAP_Cluster(droplet_Heart_and_Aorta,res=2)
-facs_Aorta <- RNA_process_Cluster_to_CT(facs_Aorta,'Tabula_Muris_mouse_facs_Aorta')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(facs_Aorta,file='Tabula_Muris_mouse_facs_Aorta')
-
-
-facs_Heart <- Read_data_from_Tabula_Muris('facs_Heart_seurat_tiss.robj')
-facs_Heart <- RNA_process_UMAP_Cluster(facs_Heart,res = 2)
-facs_Heart <- RNA_process_Cluster_to_CT(facs_Heart,'Tabula_Muris_mouse_facs_Heart')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(facs_Heart,file='Tabula_Muris_mouse_facs_Heart')
-
-
-##### droplet_Kidney facs_Kidney ##########
-droplet_Kidney <- Read_data_from_Tabula_Muris('droplet_Kidney_seurat_tiss.robj')
-droplet_Kidney <- RNA_process_UMAP_Cluster(droplet_Kidney,res = 2)
-droplet_Kidney <- RNA_process_Cluster_to_CT(droplet_Kidney,'Tabula_Muris_mouse_droplet_Kidney')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(droplet_Kidney,file='Tabula_Muris_mouse_droplet_Kidney')
-
-
-
-facs_Kidney <- Read_data_from_Tabula_Muris('facs_Kidney_seurat_tiss.robj')
-facs_Kidney <- RNA_process_UMAP_Cluster(facs_Kidney,res = 2)
-facs_Kidney <- RNA_process_Cluster_to_CT(facs_Kidney,'Tabula_Muris_mouse_facs_Kidney')
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
-save(facs_Kidney,file='Tabula_Muris_mouse_facs_Kidney')
-
+####### on the new server #####
 
 
 Process <- function(tag){
@@ -104,15 +57,31 @@ Process <- function(tag){
 	x <- RNA_process_UMAP_Cluster(x,res = 2)
 	file2 = paste('Tabula_Muris_mouse_',tag,sep='')
 	x <- RNA_process_Cluster_to_CT(x,file2)
-	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+	setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
 	save(x,file=file2)
 }
 
 
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+Process("facs_Bladder")
+Process("droplet_Bladder")
+
+Process("droplet_Heart_and_Aorta")
+Process("facs_Aorta")
+Process("facs_Heart")
+
+Process("droplet_Kidney")
+Process("facs_Kidney")
+
 
 ######### "yellow" #########
 ######### "yellow" #########
 ######### "yellow" #########
+
+
+Process("droplet_Mammary_Gland")
+Process("facs_Mammary_Gland")
 
 ######### droplet_Mammary_Gland facs_Mammary_Gland #########
 Process("droplet_Mammary_Gland")
@@ -157,6 +126,1945 @@ Process("facs_Marrow")
 ######### droplet_Thymus facs_Thymus ############
 Process("droplet_Thymus")
 Process("facs_Thymus")
+
+
+
+
+"green"
+"green"
+"green"
+"green"
+"green"
+
+######### Next we prepare the Human samples: ########
+######### Baron_pancreas ##########
+
+library(Seurat)
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Baron_pancreas')
+h1 <- read.csv("GSM2230757_human1_umifm_counts.csv", header = T)
+rownames(h1) <- h1[,1]
+labels_h1 <- as.character(h1$assigned_cluster)
+h1 <- h1[,4:ncol(h1)]
+h1 <- t(h1)
+# human2
+h2 <- read.csv("GSM2230758_human2_umifm_counts.csv", header = T)
+rownames(h2) <- h2[,1]
+labels_h2 <- as.character(h2$assigned_cluster)
+h2 <- h2[,4:ncol(h2)]
+h2 <- t(h2)
+# human3
+h3 <- read.csv("GSM2230759_human3_umifm_counts.csv", header = T)
+rownames(h3) <- h3[,1]
+labels_h3 <- as.character(h3$assigned_cluster)
+h3 <- h3[,4:ncol(h3)]
+h3 <- t(h3)
+# human4
+h4 <- read.csv("GSM2230760_human4_umifm_counts.csv", header = T)
+rownames(h4) <- h4[,1]
+labels_h4 <- as.character(h4$assigned_cluster)
+h4 <- h4[,4:ncol(h4)]
+h4 <- t(h4)
+# mouse1
+m1 <- read.csv("GSM2230761_mouse1_umifm_counts.csv", header = T)
+rownames(m1) <- m1[,1]
+labels_m1 <- as.character(m1$assigned_cluster)
+m1 <- m1[,4:ncol(m1)]
+m1 <- t(m1)
+# mouse2
+m2 <- read.csv("GSM2230762_mouse2_umifm_counts.csv", header = T)
+rownames(m2) <- m2[,1]
+labels_m2 <- as.character(m2$assigned_cluster)
+m2 <- m2[,4:ncol(m2)]
+m2 <- t(m2)
+# merge data
+h <- cbind(h1, h2, h3, h4)
+m <- cbind(m1, m2)
+######################
+# human
+h_ann <- data.frame(
+    human = c(
+        rep(1, length(labels_h1)), 
+        rep(2, length(labels_h2)), 
+        rep(3, length(labels_h3)), 
+        rep(4, length(labels_h4))
+    ),
+    cell_type1 = c(labels_h1, labels_h2, labels_h3, labels_h4))
+rownames(h_ann) <- colnames(h)
+# mouse
+m_ann <- data.frame(
+    mouse = c(
+        rep(1, length(labels_m1)), 
+        rep(2, length(labels_m2))
+    ),
+    cell_type1 = c(labels_m1, labels_m2))
+rownames(m_ann) <- colnames(m)
+
+Baron_pancreas_seurat_human <- CreateSeuratObject(h)
+m = match(colnames(Baron_pancreas_seurat_human),rownames(h_ann))
+Baron_pancreas_seurat_human$batch = h_ann$human[m]
+Baron_pancreas_seurat_human$celltype = h_ann$cell_type1[m]
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Baron_pancreas_seurat_human,file='Baron_pancreas_seurat_human')
+
+######### Next #############
+
+library(Seurat)
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Xin_pancreas')
+
+Mat = Matrix::readMM('E-MTAB-5061.aggregated_filtered_counts.mtx')
+Col = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_cols')
+Row = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_rows')
+colnames(Mat) = Col$V1
+rownames(Mat) = Row$V1
+
+Xin_pancreas_seurat = CreateSeuratObject(Mat)
+
+Anno <- read.table('ExpDesign-E-MTAB-5061.tsv',sep='\t',header=T)
+dim(Anno)
+k = which(colnames(Xin_pancreas_seurat) %in% Anno$Assay)
+Xin_pancreas_seurat = Xin_pancreas_seurat[,k]
+m = match(colnames(Xin_pancreas_seurat),Anno$Assay)
+Xin_pancreas_seurat$celltype = Anno$"Factor.Value.inferred.cell.type...authors.labels."[m]
+k = which(Xin_pancreas_seurat$celltype=='')
+Xin_pancreas_seurat = Xin_pancreas_seurat[,-k]
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Xin_pancreas_seurat,file='Xin_pancreas_seurat_human')
+
+######### Next: ############
+
+library(Seurat)
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Wang_pancreas')
+
+
+x <- read.table("GSE83139_tbx-v-f-norm-ntv-cpms.csv", header=T, stringsAsFactor=FALSE)
+fDat <- x[,1:7]
+x<-x[,-1*c(1:7)]
+rownames(x) <- fDat$transcript
+rownames(x)[!is.na(fDat$gene)] <- fDat$gene[!is.na(fDat$gene)]
+rownames(fDat) <- rownames(x)
+
+Wang_pancreas_seurat_human = CreateSeuratObject(x)
+
+head(ann1[1:10,])
+head(ann1[11:20,])
+head(ann1[20:30,])
+ann1[30:50,][1:2]
+
+ann1[49,]
+
+ann1 <- read.delim("GSE83139-GPL11154_series_matrix.txt",sep="\n", header=F, stringsAsFactor=FALSE)
+ANN1 <- ann1[c(37,48:49),]
+ANN1 <- sapply(ANN1, function(y){strsplit(y, "\t")})
+ann2 <- read.delim("GSE83139-GPL16791_series_matrix.txt",sep="\n", header=F, stringsAsFactor=FALSE)
+ANN2 <- ann2[c(37,48:49),]
+ANN2 <- sapply(ANN2, function(y){strsplit(y, "\t")})
+# Extract metadata
+qualities <- list()
+for (i in 1:length(ANN1)) {
+        thing1 <- ANN1[[i]]
+        thing1 <- thing1[-1]
+        thing1 <- matrix(unlist(strsplit(thing1, " ")), ncol=2, byrow=T)
+        thing2 <- ANN2[[i]]
+        thing2 <- thing2[-1]
+        thing2 <- matrix(unlist(strsplit(thing2, " ")), ncol=2, byrow=T)
+        qualities[[i]] = c(thing1[,2], thing2[,2])
+}
+pDat <- data.frame(age=qualities[[2]], cell_type1=qualities[[3]])
+rownames(pDat) = paste("reads.", qualities[[1]], sep="")
+# Check cell ordering
+pDat<-pDat[order(rownames(pDat)),]
+if (sum(rownames(pDat)==colnames(x)) < length(colnames(x))) {stop("Cell Ordering Doesn't Match")}
+pDat$cell_type1 <- as.character(pDat$cell_type1)
+pDat$cell_type1[pDat$cell_type1 == "pp"] <- "gamma"
+pDat$cell_type1[pDat$cell_type1 == "duct"] <- "ductal"
+
+Wang_pancreas_seurat_human = CreateSeuratObject(x)
+
+m = match(colnames(Wang_pancreas_seurat_human),rownames(pDat))
+
+Wang_pancreas_seurat_human$batch = pDat$age[m]
+Wang_pancreas_seurat_human$celltype = pDat$cell_type1[m]
+
+k = which(Wang_pancreas_seurat_human$celltype == 'dropped')
+
+Wang_pancreas_seurat_human = Wang_pancreas_seurat_human[,-k]
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Wang_pancreas_seurat_human,file='Wang_pancreas_seurat_human')
+
+
+######### Then Next thing: ############
+library(Seurat)
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Muraro_pancreas')
+
+Muraro_pancreas_seurat = readRDS('local.rds')
+Mat = Muraro_pancreas_seurat[['RNA']]@counts
+Muraro_pancreas_seurat = CreateSeuratObject(Mat)
+Muraro_pancreas_seurat_human <- Muraro_pancreas_seurat
+Muraro_pancreas_seurat = readRDS('local.rds')
+m = match(colnames(Muraro_pancreas_seurat_human),colnames(Muraro_pancreas_seurat))
+Muraro_pancreas_seurat_human$celltype = Muraro_pancreas_seurat$cell_type[m]
+
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Muraro_pancreas_seurat_human,file='Muraro_pancreas_seurat_human')
+
+######### Next ############
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Segerstolpe_pancreas')
+
+d <- read.table("pancreas_refseq_rpkms_counts_3514sc.txt", stringsAsFactors = F)
+d <- d[!duplicated(d[,1]), ]
+rownames(d) <- d[,1]
+d <- d[,3:ncol(d)]
+d <- d[,3515:7028]
+labs <- read.table("labels.txt", stringsAsFactors = F, header = F)
+labs <- as.character(labs)
+colnames(d) <- labs
+d <- d[,order(colnames(d))]
+# remove eGFP row
+d <- d[1:(nrow(d) - 1), ]
+
+### ANNOTATIONS
+ann <- read.table("E-MTAB-5061.sdrf.txt", stringsAsFactors = F, header = T, sep = "\t")
+rownames(ann) <- ann$Extract.Name
+ann <- ann[order(rownames(ann)), ]
+ann <- ann[,7:11]
+colnames(ann) <- c("cell_quality", "cell_type1", "disease", "sex", "age")
+# format cell type names
+ann$cell_type1 <- unlist(lapply(strsplit(ann$cell_type1, " cell"), "[[", 1))
+
+
+Segerstolpe_pancreas_seurat = CreateSeuratObject(d)
+m = match(colnames(Segerstolpe_pancreas_seurat),rownames(ann))
+Segerstolpe_pancreas_seurat$celltype = ann$cell_type1[m]
+k = which(Segerstolpe_pancreas_seurat$celltype == 'not applicable')
+Segerstolpe_pancreas_seurat_human = Segerstolpe_pancreas_seurat[,-k]
+
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Segerstolpe_pancreas_seurat_human,file='Segerstolpe_pancreas_seurat_human')
+
+
+
+######### Next: #####################
+
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Enge_pancreas')
+
+Enge_pancreas_seurat = readRDS('local.rds')
+
+table(Enge_pancreas_seurat$cluster)
+
+Mat = Enge_pancreas_seurat[['RNA']]@data
+
+Enge_pancreas_seurat = CreateSeuratObject(Mat)
+
+Enge_pancreas_seurat_human <- Enge_pancreas_seurat
+
+Enge_pancreas_seurat = readRDS('local.rds')
+
+m = match(colnames(Enge_pancreas_seurat_human),colnames(Enge_pancreas_seurat))
+
+Enge_pancreas_seurat_human$celltype = Enge_pancreas_seurat$cell_type[m]
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+saveRDS(Enge_pancreas_seurat_human,file='Enge_pancreas_seurat_human')
+
+########## Next: #############
+########## OK! ###############
+########## Next we prepare the samples ###############
+
+
+
+Process <- function(file){
+	x <- readRDS(file)
+	x <- RNA_process_UMAP_Cluster(x,res = 2)
+	file2 = paste(file,'_pre',sep='')
+	x <- RNA_process_Cluster_to_CT(x,file2)
+	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
+	save(x,file=file2)
+}
+
+files = list.files()
+
+Process(files[1])
+Process(files[2])
+Process(files[3])
+Process(files[4])
+Process(files[5])
+Process(files[6])
+
+
+
+
+######### Then we processed the cell types!!! #################
+######### blue blue blue #####
+
+
+files = list.files()
+files = files[grep('_pre$',files)]
+
+for(i in 1:length(files)){
+	print(files[i])
+	x = loadRData(files[i])
+	print(table(x$celltype))
+}
+
+
+##### Segerstolpe_pancreas_seurat_human_pre ######
+x = loadRData('Segerstolpe_pancreas_seurat_human_pre')
+x = subset(x,subset = celltype %in% c('co-expression','unclassified','unclassified endocrine') == F)
+table(x$celltype)
+save(x,file='Segerstolpe_pancreas_seurat_human_pre')
+
+##### Xin_pancreas_seurat_human_pre ######
+x = loadRData('Xin_pancreas_seurat_human_pre')
+x = subset(x,subset = celltype %in% c('co-expression cell','unclassified cell','unclassified endocrine cell') == F)
+table(x$celltype)
+save(x,file='Xin_pancreas_seurat_human_pre')
+
+#####  Stellate cells are mesenchymal stem cells ######
+
+r1 = c('acinar','activated_stellate','alpha','beta','delta','ductal','endothelial','gamma','macrophage','quiescent_stellate')
+r2 = c('acinar','PSC','alpha','beta','delta','ductal','endothelial','gamma','macrophage','PSC')
+
+
+Baron_pancreas_seurat_human = loadRData(files[1])
+Baron_pancreas_seurat_human = Replace_celltype_pancreas(Baron_pancreas_seurat_human,r1,r2)
+table(Baron_pancreas_seurat_human$celltype)
+Baron_pancreas_seurat_human = subset(Baron_pancreas_seurat_human,subset=celltype %in% c('schwann','t_cell')==F)
+save(Baron_pancreas_seurat_human,file='Baron_pancreas_seurat_human_pre2')
+
+
+r1 = c('acinar cell','PSC cell','alpha cell','beta cell','delta cell','ductal cell','gamma cell','epsilon cell','mast cell','MHC class II cell')
+r2 = c('acinar','PSC','alpha','beta','delta','ductal','gamma','epsilon','mast','MHC classII')
+
+Xin_pancreas_seurat_human = loadRData(files[6])
+Xin_pancreas_seurat_human = Replace_celltype_pancreas(Xin_pancreas_seurat_human,r1,r2)
+table(Xin_pancreas_seurat_human$celltype)
+Xin_pancreas_seurat_human = Xin_pancreas_seurat_human
+save(Xin_pancreas_seurat_human,file='Xin_pancreas_seurat_human_pre2')
+
+
+
+r1 = c('pancreatic acinar cell','mesenchymal cell','pancreatic A cell','type B pancreatic cell','pancreatic D cell','pancreatic ductal cell','pancreatic PP cell','pancreatic epsilon cell','endothelial cell')
+r2 = c('acinar','PSC','alpha','beta','delta','ductal','gamma','epsilon','endothelial')
+
+Muraro_pancreas_seurat_human = loadRData(files[3])
+Muraro_pancreas_seurat_human = Replace_celltype_pancreas(Muraro_pancreas_seurat_human,r1,r2)
+table(Muraro_pancreas_seurat_human$celltype)
+Muraro_pancreas_seurat_human = subset(Muraro_pancreas_seurat_human,subset=celltype %in% c('pancreatic endocrine cell')==F)
+save(Muraro_pancreas_seurat_human,file='Muraro_pancreas_seurat_human_pre2')
+
+
+
+
+r1 = c('alpha','beta','ductal','acinar','ductal','gamma','mesenchyme')
+r2 = c('alpha','beta','ductal','acinar','ductal','gamma','PSC')
+
+Wang_pancreas_seurat_human = loadRData(files[5])
+Wang_pancreas_seurat_human = Replace_celltype_pancreas(Wang_pancreas_seurat_human,r1,r2)
+table(Wang_pancreas_seurat_human$celltype)
+save(Wang_pancreas_seurat_human,file='Wang_pancreas_seurat_human_pre2')
+
+
+r1 = c('acinar','PSC','alpha','beta','delta','ductal','gamma','MHC class II')
+r2 = c('acinar','PSC','alpha','beta','delta','ductal','gamma','MHC classII')
+Segerstolpe_pancreas_seurat_human = loadRData(files[4])
+Segerstolpe_pancreas_seurat_human = Replace_celltype_pancreas(Segerstolpe_pancreas_seurat_human,r1,r2)
+table(Segerstolpe_pancreas_seurat_human$celltype)
+save(Segerstolpe_pancreas_seurat_human,file='Segerstolpe_pancreas_seurat_human_pre2')
+
+#### 
+
+
+
+#### important !!! ####
+r1 = c('acinar cell','mesenchymal cell','type A enteroendocrine cell','type B pancreatic cell','type D enteroendocrine cell','pancreatic ductal cell','native cell')
+r2 = c('acinar','PSC','alpha','beta','delta','ductal','gamma')
+Enge_pancreas_seurat_human = loadRData(files[2])
+Enge_pancreas_seurat_human = Replace_celltype_pancreas(Enge_pancreas_seurat_human,r1,r2)
+table(Enge_pancreas_seurat_human$celltype)
+save(Segerstolpe_pancreas_seurat_human,file='Enge_pancreas_seurat_human_pre2')
+
+##### good!!!! #########
+##### let us prepare the plots !!!!! #######
+##### ##################
+
+
+#####
+##### first prepare the DEGs for each cell types ##########
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### yellow 
+##### first prepare the DEGs for each cell types ##########
+#####
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare2')
+
+#####
+##### 1 generate cluster results: ########
+#####
+
+files = list.files()
+
+file = files[1]
+
+Process2 <- function(file){
+	library(Seurat)
+	x = loadRData(file)
+	x <- RNA_process_UMAP_Cluster(x,res = 2)
+	file2 = gsub('_pre2','',file)
+	file2 = paste(file2,'_pre3',sep='')
+	x <- RNA_process_Cluster_to_CT(x,file2)
+	setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare2')
+	save(x,file=file2)
+}
+
+for(i in 1:length(files)){
+	print(files[i])
+	Process2(files[i])
+}
+
+#####
+#####
+#####
+
+
+
+
+##### output clusterAvg for each sample ####
+
+files = list.files()
+files = files[grep('pre3$',files)]
+
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_AvgFile = paste(tag,'_ClusterAvg','.txt',sep='')
+	print(new_AvgFile)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	data_mat = data[['RNA']]@data
+	####
+	data_cluster = data$seurat_clusters
+	####
+	avg_mat = CellAnn_Avg_Mat(data_mat,data_cluster)
+	####
+	avg_df = Avg_mat_to_df(avg_mat)
+	####
+	write.table(avg_df,file=new_AvgFile,sep='\t',quote=F,row.names=F)
+}
+
+##### Next ########
+##### generate ground TruthLabel ######
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_File = paste(tag,'_GroundTruthLabel','.txt',sep='')
+	print(new_File)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	clusters = data$seurat_clusters
+	celltypes = data$celltype
+	####
+	dat = data.frame(clusters,celltypes)
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	print(dat)
+	####
+	write.table(dat,file=new_File,sep='\t',quote=F,row.names=F)
+}
+
+
+#####
+##### Next we moved to the winodws computer ######
+#####
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/")
+files = list.files()
+files = files[grep('_pre3$',files)]
+
+#####
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_File = paste(tag,'_DGEs_COSG_100',sep='')
+	print(new_File)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	DEGs_Ref = runDEGs_Ref(data,method='COSG',idents='celltype',num_of_genes = 100)
+	####
+	saveRDS(DEGs_Ref,file=new_File)
+}
+
+#####
+
+
+
+
+
+
+
+
+
+
+
+
+#####
+
+Replace_celltype_pancreas <- function(x,r1,r2){
+    ######
+    x$celltype = as.character(x$celltype)
+    ######
+    for(i in 1:length(r1)){
+        tmp_k = which(x$celltype == r1[i])
+        x$celltype[tmp_k] = r2[i]
+    }
+    print(table(x$celltype))
+    return(x)
+}
+
+
+#########
+######### 'red' here !!!! #####
+#########
+
+!!!! NEXT express calculate the DEGs in each samples: !!!!!!
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+######### generate test datasets for validation: #####
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+
+tmp_file_mat1 = data[['RNA']]@data
+data = NormalizeData(data)
+tmp_file_mat2 = data[['RNA']]@data
+setequal(tmp_file_mat1, tmp_file_mat2)
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_AvgFile = paste(tag,'_ClusterAvg','.txt',sep='')
+	print(new_AvgFile)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	data_mat = data[['RNA']]@data
+	####
+	data_cluster = data$seurat_clusters
+	####
+	avg_mat = CellAnn_Avg_Mat(data_mat,data_cluster)
+	####
+	avg_df = Avg_mat_to_df(avg_mat)
+	####
+	write.table(avg_df,file=new_AvgFile,sep='\t',quote=F,row.names=F)
+}
+
+######## Then generate the ground-truth files ####
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_File = paste(tag,'_GroundTruthLabel','.txt',sep='')
+	print(new_File)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	clusters = data$seurat_clusters
+	celltypes = data$celltype
+	####
+	dat = data.frame(clusters,celltypes)
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	print(dat)
+	####
+	write.table(dat,file=new_File,sep='\t',quote=F,row.names=F)
+}
+
+
+######## Next we call the DEGs !!! ########
+######## We call the reference DEGs !!! ###
+######## Next we install the DEGs #########
+
+
+
+
+######## #########
+######## #########
+
+Seurat_Obj = data
+
+runDEGs_Ref <- function(Seurat_Obj,method='COSG',idents='celltype',num_of_genes = 50){
+	Idents(Seurat_Obj) = idents
+	#######
+	library(COSG)
+	#######
+	if(method == 'COSG'){
+		marker_cosg <- cosg(
+ 				Seurat_Obj,
+ 				groups=c('all'),
+ 				assay='RNA',
+ 				slot='data',
+ 				mu=1,
+ 				n_genes_user=num_of_genes)
+		res = marker_cosg$names
+		all_genes = c()
+		for(j in 1:dim(res)[2]){
+			all_genes = c(all_genes,res[,j])
+			print(length(all_genes))
+		}
+		all_genes = all_genes[!duplicated(all_genes)]
+	}
+	#######
+	#######
+	return(all_genes)
+}
+
+runDEGs_Ref_sub <- function(Seurat_Obj,method='COSG',idents='celltype',num_of_genes = 50){
+	Idents(Seurat_Obj) = idents
+	#######
+	library(COSG)
+	#######
+	if(method == 'COSG'){
+		marker_cosg <- cosg(
+ 				Seurat_Obj,
+ 				groups=c('all'),
+ 				assay='RNA',
+ 				slot='data',
+ 				mu=1,
+ 				n_genes_user=num_of_genes)
+		res = marker_cosg$names
+		all_genes = res
+	}
+	#######
+	#######
+	return(all_genes)
+}
+
+
+##### output the DEGs results ######
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	new_File = paste(tag,'_DGEs_COSG_100',sep='')
+	print(new_File)
+	####
+	data = loadRData(tmp_file)
+	####
+	print(table(data$celltype))
+	#### cluster according to seurat_clusters ####
+	#### data_mat_counts = data[['RNA']]@counts
+	DEGs_Ref = runDEGs_Ref(data,method='COSG',idents='celltype',num_of_genes = 100)
+	####
+	saveRDS(DEGs_Ref,file=new_File)
+}
+
+
+######### yellow #################
+######### yellow #################
+######### yellow #################
+######### yellow #################
+######### yellow #################
+######### yellow #################
+
+
+#########
+######### ref_matrix to subcluster files for each subcluster ###########
+######### solve the problem ！！！ #######
+#########
+ 
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	####
+	data = loadRData(tmp_file)
+	####
+	subset_matrix_res = subset_each_ct(data,resolution=0.8)
+	subset_matrix = subset_matrix_res[[1]]
+	subset_cell = subset_matrix_res[[2]]
+	####
+	new_File = paste(tag,'_SubClusterAvg',sep='')
+	####
+	saveRDS(subset_matrix,file=new_File)
+	#### Then calculate DEGs for sub ######
+	m = match(colnames(data),subset_cell$cells)
+	data$cell_id = subset_cell$cells[m]
+	data$celltype_sub = subset_cell$new_sub_cluster[m]
+	####
+	print(tmp_file)
+	save(data,file=tmp_file)
+	####
+	new_File = paste(tag,'_subDGEs_COSG_50',sep='')
+	print(new_File)
+	####
+	DEGs_Ref_sub = runDEGs_Ref_sub(data,method='COSG',idents='celltype_sub',num_of_genes = 25)
+	####
+	saveRDS(DEGs_Ref_sub,file=new_File)
+}
+
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tag = tmp_file
+	####
+	data = loadRData(tmp_file)
+	####
+	new_File = paste(tag,'_subDGEs_COSG_100',sep='')
+	print(new_File)
+	####
+	DEGs_Ref_sub = runDEGs_Ref_sub(data,method='COSG',idents='celltype_sub',num_of_genes = 100)
+	####
+	saveRDS(DEGs_Ref_sub,file=new_File)
+}
+
+
+##### we need to check the number of cells for each cluster #####
+##### if cells < 25 then we didn't perform any ##################
+
+subset_each_ct <- function(data,resolution){
+	#####
+	matrix_list = list()
+	##### ct ######
+	ct = levels(as.factor(data$celltype))
+	#####
+	cells_list = list()
+	#####
+	for(j in 1:length(ct)){
+		print(ct[j])
+		#######
+		k = which(data$celltype == ct[j])
+		#######
+		#if(length(k) == 0){
+		#	print('small')
+		#	sub_seurat_mat = data[['RNA']]@data
+		#	sub_seurat_mat = sub_seurat_mat[,which(data$celltype == ct[j])]
+		#	data_cluster = paste(ct[j],'@sub0',sep='')
+		#	data_cluster = rep(data_cluster,length(k))
+		#	####
+		#	sub_seurat_avg = CellAnn_Avg_Mat(sub_seurat_mat,data_cluster)
+		#	matrix_list = c(matrix_list,list(sub_seurat_avg))
+
+		#}
+		if(length(k) > 1){
+			print('large')
+			#######
+			sub_seurat = subset(data,subset = celltype == ct[j])
+			sub_seurat = FindNeighbors(sub_seurat)
+			sub_seurat = FindClusters(sub_seurat,resolution=resolution)
+			sub_seurat_mat = sub_seurat[['RNA']]@data
+			data_cluster = sub_seurat$seurat_clusters
+			data_cluster = paste(ct[j],data_cluster,sep='@sub')
+			sub_seurat_avg = CellAnn_Avg_Mat(data_mat=sub_seurat_mat,data_cluster)
+			matrix_list = c(matrix_list,list(sub_seurat_avg))
+			######
+			cells_table = data.frame(cells=colnames(sub_seurat_mat),new_sub_cluster = data_cluster)
+			cells_list = c(cells_list,list(cells_table))
+		}
+	}
+	matrix_list = do.call('cbind',matrix_list)
+	cells_list = do.call('rbind',cells_list)
+	####
+	return(list(matrix_list,cells_list))
+}
+
+#### UMAPs for each #########
+
+for(i in 1:length(files)){
+	print(files[i])
+    x = loadRData(files[i])
+    x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste(files[i],'_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste(files[i],'_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+}
+
+
+
+
+
+##### orange #####
+##### orange #####
+##### orange #####
+##### orange #####
+##### orange #####
+##### orange #####
+
+
+##### output the UMAPs for each test datasets: ######
+files 
+
+for(i in 1:length(files)){
+	print(files[i])
+    x = loadRData(files[i])
+    x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste(files[i],'_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste(files[i],'_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+}
+
+##### thymus #####
+
+
+
+
+
+
+######### first self compare ####################
+######### generate the compare list #############
+######### there are 2 cols in the compare list ############
+######### query and reference #####################
+#########
+files = list.files()
+files = gsub('_DGEs_COSG','',files)
+files = gsub('_GroundTruthLabel.txt','',files)
+files = gsub('_ClusterAvg.txt','',files)
+files = files[!duplicated(files)]
+
+######### files = files ##########
+######### 25 different studies ###
+
+Self_compare_list = data.frame(query=files,ref=files)
+
+dim(Self_compare_list)
+
+compare_df = Self_compare_list
+
+"purple"
+"purple"
+"purple"
+"purple"
+"purple"
+"purple"
+"purple"
+"purple"
+"purple"
+
+###
+### we copy the folder to the windows ####
+###
+
+folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare'
+compare_df = mouse_df_batch
+compare_df = mouse_df_self
+compare_df = human_df_batch[c(-5,-9,-11),]
+Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder,mode='easy'){
+	library(Seurat)
+	##########
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('query:',compare_df[i,1],'  ','ref:',compare_df[i,2],sep=''))
+		TAG = paste('query:',compare_df[i,1],'-->','ref:',compare_df[i,2],sep='')
+		setwd(folder)
+		#######
+		query = compare_df[i,1]
+		ref = compare_df[i,2]
+		####### find the overlap Cell types #######
+		query_seurat = loadRData(query)
+		ref_seurat = loadRData(ref)
+		#######	
+	    query_seurat_ct = levels(as.factor(query_seurat$celltype))
+		ref_seurat_ct = levels(as.factor(ref_seurat$celltype))
+		overlap_ct = query_seurat_ct[which(query_seurat_ct %in% ref_seurat_ct == T)]
+		if(length(overlap_ct) == 0){
+			print('no overlaps!')
+			next
+		}
+		#######
+		query_avg = paste(query,'ClusterAvg.txt',sep='_')
+		query_mat = read.table(query_avg,header=T)
+		query_mat = df_to_mat(query_mat)
+		#######
+		####### Then ref mat and ref label #########
+		ref_mat = ref_seurat[['RNA']]@data
+		ref_label = unname(ref_seurat$celltype)
+		####### head(query_seurat$seurat_clusters)       
+	    if(mode=='easy'){
+			### trim query ####
+			k = which(query_seurat$celltype %in% overlap_ct == T)
+			query_seurat_cluster = levels(as.factor(query_seurat$seurat_clusters[k]))
+			query_mat = query_mat[,which(colnames(query_mat) %in% query_seurat_cluster == T)]
+			### trim ref ####
+			### don't need to change !!!######
+			if(dim(query_mat)[2] < 2){
+				print('too small end for')
+				next
+			}
+		}
+		######
+		if(mode=='hard'){
+			### trim query ####
+			### not trim query !!! ##
+			### trim ref ####
+			k = which(ref_seurat$celltype %in% overlap_ct == T)
+			ref_cl = ref_seurat[,k]
+			ref_mat = ref_cl[['RNA']]@data
+			ref_label = unname(ref_cl$celltype)
+			### don't need to change !!!######
+		}
+		####### prepare the datasets in the folder ###########
+		if(method=='scmap-cluster'){
+			library(scmap)
+			library(SingleCellExperiment)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			res = Cell_Ann_scmapcluster(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time=F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+		}
+		####### first read the query datasets ################
+		if(method == 'CellAnnV1'){
+			#### load the DEGs in the reference: ########
+			ref = compare_df[i,2]
+			ref_DEGs_names = paste(ref,'_DGEs_COSG',sep='')
+			ref_DEGs_input = readRDS(ref_DEGs_names)
+			####
+			####
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			####
+			####
+			res = CellAnnV1(ref_mat_input,query_mat_input,ref_label_input,ref_DEGs_input,threshold = 0.5,time=F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+
+		}
+		####### cellAnnV2 ####################################
+		if(method == 'CellAnnV2'){
+			#### load the DEGs in the reference: ########
+			ref = compare_df[i,2]
+			ref_DEGs_names = paste(ref,'_DGEs_COSG_100',sep='')
+			ref_DEGs_input = readRDS(ref_DEGs_names)
+			####
+			####
+			ref_mat_input_name = paste(ref,'_SubClusterAvg',sep='')
+			ref_mat_input = readRDS(ref_mat_input_name)
+			#####
+			if(mode == 'hard'){
+				ref_mat_input_index = colnames(ref_mat_input)
+				ref_mat_input_index = sapply(strsplit(ref_mat_input_index,split='@'),function(x) x[[1]])
+				k = which(ref_mat_input_index %in% overlap_ct == T)
+				ref_mat_input = ref_mat_input[,k]
+				##### next recalculate DEGs ###########
+				k_ref = which(ref_seurat$celltype %in% overlap_ct == T)
+				ref_seurat_cl = ref_seurat[,k_ref]
+				#####
+				ref_DEGs_input = runDEGs_Ref(ref_seurat_cl,method='COSG',idents='celltype',num_of_genes = 100)
+			}
+			####
+			query_mat_input = query_mat
+			####
+			res = CellAnnV2(ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F)
+			#####
+			res = res[[1]]
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+
+		}
+		if(method == 'CellAnnV4'){
+			#### load the DEGs in the reference: ########
+			ref = compare_df[i,2]
+			ref_DEGs_names = paste(ref,'_DGEs_COSG_100',sep='')
+			ref_DEGs_input = readRDS(ref_DEGs_names)
+			####
+			####
+			ref_mat_input_name = paste(ref,'_SubClusterAvg',sep='')
+			ref_mat_input = readRDS(ref_mat_input_name)
+			#####
+			if(mode == 'hard'){
+				ref_mat_input_index = colnames(ref_mat_input)
+				ref_mat_input_index = sapply(strsplit(ref_mat_input_index,split='@'),function(x) x[[1]])
+				k = which(ref_mat_input_index %in% overlap_ct == T)
+				ref_mat_input = ref_mat_input[,k]
+				##### next recalculate DEGs ###########
+				k_ref = which(ref_seurat$celltype %in% overlap_ct == T)
+				ref_seurat_cl = ref_seurat[,k_ref]
+				#####
+				ref_DEGs_input = runDEGs_Ref(ref_seurat_cl,method='COSG',idents='celltype',num_of_genes = 100)
+			}
+			####
+			####
+			query_mat_input = query_mat
+			####
+			res = CellAnnV2(ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F)
+			#####
+			##### we select the highest correlation ######
+			res_mat = res[[2]]
+			candidate_align = Res_mat_highest_celltype(res_mat)
+			##### then we generate subclusters for these seurat files: #########
+			res_tab = res[[1]]
+			#####
+			for(j in 1:length(candidate_align)){
+				print(j)
+				tmp = candidate_align[[j]]
+				tmp_index = sapply(strsplit(tmp,split='@'),function(x) x[[1]])
+				if(length(levels(as.factor(tmp_index))) == 1){
+					next
+				}else{
+					print('compare!')
+					One_sub_ct = tmp[1]
+					Two_sub_ct = tmp[which(tmp_index != tmp_index[1])[1]]
+					#### then get DEGs #####
+					subDEGs = readRDS(file=paste(ref,'_subDGEs_COSG_100',sep=''))
+					One_sub_ct_DEGs = subDEGs[1:50,which(colnames(subDEGs) == One_sub_ct)]
+					Two_sub_ct_DEGs = subDEGs[1:50,which(colnames(subDEGs) == Two_sub_ct)]
+					#### 
+					Overlap1 = which(One_sub_ct_DEGs %in% Two_sub_ct_DEGs == T)
+					Overlap2 = which(Two_sub_ct_DEGs %in% One_sub_ct_DEGs == T)
+					if(length(Overlap1) > 0){
+						One_sub_ct_DEGs = One_sub_ct_DEGs[-Overlap1]
+						Two_sub_ct_DEGs = Two_sub_ct_DEGs[-Overlap2]
+					}
+					#### then get query mat ####
+					sub_query_mat_input = query_mat_input[,names(candidate_align)[j]]
+					####
+					query_One_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% One_sub_ct_DEGs == T)]
+					query_Two_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% Two_sub_ct_DEGs == T)]
+					#### Wilcoxon-test with tie correction ####
+					res1 = wilcox.test(query_One_sub_ct, query_Two_sub_ct, alternative = "greater")
+					res2 = wilcox.test(query_One_sub_ct, query_Two_sub_ct, alternative = "less")
+					####
+					if(res1$p.value > 0.01 & res2$p.value > 0.01){
+						indexJ = paste(tmp_index[1],tmp_index[which(tmp_index != tmp_index[1])[1]],sep=' & ')
+						res_tab[j] = indexJ
+						
+					}else if(res2$p.value < 0.01){
+						print('Reverse!!!')
+						indexJ = tmp_index[which(tmp_index != tmp_index[1])[1]]
+						res_tab[j] = indexJ
+					}
+				}
+			}
+			#####
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res_tab)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+
+		}
+		if(method == 'CellAnnV5'){
+			#### load the DEGs in the reference: ########
+			ref = compare_df[i,2]
+			ref_DEGs_names = paste(ref,'_DGEs_COSG_100',sep='')
+			ref_DEGs_input = readRDS(ref_DEGs_names)
+			####
+			####
+			ref_mat_input_name = paste(ref,'_SubClusterAvg',sep='')
+			ref_mat_input = readRDS(ref_mat_input_name)
+			#####
+			if(mode == 'hard'){
+				ref_mat_input_index = colnames(ref_mat_input)
+				ref_mat_input_index = sapply(strsplit(ref_mat_input_index,split='@'),function(x) x[[1]])
+				k = which(ref_mat_input_index %in% overlap_ct == T)
+				ref_mat_input = ref_mat_input[,k]
+				##### next recalculate DEGs ###########
+				k_ref = which(ref_seurat$celltype %in% overlap_ct == T)
+				ref_seurat_cl = ref_seurat[,k_ref]
+				#####
+				ref_DEGs_input = runDEGs_Ref(ref_seurat_cl,method='COSG',idents='celltype',num_of_genes = 100)
+			}
+			#### update the ref_DEGs_input ##############
+			####
+			####
+			query_mat_input = query_mat
+			####
+			res = CellAnnV2(ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F)
+			#####
+			##### we select the highest correlation ######
+			res_mat = res[[2]]
+			##### Next we will find a cutoff !!!!! #########
+			res_mat_v = as.vector(res_mat)
+			res_mat_v = sort(res_mat_v,decreasing=T)
+			model <- densityMclust(as.vector(res_mat_v),G=2:4)
+			model_mean = model$parameters$mean
+			if(model$G >2){
+				model_diff = model_mean[model$G] - model_mean[model$G-1]
+				while(model_diff < 0.1 & model$G > 2){
+					model <- densityMclust(as.vector(res_mat_v),G=2:(model$G-1))
+					model_mean = model$parameters$mean
+					model_diff = model_mean[model$G] - model_mean[model$G-1]
+				}
+			}
+			###
+			### summary(model, parameters = TRUE)
+			model_class <- model$classification
+			model_class_max = model_class[which(model_class == max(model_class))]
+			####
+			model_mean = max(model$parameters$mean)
+			if(length(model$parameters$variance$sigmasq)==1){
+				model_var = model$parameters$variance$sigmasq
+			}else{
+				model_var = model$parameters$variance$sigmasq[model$G]
+			}
+			cutoff_Cor = qnorm(0.01,mean=model_mean,sd=sqrt(model_var))
+			#### 
+			####
+			if(cutoff_Cor < 0.3){
+				cutoff_Cor = 0.3
+			}
+			#####
+			#####
+			##### Next we will find a cutoff !!!!! #########
+			candidate_align = Res_mat_highest_celltype(res_mat)
+			##### then we generate subclusters for these seurat files: #########
+			res_tab = res[[1]]
+			res_max = apply(res_mat,1,max)
+			Unassigned_index = which(res_max < cutoff_Cor)
+			#####
+			for(j in 1:length(candidate_align)){
+				print(j)
+				tmp = candidate_align[[j]]
+				tmp_index = sapply(strsplit(tmp,split='@'),function(x) x[[1]])
+				if(length(levels(as.factor(tmp_index))) == 1){
+					next
+				}else{
+					print('compare!')
+					One_sub_ct = tmp[1]
+					Two_sub_ct = tmp[which(tmp_index != tmp_index[1])[1]]
+					#### then get DEGs #####
+					subDEGs = readRDS(file=paste(ref,'_subDGEs_COSG_100',sep=''))
+					One_sub_ct_DEGs = subDEGs[1:50,which(colnames(subDEGs) == One_sub_ct)]
+					Two_sub_ct_DEGs = subDEGs[1:50,which(colnames(subDEGs) == Two_sub_ct)]
+					#### 
+					Overlap1 = which(One_sub_ct_DEGs %in% Two_sub_ct_DEGs == T)
+					Overlap2 = which(Two_sub_ct_DEGs %in% One_sub_ct_DEGs == T)
+					if(length(Overlap1) > 0){
+						One_sub_ct_DEGs = One_sub_ct_DEGs[-Overlap1]
+						Two_sub_ct_DEGs = Two_sub_ct_DEGs[-Overlap2]
+					}
+					#### then get query mat ####
+					sub_query_mat_input = query_mat_input[,names(candidate_align)[j]]
+					####
+					query_One_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% One_sub_ct_DEGs == T)]
+					query_Two_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% Two_sub_ct_DEGs == T)]
+					#### Wilcoxon-test with tie correction ####
+					res1 = wilcox.test(query_One_sub_ct, query_Two_sub_ct, alternative = "greater")
+					res2 = wilcox.test(query_One_sub_ct, query_Two_sub_ct, alternative = "less")
+					####
+					if(res1$p.value > 0.01 & res2$p.value > 0.01){
+						indexJ = paste(tmp_index[1],tmp_index[which(tmp_index != tmp_index[1])[1]],sep=' & ')
+						res_tab[j] = indexJ
+						
+					}else if(res2$p.value < 0.01){
+						print('Reverse!!!')
+						indexJ = tmp_index[which(tmp_index != tmp_index[1])[1]]
+						res_tab[j] = indexJ
+					}
+				}
+			}
+			#####
+			#####
+			res_tab[Unassigned_index] = 'unassigned'
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res_tab)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+
+		}
+		if(method == 'CellAnnV3'){
+			#### load the DEGs in the reference: ########
+			ref = compare_df[i,2]
+			ref_DEGs_names = paste(ref,'_DGEs_COSG_100',sep='')
+			ref_DEGs_input = readRDS(ref_DEGs_names)
+			####
+			####
+			ref_mat_input_name = paste(ref,'_SubClusterAvg',sep='')
+			ref_mat_input = readRDS(ref_mat_input_name)
+			#####
+			if(mode == 'hard'){
+				ref_mat_input_index = colnames(ref_mat_input)
+				ref_mat_input_index = sapply(strsplit(ref_mat_input_index,split='@'),function(x) x[[1]])
+				k = which(ref_mat_input_index %in% overlap_ct == T)
+				ref_mat_input = ref_mat_input[,k]
+				##### next recalculate DEGs ###########
+				k_ref = which(ref_seurat$celltype %in% overlap_ct == T)
+				ref_seurat_cl = ref_seurat[,k_ref]
+				#####
+				ref_DEGs_input = runDEGs_Ref(ref_seurat_cl,method='COSG',idents='celltype',num_of_genes = 100)
+			}
+			####
+			query_mat_input = query_mat
+			####
+			res = CellAnnV3(ref_seurat,query_seurat,ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F)
+			#####
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+
+		}
+	}
+	###########
+	###########
+	return(out_table_list)
+}
+
+
+
+Res_mat_highest_celltype <- function(res_mat,diff_cor=0.05){
+	res_list = list()
+	for(i in 1:dim(res_mat)[1]){
+		res_mat_tmp = res_mat[i,]
+		k = which(res_mat_tmp == max(res_mat_tmp))
+		max_cor = res_mat_tmp[k]
+		##### #######
+		min_cor = max_cor-diff_cor
+		k2 = which(res_mat_tmp <= max_cor & res_mat_tmp >= min_cor)
+		##### #######
+		res_mat_tmp_k2 = res_mat_tmp[k2]
+		res_mat_tmp_k2 = sort(res_mat_tmp_k2,decreasing=T)
+		#####
+		if(length(res_mat_tmp_k2) >3){
+			res_mat_tmp_k2 = res_mat_tmp_k2[1:3]
+		}
+		#####
+		res_list = c(res_list,list(names(res_mat_tmp_k2)))
+	}
+	names(res_list) = rownames(res_mat)
+	return(res_list)
+}
+
+
+
+
+
+#### blue #####
+#### blue #####
+#### blue #####
+#### blue #####
+
+scmap_cluster_res_0.5 = Main_compare_process(compare_df,method='scmap-cluster',folder=folder)
+
+cellAnnV1_res = Main_compare_process(compare_df,method='CellAnnV1',folder=folder)
+cellAnnV2_res = Main_compare_process(compare_df,method='CellAnnV2',folder=folder)
+
+scmap_cluster_res_0.5_v = Visualize_res(scmap_cluster_res_0.5)
+
+cellAnnV1_res_v = Visualize_res(cellAnnV1_res)
+
+cellAnnV2_res_v = Visualize_res(cellAnnV2_res)
+
+
+#### blue pink #####
+#### blue pink #####
+#### blue pink #####
+#### blue pink #####
+
+compare_df_human_pancreas_self = data.frame(query=files,ref=files)
+
+folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Human_Pancreas_test2'
+
+scmap_cluster_res_0.5_human_pancreas = Main_compare_process(compare_df_human_pancreas_self[c(1:4,6),],method='scmap-cluster',folder=folder)
+scmap_cluster_res_0.5_human_pancreas_v = Visualize_res(scmap_cluster_res_0.5_human_pancreas)
+scmap_cluster_res_0.5_human_pancreas_p = Visualize_res_plot(scmap_cluster_res_0.5_human_pancreas_v)
+
+Visualize_res_plot_process2 <- function(x){
+	x$sample2 = gsub('query:','',x$sample)
+	x$sample2 = gsub('ref:','',x$sample2)
+	x$sample2 = gsub('_seurat_human_pre3','',x$sample2)
+	return(x)
+}
+scmap_cluster_res_0.5_human_pancreas_p = Visualize_res_plot_process2(scmap_cluster_res_0.5_human_pancreas_p)
+ggplot(scmap_cluster_res_0.5_human_pancreas_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+cellAnnV2_res_0.5_human_pancreas = Main_compare_process(compare_df_human_pancreas_self,method='CellAnnV2',folder=folder)
+cellAnnV2_res_0.5_human_pancreas_v = Visualize_res(cellAnnV2_res_0.5_human_pancreas)
+cellAnnV2_res_0.5_human_pancreas_p = Visualize_res_plot(cellAnnV2_res_0.5_human_pancreas_v)
+cellAnnV2_res_0.5_human_pancreas_p = Visualize_res_plot_process2(cellAnnV2_res_0.5_human_pancreas_p)
+
+ggplot(cellAnnV2_res_0.5_human_pancreas_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+
+#### Next we measure between studies ##########
+#### for mouse datasets: ######################
+####
+
+#### blue pink green#####
+#### blue pink green#####
+#### blue pink green#####
+#### blue pink green#####
+#### on the windows #####
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/")
+setwd("Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare/")
+
+files = list.files()
+m1 = grep('_DGE',files)
+m2 = grep('_auth',files)
+m3 = grep('_Clu',files)
+m4 = grep('_clu',files)
+m5 = grep('_Ground',files)
+m6 = grep('_Sub',files)
+
+files = files[-c(m1,m2,m3,m4,m5,m6)]
+
+
+#### with batch effect ####
+mouse_df_batch1 <- data.frame(query=files[c(1,2,2,3:12)],ref=files[c(14,13,15,16:25)])
+mouse_df_batch2 <- data.frame(query=files[c(14,13,15,16:25)],ref=files[c(1,2,2,3:12)])
+mouse_df_batch = rbind(mouse_df_batch1,mouse_df_batch2)
+
+folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare'
+Mouse_batch_scmap_cluster_res_0.5 = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='easy')
+Mouse_batch_scmap_cluster_res_0.5_v = Visualize_res(Mouse_batch_scmap_cluster_res_0.5)
+Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot(Mouse_batch_scmap_cluster_res_0.5_v)
+Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot_process(Mouse_batch_scmap_cluster_res_0.5_p)
+
+ggplot(Mouse_batch_scmap_cluster_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare'
+Mouse_batch_scmap_cluster_res_0.5 = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='hard')
+Mouse_batch_scmap_cluster_res_0.5_v = Visualize_res(Mouse_batch_scmap_cluster_res_0.5)
+Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot(Mouse_batch_scmap_cluster_res_0.5_v)
+Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot_process(Mouse_batch_scmap_cluster_res_0.5_p)
+
+ggplot(Mouse_batch_scmap_cluster_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+Mouse_batch_cellAnnV2_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV2',folder=folder,mode='easy')
+Mouse_batch_cellAnnV2_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV2_res_0.5)
+Mouse_batch_cellAnnV2_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV2_res_0.5_v)
+Mouse_batch_cellAnnV2_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV2_res_0.5_p)
+
+ggplot(Mouse_batch_cellAnnV2_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+names(Mouse_batch_cellAnnV2_res_0.5_v)
+
+##### k=23 spleen ######
+
+Mouse_batch_cellAnnV2_res_0.5_v[25]
+
+
+Mouse_batch_cellAnnV3_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV3',folder=folder,mode='easy')
+Mouse_batch_cellAnnV3_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV3_res_0.5)
+Mouse_batch_cellAnnV3_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV3_res_0.5_v)
+Mouse_batch_cellAnnV3_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV3_res_0.5_p)
+
+ggplot(Mouse_batch_cellAnnV3_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+Mouse_batch_cellAnnV4_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV4',folder=folder,mode='easy')
+Mouse_batch_cellAnnV4_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV4_res_0.5)
+Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV4_res_0.5_v)
+Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV4_res_0.5_p)
+
+ggplot(Mouse_batch_cellAnnV4_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+Mouse_batch_cellAnnV4_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV4',folder=folder,mode='hard')
+Mouse_batch_cellAnnV4_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV4_res_0.5)
+Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV4_res_0.5_v)
+Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV4_res_0.5_p)
+
+ggplot(Mouse_batch_cellAnnV4_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+Mouse_batch_cellAnnV5_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV5',folder=folder,mode='hard')
+Mouse_batch_cellAnnV5_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV5_res_0.5)
+Mouse_batch_cellAnnV5_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV5_res_0.5_v)
+Mouse_batch_cellAnnV5_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV5_res_0.5_p)
+
+ggplot(Mouse_batch_cellAnnV5_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+mouse_df_self = data.frame(query=files,ref=files)
+Mouse_self_cellAnnV5_res_0.5 = Main_compare_process(mouse_df_self,method='CellAnnV5',folder=folder,mode='easy')
+Mouse_self_cellAnnV5_res_0.5_v = Visualize_res(Mouse_self_cellAnnV5_res_0.5)
+Mouse_self_cellAnnV5_res_0.5_v = Visualize_res_plot(Mouse_self_cellAnnV5_res_0.5_v)
+Mouse_self_cellAnnV5_res_0.5_v = Visualize_res_plot_process(Mouse_self_cellAnnV5_res_0.5_v)
+
+ggplot(Mouse_self_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+########
+######## Then we set human datasets ######
+########
+'white'
+'green'
+'blue'
+'red'
+'pink'
+'yellow'
+
+
+setwd('C:/Users/plyu3/Desktop/CellAnn_methods_test/')
+setwd('Human_Pancreas_test2/')
+
+files = list.files()
+files = files[grep('pre3$',files)]
+
+human_df_self = data.frame(query=files,ref=files)
+folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Human_Pancreas_test2'
+
+
+human_self_cellAnnV5_res_0.5 = Main_compare_process(human_df_self,method='CellAnnV5',folder=folder,mode='easy')
+human_self_cellAnnV5_res_0.5_v = Visualize_res(human_self_cellAnnV5_res_0.5)
+human_self_cellAnnV5_res_0.5_v = Visualize_res_plot(human_self_cellAnnV5_res_0.5_v)
+human_self_cellAnnV5_res_0.5_v = Visualize_res_plot_process2(human_self_cellAnnV5_res_0.5_v)
+
+ggplot(human_self_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+human_self_scmap_cluster_res_0.5 = Main_compare_process(human_df_self[c(1:4),],method='scmap-cluster',folder=folder,mode='easy')
+human_self_scmap_cluster_res_0.5_v = Visualize_res(human_self_scmap_cluster_res_0.5)
+human_self_scmap_cluster_res_0.5_v = Visualize_res_plot(human_self_scmap_cluster_res_0.5_v)
+human_self_scmap_cluster_res_0.5_v = Visualize_res_plot_process2(human_self_scmap_cluster_res_0.5_v)
+
+ggplot(human_self_scmap_cluster_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+########
+########
+for(i in 1:length(files)){
+	print(files[i])
+	tmp = loadRData(files[i])
+	print(head(VariableFeatures(tmp)))
+}
+
+human_df_batch = data.frame(query=files[c(1,2,1,4,1,5,2,4,2,5,4,5,3,6)],ref=files[c(2,1,4,1,5,1,4,2,5,2,5,4,6,3)])
+
+human_batch_scmap_cluster_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='scmap-cluster',folder=folder,mode='easy')
+human_batch_scmap_cluster_res_0.5_v = Visualize_res(human_batch_scmap_cluster_res_0.5)
+human_batch_scmap_cluster_res_0.5_v = Visualize_res_plot(human_batch_scmap_cluster_res_0.5_v)
+human_batch_scmap_cluster_res_0.5_v = Visualize_res_plot_process2(human_batch_scmap_cluster_res_0.5_v)
+
+ggplot(human_batch_scmap_cluster_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+i = length(human_batch_cellAnnV5_res_0.5_v)
+
+human_batch_cellAnnV5_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='CellAnnV5',folder=folder,mode='easy')
+human_batch_cellAnnV5_res_0.5_v = Visualize_res(human_batch_cellAnnV5_res_0.5)
+human_batch_cellAnnV5_res_0.5_v = Visualize_res_plot(human_batch_cellAnnV5_res_0.5_v)
+human_batch_cellAnnV5_res_0.5_v = Visualize_res_plot_process2(human_batch_cellAnnV5_res_0.5_v)
+
+ggplot(human_batch_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+
+########
+########
+########
+
+Mouse_batch_cellAnnV2_res_0.5_v[[25]]
+Mouse_batch_cellAnnV4_res_0.5[[25]]
+#########
+######### Spleen #############
+#########
+
+######### Then we prepare the single cell markers: ########
+setwd('/zp1/data/plyu3/CellAnn_test_AUC')
+tab = read.table('Single_cell_markers.txt',sep='\t',header=T)
+cellmarker = tab$cellMarker
+######### ???? ####################
+
+#########
+######### first we need to found the globle DEGs ###############
+#########
+
+files
+
+Seurat_list_Mouse = list()
+
+for(i in 1:length(files)){
+	tmp_R = loadRData(files[i])
+	Seurat_list_Mouse = c(Seurat_list_Mouse,list(tmp_R))
+}
+
+mouse_all_merge = Merge_Seurat_List(
+  Seurat_list_Mouse,
+  add.cell.ids = NULL,
+  merge.data = TRUE,
+  project = "SeuratProject"
+)
+
+meta1 = read.table('annotations_droplet.csv',sep=',',header=T)
+meta2 = read.table('annotations_facs.csv',sep=',',header=T)
+
+
+######### 所有差异基因，所有cluster ##########
+#########
+
+i = 4
+
+
+
+
+
+
+#########
+#########
+#########
+
+"red"
+"red"
+"red"
+"red"
+
+####
+#### we should found an example to define the results !!!!! ##########
+####
+####
+
+something wrong with the mouse annotations !!!
+#### check the excel files !!! ################
+
+install.packages("readxl")
+
+setwd('C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/')
+
+files = list.files()
+facs_data <- read.table(files[2],header=T,sep=',')
+
+facs_data_ct = facs_data$cell_ontology_class
+facs_data_ct = levels(as.factor(facs_data_ct))
+
+droplet_data <- read.table(files[1],header=T,sep=',')
+droplet_data_ct = droplet_data$cell_ontology_class
+droplet_data_ct = levels(as.factor(droplet_data_ct))
+
+k = which(facs_data_ct %in% droplet_data_ct == T)
+
+data_ct_overlap = facs_data_ct[k]
+
+data_ct_overlap = data_ct_overlap[-1]
+
+save(data_ct_overlap,file='data_ct_overlap')
+
+#########
+setwd("Tabula_Muris_mouse_data_prepare/")
+files = list.files()
+
+
+##########
+when compare we can trim the celltypes !!!!
+##########
+
+for(i in 1:length(files)){
+	x = loadRData(files[i])
+
+
+}
+
+
+######### files = files ##########
+######### 25 different studies ###
+
+Self_compare_list = data.frame(query=files,ref=files)
+
+dim(Self_compare_list)
+
+compare_df = Self_compare_list
+
+
+#### blue #####
+#### blue #####
+#### blue #####
+#### blue #####
+
+cluster_res = scmap_cluster_res
+
+Visualize_res <- function(cluster_res){
+	plot_res = list()
+	for(i in 1:length(cluster_res)){
+		######
+		names = names(cluster_res)[i]
+		library(stringr)
+		query_names = str_extract(names,"(?<=query:)(.+)(?=-->)")
+		ref_names = str_extract(names,"(?<=ref:)(.+)")
+		print(paste(query_names,ref_names))
+		###### load the query ground truth ######
+		query_truth_file = paste(query_names,'_GroundTruthLabel.txt',sep='')
+		query_truth = read.table(query_truth_file,sep='\t',header=T)
+		###### see the results ######
+		query_res = cluster_res[[i]]
+		###### merge the table ######
+		query_merge = merge(query_res,query_truth)
+		###### check ################
+		if(dim(query_merge)[1] == dim(query_res)[1] & dim(query_truth)[1] == dim(query_res)[1]){
+			print('OK')
+		}else{
+			print('Error')
+		}
+		###### Next calculate the results: ###########
+		###### we need to know the reference ct in the datasets #######
+		ref_truth_file = paste(ref_names,'_GroundTruthLabel.txt',sep='')
+		ref_truth = read.table(ref_truth_file,sep='\t',header=T)
+		ref_ct = ref_truth$ground.truth
+		###### Then calculate the accuracy ############
+		plot_res_sub = Class_results(query_merge,ref_ct,NDtag='unassigned')
+		plot_res = c(plot_res,list(plot_res_sub))
+	}
+	names(plot_res) = names(cluster_res)
+	return(plot_res)
+}
+
+
+Class_results <- function(query_merge,ref_ct,NDtag='unassigned'){
+	####
+	res_table = query_merge
+	res_table$class1 = 'ND'
+	res_table$class2 = 'ND'
+	res_table_cl = res_table
+	####
+	query_res = query_merge$result
+	query_truth = query_merge$ground.truth
+	####
+	for(j in 1:dim(res_table_cl)[1]){
+		query_truth_tmp = query_truth[j]
+		query_res_tmp = query_res[j]
+		if(query_truth_tmp %in% ref_ct == T){
+			if(length(grep(" & ",query_res_tmp))==0){
+				if(query_res_tmp == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+					res_table_cl$class1[j] = 'Failed_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))>0){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				if(query_res_tmp[1] == query_truth_tmp | query_res_tmp[2] == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify_Half'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if((query_res_tmp[1] != query_truth_tmp) & (query_res_tmp[2] != query_truth_tmp)){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+		}
+		if(query_truth_tmp %in% ref_ct == F){
+			if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+				res_table_cl$class1[j] = 'Correct_unClassify'
+	 			res_table_cl$class2[j] = 'Correct'
+			}
+			if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+				res_table_cl$class1[j] = 'Wrong_unClassify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+
+		}
+	}
+	return(res_table_cl)
+}
+
+
+#####
+##### then visulize to plot ######
+#####
+
+Then Output to the plots:
+
+res_v = scmap_cluster_res_0.5_v
+
+Visualize_res_plot <- function(res_v){
+	##### res_v #####
+	res_tab = list()
+	for(i in 1:length(res_v)){
+		#######
+		tmp_table = data.frame(class=c('Correct_Classify','Correct_Classify_Half','Failed_Classify','Wrong_Classify','Correct_unClassify','Wrong_unClassify'),counts=0)
+		#######
+		res_v_sub = res_v[[i]]
+		res_v_subSum = data.frame(table(res_v_sub$class1))
+		m = match(res_v_subSum$Var1,tmp_table$class)
+		tmp_table$counts[m] = res_v_subSum$Freq
+		tmp_table$sample = names(res_v)[i]
+		res_tab = c(res_tab,list(tmp_table))
+	}
+	res_tab = do.call('rbind',res_tab)
+	return(res_tab)
+}
+
+scmap_cluster_res_0.5_p = Visualize_res_plot(scmap_cluster_res_0.5_v)
+cellAnnV1_res_p = Visualize_res_plot(cellAnnV1_res_v)
+cellAnnV2_res_p = Visualize_res_plot(cellAnnV2_res_v)
+
+######### THEN SEE THE PLOT ######
+######### TRY to see !!! #########
+#########
+
+Visualize_res_plot_process <- function(x){
+	x$sample2 = gsub('query:Tabula_Muris_mouse_','',x$sample)
+	x$sample2 = gsub('ref:Tabula_Muris_mouse_','',x$sample2)
+	return(x)
+}
+
+
+library(ggplot2)
+
+scmap_cluster_res_0.5_p = Visualize_res_plot_process(scmap_cluster_res_0.5_p)
+cellAnnV1_res_p = Visualize_res_plot_process(cellAnnV1_res_p)
+cellAnnV2_res_p = Visualize_res_plot_process(cellAnnV2_res_p)
+ggplot(cellAnnV2_res_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+
+
+########
+######## Next is the CellAnnV1 #########
+########
+
+query_mat_input = query_mat_input_log
+ref_mat_input = ref_avg_mat
+
+CellAnnV1 <- function(ref_mat_input,query_mat_input,ref_label_input,ref_DEGs_input,threshold = 0.5,time=F){
+	####### first calculte the average expression for each cluster #############
+	ref_mat_input_log = log(ref_mat_input+1)
+	ref_avg_mat = CellAnn_Avg_Mat(ref_mat_input_log,ref_label_input)
+	#######
+	query_mat_input_log = log(query_mat_input+1)
+	#######
+	genes_overlap = rownames(ref_avg_mat)[which(rownames(ref_avg_mat) %in% rownames(query_mat_input) == T)]
+	DEGs_overlap = ref_DEGs_input[which(ref_DEGs_input %in% genes_overlap == T)]
+	#######
+	cor_res = calculate_Cor(query_mat_input_log,ref_avg_mat,DEGs_overlap)
+	#######
+	####### Then we get the largest cluster name is the final results #######
+	max_index = apply(cor_res,1,function(x) which(x==max(x)))
+	####### return format is a vector of celltype names ######
+	res = colnames(ref_avg_mat)[max_index]
+	return(res)
+}
+
+##### OK !!! ######
+##### Then we will try another 2 datasets !!!! #######
+
+CellAnnV2 <- function(ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F){
+	#######
+	genes_overlap = rownames(ref_mat_input)[which(rownames(ref_mat_input) %in% rownames(query_mat_input) == T)]
+	DEGs_overlap = ref_DEGs_input[which(ref_DEGs_input %in% genes_overlap == T)]
+	#######
+	cor_res = calculate_Cor(query_mat_input,ref_mat_input,DEGs_overlap)
+	#######
+	index = apply(cor_res,1,function(x) which(x==max(x)))
+	####### Then we get the largest cluster name is the final results #######
+	res = colnames(cor_res)[index]
+	res = str_extract(res,"(.+)(?=@sub)")
+	#######
+	####### return format is a vector of celltype names ######
+	return(list(res,cor_res))
+}
+
+##### 看一下V2 原始的 #####
+
+
+##### V3 normalize 没有用 ！！！！ ########
+CellAnnV3 <- function(ref_seurat,query_seurat,ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F){
+	#######
+	genes_overlap = rownames(ref_mat_input)[which(rownames(ref_mat_input) %in% rownames(query_mat_input) == T)]
+	DEGs_overlap = ref_DEGs_input[which(ref_DEGs_input %in% genes_overlap == T)]
+	#######
+	query_mat_input_Norm = query_mat_input[which(rownames(query_mat_input) %in% genes_overlap == T),]
+	ref_mat_input_Norm = ref_mat_input[which(rownames(ref_mat_input) %in% genes_overlap == T),]
+	#######
+	m1 = match(genes_overlap,rownames(query_mat_input_Norm))
+	m2 = match(genes_overlap,rownames(ref_mat_input_Norm))
+	#######
+	query_mat_input_Norm = query_mat_input_Norm[m1,]
+	ref_mat_input_Norm = ref_mat_input_Norm[m2,]
+	#######
+	mtx.in = cbind(query_mat_input_Norm,ref_mat_input_Norm)
+	#######  get stably expression genes both in ref seurat and query seurat #######
+	load("C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare/seurat.out.group")
+	#######
+    gene.constant <- intersect(genes_overlap,VariableFeatures(seurat.out.group))
+    suppressPackageStartupMessages(library(RUVSeq, verbose = F))
+    #######
+    #######
+    seqRUVg <- RUVg(as.matrix(mtx.in), gene.constant, k=1, isLog = T)
+    mtx.combat <- seqRUVg$normalizedCounts
+    #######
+    query_mat_input = mtx.combat[,c(1:dim(query_mat_input_Norm)[2])]
+    ref_mat_input = mtx.combat[,-c(1:dim(query_mat_input_Norm)[2])]
+	#######
+	cor_res = calculate_Cor(query_mat_input,ref_mat_input,DEGs_overlap)
+	#######
+	index = apply(cor_res,1,function(x) which(x==max(x)))
+	index = unlist(index)
+	####### Then we get the largest cluster name is the final results #######
+	res = colnames(cor_res)[as.numeric(index)]
+	res = str_extract(res,"(.+)(?=@sub)")
+	#######
+	####### return format is a vector of celltype names ######
+	return(res)
+}
+
+
+
+
+
+CellAnnV4 <- function(ref_mat_input,query_mat_input,ref_DEGs_input,threshold = 0.5,time=F){
+	#######
+	genes_overlap = rownames(ref_mat_input)[which(rownames(ref_mat_input) %in% rownames(query_mat_input) == T)]
+	DEGs_overlap = ref_DEGs_input[which(ref_DEGs_input %in% genes_overlap == T)]
+	#######
+	cor_res = calculate_Cor(query_mat_input,ref_mat_input,DEGs_overlap)
+	#######
+	####### Then we get the largest cluster name is the final results #######
+	res = c()
+	#######
+	for(index in 1:dim(cor_res)[1]){
+		print(index)
+		cor_res_sub = cor_res[index,]
+		library(mclust)
+		model <- densityMclust(cor_res_sub,G=3:5)
+		model_class <- model$classification
+		model_class_max = model_class[which(model_class == max(model_class))]
+		model_class_other = model_class[which(model_class != max(model_class))]
+		######
+		model_class_max_names = str_extract(names(model_class_max),"(.+)(?=@sub)")
+		model_class_other_names = str_extract(names(model_class_other),"(.+)(?=@sub)")
+		######
+		model_class_max_state = data.frame(table(model_class_max_names))
+		model_class_other_state = data.frame(table(model_class_other_names))
+		######
+		all_names = c(model_class_max_names,model_class_other_names)
+		all_names = all_names[!duplicated(all_names)]
+		all_table = data.frame(CT=all_names,MAX=0,Other=0)
+		######
+		m1 = match(model_class_max_state[,1],all_table$CT)
+		all_table$MAX[m1] = model_class_max_state$Freq
+		m2 = match(model_class_other_state[,1],all_table$CT)
+		all_table$Other[m2] = model_class_other_state$Freq
+		all_table$ratio = (all_table$MAX+0.1)/(all_table$Other+0.1)
+		######
+		k = which(all_table$ratio == max(all_table$ratio))
+		if(length(k) > 1){
+			#### calculate average cor #####
+			cor_res_sub_cl = cor_res_sub
+			names(cor_res_sub_cl) = str_extract(names(cor_res_sub_cl),"(.+)(?=@sub)")
+			cor_res_sub_avg = tapply(as.numeric(cor_res_sub_cl),names(cor_res_sub_cl),mean)
+			m = match(names(cor_res_sub_avg),all_table$CT)
+			all_table$mean[m] = cor_res_sub_avg
+			out = all_table$CT[which(all_table$mean == max(all_table$mean))]
+			out = out[1]
+
+		}else{
+			out = all_table$CT[k]
+		}
+		######
+		res = c(res,out)
+	}
+	#######
+	####### return format is a vector of celltype names ######
+	return(res)
+}
+
+
+
+calculate_Cor <- function(query_mat_input,ref_mat_input,DEGs_overlap){
+	######
+	query_mat_input_cl = query_mat_input[which(rownames(query_mat_input) %in% DEGs_overlap == T),]
+	ref_mat_input_cl = ref_mat_input[which(rownames(ref_mat_input) %in% DEGs_overlap == T),]
+	######
+	m1 = match(DEGs_overlap,rownames(query_mat_input_cl))
+	m2 = match(DEGs_overlap,rownames(ref_mat_input_cl))
+	query_mat_input_cl= query_mat_input_cl[m1,]
+	ref_mat_input_cl= ref_mat_input_cl[m2,]
+	######
+	merge_mat = cbind(query_mat_input_cl,ref_mat_input_cl)
+	Cor_res <- pcaPP::cor.fk(merge_mat)
+	###### split the Cor_res #######
+	query_dim = dim(query_mat_input_cl)[2]
+	ref_dim = dim(ref_mat_input_cl)[2]
+	######
+	Cor_res = Cor_res[,-c(1:query_dim)]
+	Cor_res = Cor_res[c(1:query_dim),]
+	###### Then we output the most largest clusters ########
+	return(Cor_res)
+}
+
+
+
+##########
+##########
+
+
+
 
 
 
@@ -311,135 +2219,6 @@ Human_pancreas
 ######## save methods ######
 ########
 
-/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare
-
-######## datasets ##########
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Xin_pancreas')
-
-library(Seurat)
-
-Mat = Matrix::readMM('E-MTAB-5061.aggregated_filtered_counts.mtx')
-Col = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_cols')
-Row = read.table('E-MTAB-5061.aggregated_filtered_counts.mtx_rows')
-colnames(Mat) = Col$V1
-rownames(Mat) = Row$V1
-
-Xin_pancreas_seurat_human = CreateSeuratObject(Mat)
-Anno <- read.table('ExpDesign-E-MTAB-5061.tsv',sep='\t',header=T)
-k = which(colnames(Xin_pancreas_seurat_human) %in% Anno$Assay)
-Xin_pancreas_seurat_human = Xin_pancreas_seurat_human[,k]
-m = match(colnames(Xin_pancreas_seurat_human),Anno$Assay)
-Xin_pancreas_seurat_human$celltype = Anno$"Factor.Value.inferred.cell.type...authors.labels."[m]
-k = which(Xin_pancreas_seurat_human$celltype=='')
-Xin_pancreas_seurat_human = Xin_pancreas_seurat_human[,-k]
-
-#######
-
-k = which(Xin_pancreas_seurat_human$celltype %in% c('co-expression cell','unclassified cell','unclassified endocrine cell') == T)
-
-Xin_pancreas_seurat_human$celltype = as.character(Xin_pancreas_seurat_human$celltype)
-
-Xin_pancreas_seurat_human = RNA_process_UMAP_Cluster(Xin_pancreas_seurat_human,res = 2)
-Xin_pancreas_seurat_human = RNA_process_Cluster_to_CT(Xin_pancreas_seurat_human,tag='Xin_pancreas_human')
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-save(Xin_pancreas_seurat_human,file='Xin_pancreas_seurat_human')
-
-#######
-#######
-#######
-
-
-######## datasets ##########
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Wang_pancreas')
-
-library(Seurat)
-
-load('Wang_pancreas_seurat_human')
-
-Wang_pancreas_seurat_human = RNA_process_UMAP_Cluster(Wang_pancreas_seurat_human,res = 2)
-Wang_pancreas_seurat_human = RNA_process_Cluster_to_CT(Wang_pancreas_seurat_human,tag='Wang_pancreas_human')
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-save(Wang_pancreas_seurat_human,file='Wang_pancreas_seurat_human')
-
-####### datasets ############
-
-
-library(Seurat)
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Muraro_pancreas')
-
-Muraro_pancreas_seurat_human = readRDS('Muraro_pancreas_seurat_human')
-
-Muraro_pancreas_seurat_human = RNA_process_UMAP_Cluster(Muraro_pancreas_seurat_human,res = 2)
-Muraro_pancreas_seurat_human = RNA_process_Cluster_to_CT(Muraro_pancreas_seurat_human,tag='Muraro_pancreas_human')
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-save(Muraro_pancreas_seurat_human,file='Muraro_pancreas_seurat_human')
-
-
-####### datasets ############
-
-library(Seurat)
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Segerstolpe_pancreas')
-
-Segerstolpe_pancreas_seurat_human = readRDS('Segerstolpe_pancreas_seurat_human')
-
-table(Segerstolpe_pancreas_seurat_human$celltype)
-
-Segerstolpe_pancreas_seurat_human = RNA_process_UMAP_Cluster(Segerstolpe_pancreas_seurat_human,res = 2)
-
-Segerstolpe_pancreas_seurat_human$celltype = as.character(Segerstolpe_pancreas_seurat_human$celltype)
-
-Segerstolpe_pancreas_seurat_human = RNA_process_Cluster_to_CT(Segerstolpe_pancreas_seurat_human,tag='Segerstolpe_pancreas_human')
-
-table(Segerstolpe_pancreas_seurat_human$celltype)
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-save(Segerstolpe_pancreas_seurat_human,file='Segerstolpe_pancreas_seurat_human')
-
-####### datasets ############
-
-library(Seurat)
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Enge_pancreas')
-
-Enge_pancreas_seurat_human = readRDS('Enge_pancreas_seurat_human')
-
-table(Enge_pancreas_seurat_human$celltype)
-
-Enge_pancreas_seurat_human = RNA_process_UMAP_Cluster(Enge_pancreas_seurat_human,res = 2)
-
-Enge_pancreas_seurat_human = RNA_process_Cluster_to_CT(Enge_pancreas_seurat_human,tag='Enge_pancreas_seurat')
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-save(Enge_pancreas_seurat_human,file='Enge_pancreas_seurat_human')
-
-######
-###### datasets #####
-######
-
-library(Seurat)
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Baron_pancreas')
-
-load('Baron_pancreas_seurat_human')
-
-Baron_pancreas_seurat_human = RNA_process_UMAP_Cluster(Baron_pancreas_seurat_human,res = 2)
-
-Baron_pancreas_seurat_human = RNA_process_Cluster_to_CT(Baron_pancreas_seurat_human,tag='Baron_pancreas_seurat')
-
-table(Baron_pancreas_seurat_human$celltype)
-
-setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
-
-save(Baron_pancreas_seurat_human,file='Baron_pancreas_seurat_human')
-
-###### pseudo-bulk ######
-
 #########################
 
 setwd('/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare')
@@ -541,7 +2320,6 @@ for(i in 1:length(index)){
 
 #######################
 
-index
 
 for(i in 1:length(index)){
 	######
@@ -633,8 +2411,6 @@ PBMC_Chromium_V2A <- RNA_process_UMAP_Cluster(PBMC_Chromium_V2A,res=2)
 PBMC_Chromium_V2A <- RNA_process_Cluster_to_CT(PBMC_Chromium_V2A,'PBMC_Chromium_V2A')
 setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
 save(PBMC_Chromium_V2A,file='PBMC_Chromium_V2A')
-
-
 
 
 PBMC_Chromium_V2B <- subset(PBMC_all2,subset = Method %in% c('10x Chromium V2 B') == T)

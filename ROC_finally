@@ -6,9 +6,8 @@
 #### on the windows computer in the office ####
 
 #### first we use Seurat V4 method #####
-####
-#### in the folder CellAnn_methods_test #####
 
+#### in the folder CellAnn_methods_test #####
 
 eagersupervised(train,test,label_train,method='Seurat')
 
