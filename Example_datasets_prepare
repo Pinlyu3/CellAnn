@@ -1572,20 +1572,77 @@ files = files[grep('pre3$',files)]
 human_df_self = data.frame(query=files,ref=files)
 folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Human_Pancreas_test2'
 
+####
+#### 合并所有结果到一个柱子 ######
+####
 
-human_self_cellAnnV5_res_0.5 = Main_compare_process(human_df_self,method='CellAnnV5',folder=folder,mode='easy')
-human_self_cellAnnV5_res_0.5_v = Visualize_res(human_self_cellAnnV5_res_0.5)
-human_self_cellAnnV5_res_0.5_v = Visualize_res_plot(human_self_cellAnnV5_res_0.5_v)
-human_self_cellAnnV5_res_0.5_v = Visualize_res_plot_process2(human_self_cellAnnV5_res_0.5_v)
+human_df_self
+human_df_batch
+mouse_df_self
+mouse_df_batch
 
-ggplot(human_self_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+"purple"
+"purple"
+"purple"
 
-human_self_scmap_cluster_res_0.5 = Main_compare_process(human_df_self[c(1:4),],method='scmap-cluster',folder=folder,mode='easy')
-human_self_scmap_cluster_res_0.5_v = Visualize_res(human_self_scmap_cluster_res_0.5)
-human_self_scmap_cluster_res_0.5_v = Visualize_res_plot(human_self_scmap_cluster_res_0.5_v)
-human_self_scmap_cluster_res_0.5_v = Visualize_res_plot_process2(human_self_scmap_cluster_res_0.5_v)
+"purple"
+"purple"
+"purple"
+### mouse ###
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare")
+folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare"
+NO4_scmap_cluster = Main_compare_process(mouse_df_self,method='scmap-cluster',folder=folder,mode='easy')
+NO5_scmap_cluster = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='easy')
+NO6_scmap_cluster = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='hard')
 
-ggplot(human_self_scmap_cluster_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+NO4_scmap_cluster = Visualize_res(NO4_scmap_cluster)
+NO5_scmap_cluster = Visualize_res(NO5_scmap_cluster)
+NO6_scmap_cluster = Visualize_res(NO6_scmap_cluster)
+
+NO4_scmap_cluster = Visualize_res_plot(NO4_scmap_cluster)
+NO5_scmap_cluster = Visualize_res_plot(NO5_scmap_cluster)
+NO6_scmap_cluster = Visualize_res_plot(NO6_scmap_cluster)
+
+scmap_cluster_merge_all = rbind(NO4_scmap_cluster,NO5_scmap_cluster,NO6_scmap_cluster)
+scmap_cluster_merge_all_res = tapply(scmap_cluster_merge_all$counts,scmap_cluster_merge_all$class,sum)
+scmap_cluster_merge_all_res = data.frame(method='scmap-cluster',counts=scmap_cluster_merge_all_res,class=names(scmap_cluster_merge_all_res))
+
+ggplot(scmap_cluster_merge_all_res,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+### Then we merge the results: #####
+
+NO4_cellAnnV5 = Main_compare_process(mouse_df_self,method='CellAnnV5',folder=folder,mode='easy')
+NO5_cellAnnV5 = Main_compare_process(mouse_df_batch,method='CellAnnV5',folder=folder,mode='easy')
+NO6_cellAnnV5 = Main_compare_process(mouse_df_batch,method='CellAnnV5',folder=folder,mode='hard')
+
+NO4_cellAnnV5 = Visualize_res(NO4_cellAnnV5)
+NO5_cellAnnV5 = Visualize_res(NO5_cellAnnV5)
+NO6_cellAnnV5 = Visualize_res(NO6_cellAnnV5)
+
+NO4_cellAnnV5 = Visualize_res_plot(NO4_cellAnnV5)
+NO5_cellAnnV5 = Visualize_res_plot(NO5_cellAnnV5)
+NO6_cellAnnV5 = Visualize_res_plot(NO6_cellAnnV5)
+
+cellAnnV5_merge_all = rbind(NO4_cellAnnV5,NO5_cellAnnV5,NO6_cellAnnV5)
+cellAnnV5_merge_all_res = tapply(cellAnnV5_merge_all$counts,cellAnnV5_merge_all$class,sum)
+cellAnnV5_merge_all_res = data.frame(method='cellAnnV5',counts=cellAnnV5_merge_all_res,class=names(cellAnnV5_merge_all_res))
+
+
+#### OK let us try a new methods!!!! ######
+
+
+
+
+####yellow####
+####
+
+Then we merge these 2 and plot the results:
+
+combine_all = rbind(scmap_cluster_merge_all_res,cellAnnV5_merge_all_res)
+
+ggplot(combine_all,aes(x=method,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
 
 ########
 ########
@@ -2265,6 +2322,7 @@ for(i in 1:length(index)){
 #####
 #####
 #####
+
 for(i in 1:length(index)){
 	#####
 	tag = index[i]
@@ -2343,7 +2401,6 @@ for(i in 1:length(index)){
 #####
 ##### Next is the Human PMBC datasets: ######
 #####
-
 
 setwd('/zp1/data/plyu3/CellAnn_test_AUC/PBMC_bench')
 
