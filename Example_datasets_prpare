@@ -304,3 +304,55 @@ Cell_Ann_scmapcluster = function(train,
   return(predict_label)
 }
 
+
+Cell_Ann_scpred = function(train,
+                  test,
+                  label_train,
+                  model = 'svmRadial',
+                  reclassify = NULL,
+                  time = F,
+                  threshold = 0.55){
+
+  library(scPred)
+
+  start_time = Sys.time()
+
+  reference = CreateSeuratObject(train)
+  query = CreateSeuratObject(test)
+
+  reference = reference %>%
+    #NormalizeData() %>%
+    FindVariableFeatures() %>%
+    ScaleData() %>%
+    RunPCA() %>%
+    RunUMAP(dims = 1:30)
+
+  ## don't need to normalize ####
+  #query = NormalizeData(query)
+
+  reference$cell_type = label_train
+
+  reference = getFeatureSpace(reference, "cell_type")
+
+  reference = trainModel(reference,
+                         model = model,
+                         reclassify = reclassify)
+
+  query = scPredict(query,
+                    reference,
+                    threshold = threshold)
+
+  predict_label = unname(query$scpred_prediction)
+
+  end_time = Sys.time()
+
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+
+  return(predict_label)
+
+}
+

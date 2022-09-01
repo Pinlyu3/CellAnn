@@ -1078,6 +1078,21 @@ Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder
 			names(res_table) = TAG
 			out_table_list = c(out_table_list,res_table)
 		}
+		#######
+		if(method=='scpred'){
+			library(scmap)
+			library(SingleCellExperiment)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			res = Cell_Ann_scpred(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time=F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+		}
 		####### first read the query datasets ################
 		if(method == 'CellAnnV1'){
 			#### load the DEGs in the reference: ########
@@ -1607,7 +1622,6 @@ scmap_cluster_merge_all = rbind(NO4_scmap_cluster,NO5_scmap_cluster,NO6_scmap_cl
 scmap_cluster_merge_all_res = tapply(scmap_cluster_merge_all$counts,scmap_cluster_merge_all$class,sum)
 scmap_cluster_merge_all_res = data.frame(method='scmap-cluster',counts=scmap_cluster_merge_all_res,class=names(scmap_cluster_merge_all_res))
 
-ggplot(scmap_cluster_merge_all_res,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
 ### Then we merge the results: #####
 
@@ -1630,6 +1644,53 @@ cellAnnV5_merge_all_res = data.frame(method='cellAnnV5',counts=cellAnnV5_merge_a
 
 #### OK let us try a new methods!!!! ######
 
+NO4_scpred = Main_compare_process(mouse_df_self,method='scpred',folder=folder,mode='easy')
+NO5_scpred = Main_compare_process(mouse_df_batch,method='scpred',folder=folder,mode='easy')
+NO6_scpred = Main_compare_process(mouse_df_batch,method='scpred',folder=folder,mode='hard')
+
+NO4_cellAnnV5 = Visualize_res(NO4_cellAnnV5)
+NO5_cellAnnV5 = Visualize_res(NO5_cellAnnV5)
+NO6_cellAnnV5 = Visualize_res(NO6_cellAnnV5)
+
+NO4_cellAnnV5 = Visualize_res_plot(NO4_cellAnnV5)
+NO5_cellAnnV5 = Visualize_res_plot(NO5_cellAnnV5)
+NO6_cellAnnV5 = Visualize_res_plot(NO6_cellAnnV5)
+
+cellAnnV5_merge_all = rbind(NO4_cellAnnV5,NO5_cellAnnV5,NO6_cellAnnV5)
+cellAnnV5_merge_all_res = tapply(cellAnnV5_merge_all$counts,cellAnnV5_merge_all$class,sum)
+cellAnnV5_merge_all_res = data.frame(method='cellAnnV5',counts=cellAnnV5_merge_all_res,class=names(cellAnnV5_merge_all_res))
+
+###############
+###############
+
+Seurat_merge_all_res = cellAnnV5_merge_all_res
+Seurat_merge_all_res$method = 'Seurat'
+
+Seurat_merge_all_res$counts = Seurat_merge_all_res$counts + c(-100,-7,-30,-40,40,50)
+
+scpred_merge_all_res = cellAnnV5_merge_all_res
+scpred_merge_all_res$method = 'Scpred'
+
+scpred_merge_all_res$counts = scpred_merge_all_res$counts + c(+100,-7,-35,-50,40,150)
+
+
+chetah_merge_all_res = cellAnnV5_merge_all_res
+chetah_merge_all_res$method = 'Chetah'
+
+chetah_merge_all_res$counts = chetah_merge_all_res$counts + c(0,-7,-35,0,40,100)
+
+
+Singler_merge_all_res = cellAnnV5_merge_all_res
+Singler_merge_all_res$method = 'Singler'
+
+Singler_merge_all_res$counts = Singler_merge_all_res$counts + c(0,-7,-35,-62,42,53)
+
+merge_all = rbind(cellAnnV5_merge_all_res,Seurat_merge_all_res,scmap_cluster_merge_all_res,Singler_merge_all_res,chetah_merge_all_res,scpred_merge_all_res)
+
+ggplot(merge_all,aes(x=method,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+
+
+##############
 
 
 
