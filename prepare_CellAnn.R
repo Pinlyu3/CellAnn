@@ -56,8 +56,13 @@ prepare_CellAnn <- function(seurat_obj,folder=getwd(),sample_name='Human_pancrea
 	########### then we add clusters ##########
 	m = match(dim_table_merge$cell,rownames(Meta))
 	dim_table_merge$cluster = Meta[m,k2]
+	############ resort dim table #######
+	index = c("cell","cluster","dim1","dim2")
+	m1 = match(colnames(dim_table_merge),index)
+	dim_table_merge = dim_table_merge[,m1]
 	############
 	write.table(dim_table_merge,file=Output_Step4_name,sep='\t',quote=F,row.names=F)
+	############
 	############
 	print("Done!")
 	print(paste(Output_Step1_name,"are in",folder))
