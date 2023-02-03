@@ -208,11 +208,9 @@ write.csv(dat_sheet,file='database_sheet.csv',row.names=F,quote=F)
 
 dat_sheet = read.table('database_sheet.csv',sep=',',header=T)
 
-####### ################################
 ####### OK! added the datasets! ########
 ####### view the brower: ###############
 ####### OK !!!! ########################
-####### ################################
 
 Next the presudo-bulk data for Human liver:
 

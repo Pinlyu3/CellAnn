@@ -48,8 +48,9 @@ index2 = paste(between_tissue_dat$query,between_tissue_dat$ref)
 between_tissue_dat =between_tissue_dat[!duplicated(index2),]
 
 between_tissue_dat = between_tissue_dat[1:24,]
-#####
 
+#####
+######
 transfer_our_table_to_dataframe <- function(input){
 	mat = as.matrix(input[,-1])
 	rownames(mat) = input$GENE

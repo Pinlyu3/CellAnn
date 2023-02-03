@@ -667,14 +667,61 @@ nohup curl -o local.rds "https://corpora-data-prod.s3.amazonaws.com/b47cf863-d90
 #### Next ####
 ####
 
+ssh [plyu3@omb2.onc.jhmi.edu](mailto:plyu3@omb2.onc.jhmi.edu)
+
+plyu3 U[9C20&&
+
+cd /zp1/data/plyu3/CellXGene_Data
+mkdir PMID_36266547
+cd PMID_36266547
+
+nohup curl -o local.rds "https://corpora-data-prod.s3.amazonaws.com/dbb4e1ed-d820-4e83-981f-88ef7eb55a35/local.rds?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIATLYQ5N5XVFBNIONN%2F20221031%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20221031T223004Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEJT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC3lj%2FABVrzvwGKzKGolfcpTHx9iuby%2BGp7V0GQ6IJ%2FsAIhAMDT9QW23wsCEzWXyHKMaOA7VzXQ9kJY9s%2BkqUMfnYbiKusDCH0QARoMMjMxNDI2ODQ2NTc1Igzc804B2trEtxAtzn0qyAOG9vqcoskCPwr3be7VlNmbkQ9lC8zU2OxFzwxG8H89Cmol0xyVSzUllQ5FZfuFECMzvydj109n9BQzGxz8dcyLIcGc486ED8wDVI7fRODoIoNTIhgSykjFb9fWjjkVZafeKI1RvMHFbjDi8CMAwl578hanzJf0CG6JP%2BFVlcZF6%2BJLV8mPkTzFEyKhAaLzLHRVi%2Bqt0xNOkR4Oszei9SXNl6O6OlORB4gX8IgdE%2FY1NPhWW9JhKKNdogr6u9SbxKJsGp7PGwpfiL0%2BIKYrCRC9FWJa1UVf4HtYfXPr77yGZ%2FMvbL%2BkxyodD7NeW1nZ2jK%2FrG19Zl3HmvwIHa89K0q5K5tqyQPY14WWjov%2BNXLmMuKcQFQhlfXbyQZ6XMNlM95irsKHVsbzqkUnlrnoZYSQ720aijyd5Lz4uNcVpiyDMYZ8NDFZaYZ99RHlF8a4GRNG1vAiuIJZiGSYj7W2cP8F%2Bps871GS%2FZFf73t5FqwGSuyOgSxY0U6UFoAW7GSumsGkhGneJHG9uzpjvVrQJvAjp43AQhGrplX8SfnyeqpJmH%2FNw1eW2rsMW6TjVZQb08qFZa%2BlHicBaONM5z1HgUprgskMcG3PeGQwidOAmwY6pAFQ5eKyplF99ZG1iD%2F1F4Ct0JAAxOeNlcwMkf5eWSjyE%2BZd6BLugzfZpeuo%2Fu8GSd%2BJnspgedJq4ch5RbgbIuXPvhC3mmK5BR2GDr1oXgLANVuMEskfMs6DhQ%2Fed%2FWangD7vBBWQOL2OcrCKM9kqmnAQ872NDX9HW7nplAjAL2S25GpWeK0VI%2Bk%2BTi2zGeZXi3RCy9niW%2BCqzC5At5Iyf2%2BAQck2Q%3D%3D&X-Amz-Signature=c2423ace6a4418cec05804773650a28a6a4abfda52dfa06a38c81e3b83ca7b3b"  &
+
+
+
+nohup  &
+nohup  &
+nohup  &
+nohup  &
+nohup  &
+nohup  &
 
 ####
 #### The next thing is: ####
 ####
 
-####
+folder = "Rahul_Satija_Azimuth_meta_analysis"
+
+
+cd /zp1/data/plyu3/CellXGene_Data
+mkdir Rahul_Satija_Azimuth_meta_analysis
+cd Rahul_Satija_Azimuth_meta_analysis
+
+nohup curl -o local.rds "https://corpora-data-prod.s3.amazonaws.com/dbb4e1ed-d820-4e83-981f-88ef7eb55a35/local.rds?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIATLYQ5N5XVFBNIONN%2F20221031%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20221031T233919Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEJT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC3lj%2FABVrzvwGKzKGolfcpTHx9iuby%2BGp7V0GQ6IJ%2FsAIhAMDT9QW23wsCEzWXyHKMaOA7VzXQ9kJY9s%2BkqUMfnYbiKusDCH0QARoMMjMxNDI2ODQ2NTc1Igzc804B2trEtxAtzn0qyAOG9vqcoskCPwr3be7VlNmbkQ9lC8zU2OxFzwxG8H89Cmol0xyVSzUllQ5FZfuFECMzvydj109n9BQzGxz8dcyLIcGc486ED8wDVI7fRODoIoNTIhgSykjFb9fWjjkVZafeKI1RvMHFbjDi8CMAwl578hanzJf0CG6JP%2BFVlcZF6%2BJLV8mPkTzFEyKhAaLzLHRVi%2Bqt0xNOkR4Oszei9SXNl6O6OlORB4gX8IgdE%2FY1NPhWW9JhKKNdogr6u9SbxKJsGp7PGwpfiL0%2BIKYrCRC9FWJa1UVf4HtYfXPr77yGZ%2FMvbL%2BkxyodD7NeW1nZ2jK%2FrG19Zl3HmvwIHa89K0q5K5tqyQPY14WWjov%2BNXLmMuKcQFQhlfXbyQZ6XMNlM95irsKHVsbzqkUnlrnoZYSQ720aijyd5Lz4uNcVpiyDMYZ8NDFZaYZ99RHlF8a4GRNG1vAiuIJZiGSYj7W2cP8F%2Bps871GS%2FZFf73t5FqwGSuyOgSxY0U6UFoAW7GSumsGkhGneJHG9uzpjvVrQJvAjp43AQhGrplX8SfnyeqpJmH%2FNw1eW2rsMW6TjVZQb08qFZa%2BlHicBaONM5z1HgUprgskMcG3PeGQwidOAmwY6pAFQ5eKyplF99ZG1iD%2F1F4Ct0JAAxOeNlcwMkf5eWSjyE%2BZd6BLugzfZpeuo%2Fu8GSd%2BJnspgedJq4ch5RbgbIuXPvhC3mmK5BR2GDr1oXgLANVuMEskfMs6DhQ%2Fed%2FWangD7vBBWQOL2OcrCKM9kqmnAQ872NDX9HW7nplAjAL2S25GpWeK0VI%2Bk%2BTi2zGeZXi3RCy9niW%2BCqzC5At5Iyf2%2BAQck2Q%3D%3D&X-Amz-Signature=d63d10e00e940d3db72a03798cb116073909b8c8e7cd0513c77fb5953605727e" &
+
+#### R functions not worked!!! #######
 #### selected database #####
-####
+
+
+
+cd /zp1/data/plyu3/CellXGene_Data
+mkdir PMID_36113773_human
+cd PMID_36113773_human
+
+nohup curl -o local.rds "https://corpora-data-prod.s3.amazonaws.com/ca9e7e2b-6c82-4b79-92c9-47d306d5d409/local.rds?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIATLYQ5N5X7M57IW4Q%2F20221031%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20221031T235729Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEJf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDdjAQamdJCp7HJcAfD6MMsx3%2BY2mpp13p53S4rN9INDAiEA2h9%2FzFtVRSGeu2q9wIKz7Hfs999h4kpnKPWZkvFfzBoq9AMIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgwyMzE0MjY4NDY1NzUiDA1tljakWGuxQffscCrIA%2Fd8rer%2B24n2TztG4TZO%2FYmiB1yCNHfJQUSuPAtXFVbjBQCC7CkyPwJYrtuKOPM59YNvMbFIqTJ1N66zXDwi8q3a1nJNRKcfX7cYPujKWQwtEqAlhBWruNRBFXapxbBeSSQt%2BSa5KfKdvf2R%2BCqovVb2Sd9kuDj%2Bgt0Bo4lSmPeB2NNNFqJrUuF5vjR8pGyXw3zKtaEfjDQu%2FXtKLgjcPAGGkIX9vQYcQ5v0toeAFQomBEFcixrZhxGfykIsiQ6ABxEAyjtJWrisPGl%2FWW0wp%2FnAVMd9Kv9pydnEec8knpeKZdwy2CS6xZYtNxf2%2BDdUw65CMJqzyboz8uSTuBjkuCn9NzrkcIwJviKWkFO2vofDGCnd17dPraehZlwQlhMSMNdOFNNF47dhXBuFgm5aqGeOTS7Y7Jkb0M5h4SGp84ogm6M86SjiUvxyRs5Kl670bE4eswJV8gl9gPh1aHXvnbalFQqV4xHsebQaXlHK9Jqo0U8YTcWZXZhAlXBXRfQzNj9bWdSytLBsCmJeZ4AcObAZij%2F%2BqKemDyzjHOEY%2F6cHHFcVf9r6Fw7Z8xuBmfEeoER5J2wBuQXO247zyZa1nkwo20nZS%2FjxjTCeloGbBjqlAcT60hLJEGiSiAPLFKMfYtArnyPsCUdvCJvhcugtOYCsNbb2l0zQApI%2BwJcpUQldKNNxNDqrJreV61aCEQv77kS303bU1VOkGslXJW%2FHwLfkDLnjkd5sA%2BLUcAf7wXDDo8L%2Fo6eC4WMYBGh6EiCInQZlVapK7jHmhCQBHIzDH7T5Rgrb3xMb2OqlxZ%2BOF2iy6dB%2FDC9wN3TgXmXEdZDEwTEbJGtERw%3D%3D&X-Amz-Signature=e07410efd6f03fd73dd8536e6fb5a2d829e8ec2d8b5e50af91f6ad6854d286bc" &
+
+
+cd /zp1/data/plyu3/CellXGene_Data
+mkdir PMID_36113773_mouse
+cd PMID_36113773_mouse
+
+nohup curl -o local.rds "https://corpora-data-prod.s3.amazonaws.com/ec9dac29-0282-4ce8-a6b8-ae4c4bdadd37/local.rds?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIATLYQ5N5X3ZBZJCWH%2F20221031%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20221031T235742Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEJX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDc7ftsCAgrAHnReDX1Q3KQahFwWUcrpjHlr2PHR4R%2BXQIgGNiLR8I8iQ2NNgARBMNDa7xGuHRm5Lin5qllZj1Ii3Qq6wMIfhABGgwyMzE0MjY4NDY1NzUiDLGuOsEIDYZUEUrQ4yrIA1AOVtU7HiQ5V39DJRF8J9hv9V1J%2Fa5C7AP3jQh7XFiIhwNYE7cH9A7PBs0Qaizjycr9%2FblSs80RDT4rAQOsrFfKzYhPLwRHeIafTc7YEe9w56bEpxupTQ%2BIu9u4vov8tkfllnp2TfEHcQQJm4tGHKn6fsIoHRtF82%2BPT99fqxn7EISLs0J%2BMSieFiJ4To%2B%2B%2FOS2eSga1qZNo%2FsRvS81YQ8hRXbBBUtZHgEmZeMzTh%2B5yw%2FrQpPnGIco2NrCrt%2B301xB5%2BmcX8JjhvCgywI4Q3y7pgKHXeozoU7OT320YHLeN%2BLU%2F6CG9KMLUVD3CF%2B5nnkjLksOgm3WbFE1b4CcZTcnZGQBRt7Yd8AJOOI25xpIt0%2BvMsCqbhyhwTMv3hQcEBQEx5FtQmxnG974%2B6AJI7vjqUbi%2BBS03Q%2BeAmr5zzRlaRANZ8pnBeutTuSvJQyNvcNZRXSH%2FxsDrb%2BOgnnB35qKVttzuA9B8iGGvSTAad7zqp0JF2bM%2FyGl%2FzGZQgtl816Ul9lTr%2BoFw8yPBptQzc7OBNAXxku4WzORynMDmQ%2BwneVBRx2CJVGH0JkQ8E3pthbuUWCdXCSVeTJ3Nhpon6N2XpLgd9UNlzC24YCbBjqlAY2vJ3RE6nVAJY4M7pcLKqwgpP0dbLAf0eJ5euo%2FO7wwADbnd6%2F9Hhf0X7CdcosktBrldjnI%2Fn01edYOelcKgsTsb3OHWxQANVqQji7YPJ6%2FsyzPhm4W01%2Bqokmz8ebaaqhVo%2BcZlTIT3BjfrDQCty2JKPeE%2FRPTSp1mY4FwPtRHQ6JtIz6S7uHwPhAUHBSPyA%2FAWQoM63fvKpahH7a91G4rnujFzw%3D%3D&X-Amz-Signature=b1954cf5c12eec896c9ee972f5d40f937f05b19d3bcfb5204887bcc54215de49" &
+
+
+#### ####
+#### ####
+#### ####
+#### ####
 
 
 

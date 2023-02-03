@@ -1,26 +1,31 @@
-##### This is the final code to permote the things ######
-#### yellow ######
-###### red #######
-#### blue ########
+#### blue #####
 ####### revise the datasets ########
-####### ################### ########
+#######
 sum(counts) should be 1e6 
 
 #######
-####### check the sum(counts) #### !!!!
+check the sum(counts) #### !!!!
 #######
-#getwd()
-#files = list.files()
-#m1 = grep('val_1.fq.gz$', files)
-#files[m1]
-#m2 = grep('val_2.fq.gz$', files)
-#files[m2]
-#files_m1 = files[m1]
-#files_m2 = files[m2]
-#for(i in 1:length(files_m1)){
-#	command = paste("nohup bismark  -non_directional --genome /zp1/data/plyu3/Mouse_DNA_meth/Mouse_mm10_genome","-1",files_m1[i],"-2",files_m2[i],'&')
-#	print(command)
-#}
+
+getwd()
+
+files = list.files()
+
+m1 = grep('val_1.fq.gz$', files)
+
+files[m1]
+
+m2 = grep('val_2.fq.gz$', files)
+
+files[m2]
+
+files_m1 = files[m1]
+files_m2 = files[m2]
+
+for(i in 1:length(files_m1)){
+	command = paste("nohup bismark  -non_directional --genome /zp1/data/plyu3/Mouse_DNA_meth/Mouse_mm10_genome","-1",files_m1[i],"-2",files_m2[i],'&')
+	print(command)
+}
 
 #######
 Tabula Muris mouse datasets !!!! ########
@@ -623,17 +628,6 @@ for(i in 1:length(files)){
 
 #####
 
-
-
-
-
-
-
-
-
-
-
-
 #####
 
 Replace_celltype_pancreas <- function(x,r1,r2){
@@ -922,10 +916,22 @@ for(i in 1:length(files)){
 	png(png_file,height=4000,width=5000,res=72*12)
 	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
 	dev.off()
+
 }
 
 
-
+for(i in 1:length(files)){
+	print(files[i])
+    x = loadRData(files[i])
+    x$celltype_sub <- stringr::str_wrap(x$celltype_sub, width = 15)
+	####
+	png_file = paste(files[i],'_celltype_sub','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=8000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype_sub',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+}
 
 
 ##### orange #####
@@ -964,12 +970,13 @@ for(i in 1:length(files)){
 
 
 
-
+#########
 ######### first self compare ####################
 ######### generate the compare list #############
 ######### there are 2 cols in the compare list ############
 ######### query and reference #####################
 #########
+
 files = list.files()
 files = gsub('_DGEs_COSG','',files)
 files = gsub('_GroundTruthLabel.txt','',files)
@@ -1003,6 +1010,7 @@ folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_
 compare_df = mouse_df_batch
 compare_df = mouse_df_self
 compare_df = human_df_batch[c(-5,-9,-11),]
+
 Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder,mode='easy'){
 	library(Seurat)
 	##########
@@ -1067,21 +1075,6 @@ Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder
 			ref_mat_input = exp(ref_mat)-1
 			ref_label_input = ref_label
 			res = Cell_Ann_scmapcluster(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time=F)
-			#####
-			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
-			res_table = list(res_table)
-			names(res_table) = TAG
-			out_table_list = c(out_table_list,res_table)
-		}
-		#######
-		if(method=='scpred'){
-			library(scmap)
-			library(SingleCellExperiment)
-			#### train and test should be normalized counts #######
-			query_mat_input = exp(query_mat)-1
-			ref_mat_input = exp(ref_mat)-1
-			ref_label_input = ref_label
-			res = Cell_Ann_scpred(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time=F)
 			#####
 			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
 			res_table = list(res_table)
@@ -1248,7 +1241,7 @@ Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder
 				ref_DEGs_input = runDEGs_Ref(ref_seurat_cl,method='COSG',idents='celltype',num_of_genes = 100)
 			}
 			#### update the ref_DEGs_input ##############
-			####
+			#### hist(as.vector(res_mat))
 			####
 			query_mat_input = query_mat
 			####
@@ -1259,7 +1252,7 @@ Main_compare_process <- function(compare_df,method='scmap-cluster',folder=folder
 			##### Next we will find a cutoff !!!!! #########
 			res_mat_v = as.vector(res_mat)
 			res_mat_v = sort(res_mat_v,decreasing=T)
-			model <- densityMclust(as.vector(res_mat_v),G=2:4)
+			model <- densityMclust(as.vector(res_mat_v),G=1:3)
 			model_mean = model$parameters$mean
 			if(model$G >2){
 				model_diff = model_mean[model$G] - model_mean[model$G-1]
@@ -1461,11 +1454,11 @@ cellAnnV2_res_0.5_human_pancreas_p = Visualize_res_plot_process2(cellAnnV2_res_0
 ggplot(cellAnnV2_res_0.5_human_pancreas_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
 
-
+####
 #### Next we measure between studies ##########
 #### for mouse datasets: ######################
 ####
-
+####
 #### blue pink green#####
 #### blue pink green#####
 #### blue pink green#####
@@ -1497,7 +1490,7 @@ Mouse_batch_scmap_cluster_res_0.5_v = Visualize_res(Mouse_batch_scmap_cluster_re
 Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot(Mouse_batch_scmap_cluster_res_0.5_v)
 Mouse_batch_scmap_cluster_res_0.5_p = Visualize_res_plot_process(Mouse_batch_scmap_cluster_res_0.5_p)
 
-ggplot(Mouse_batch_scmap_cluster_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
+ggplot(Mouse_batch_scmap_cluster_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
 folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare'
 Mouse_batch_scmap_cluster_res_0.5 = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='hard')
@@ -1529,14 +1522,12 @@ Mouse_batch_cellAnnV3_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnn
 
 ggplot(Mouse_batch_cellAnnV3_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
-
 Mouse_batch_cellAnnV4_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV4',folder=folder,mode='easy')
 Mouse_batch_cellAnnV4_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV4_res_0.5)
 Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot(Mouse_batch_cellAnnV4_res_0.5_v)
 Mouse_batch_cellAnnV4_res_0.5_p = Visualize_res_plot_process(Mouse_batch_cellAnnV4_res_0.5_p)
 
 ggplot(Mouse_batch_cellAnnV4_res_0.5_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
-
 
 Mouse_batch_cellAnnV4_res_0.5 = Main_compare_process(mouse_df_batch,method='CellAnnV4',folder=folder,mode='hard')
 Mouse_batch_cellAnnV4_res_0.5_v = Visualize_res(Mouse_batch_cellAnnV4_res_0.5)
@@ -1582,123 +1573,20 @@ files = files[grep('pre3$',files)]
 human_df_self = data.frame(query=files,ref=files)
 folder = 'C:/Users/plyu3/Desktop/CellAnn_methods_test/Human_Pancreas_test2'
 
-####
-#### 合并所有结果到一个柱子 ######
-####
 
-human_df_self
-human_df_batch
-mouse_df_self
-mouse_df_batch
+human_self_cellAnnV5_res_0.5 = Main_compare_process(human_df_self,method='CellAnnV5',folder=folder,mode='easy')
+human_self_cellAnnV5_res_0.5_v = Visualize_res(human_self_cellAnnV5_res_0.5)
+human_self_cellAnnV5_res_0.5_v = Visualize_res_plot(human_self_cellAnnV5_res_0.5_v)
+human_self_cellAnnV5_res_0.5_v = Visualize_res_plot_process2(human_self_cellAnnV5_res_0.5_v)
 
-"purple"
-"purple"
-"purple"
+ggplot(human_self_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
-"purple"
-"purple"
-"purple"
-### mouse ###
-setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare")
-folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare"
-NO4_scmap_cluster = Main_compare_process(mouse_df_self,method='scmap-cluster',folder=folder,mode='easy')
-NO5_scmap_cluster = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='easy')
-NO6_scmap_cluster = Main_compare_process(mouse_df_batch,method='scmap-cluster',folder=folder,mode='hard')
+human_self_scmap_cluster_res_0.5 = Main_compare_process(human_df_self[c(1:4),],method='scmap-cluster',folder=folder,mode='easy')
+human_self_scmap_cluster_res_0.5_v = Visualize_res(human_self_scmap_cluster_res_0.5)
+human_self_scmap_cluster_res_0.5_v = Visualize_res_plot(human_self_scmap_cluster_res_0.5_v)
+human_self_scmap_cluster_res_0.5_v = Visualize_res_plot_process2(human_self_scmap_cluster_res_0.5_v)
 
-NO4_scmap_cluster = Visualize_res(NO4_scmap_cluster)
-NO5_scmap_cluster = Visualize_res(NO5_scmap_cluster)
-NO6_scmap_cluster = Visualize_res(NO6_scmap_cluster)
-
-NO4_scmap_cluster = Visualize_res_plot(NO4_scmap_cluster)
-NO5_scmap_cluster = Visualize_res_plot(NO5_scmap_cluster)
-NO6_scmap_cluster = Visualize_res_plot(NO6_scmap_cluster)
-
-scmap_cluster_merge_all = rbind(NO4_scmap_cluster,NO5_scmap_cluster,NO6_scmap_cluster)
-scmap_cluster_merge_all_res = tapply(scmap_cluster_merge_all$counts,scmap_cluster_merge_all$class,sum)
-scmap_cluster_merge_all_res = data.frame(method='scmap-cluster',counts=scmap_cluster_merge_all_res,class=names(scmap_cluster_merge_all_res))
-
-
-### Then we merge the results: #####
-
-NO4_cellAnnV5 = Main_compare_process(mouse_df_self,method='CellAnnV5',folder=folder,mode='easy')
-NO5_cellAnnV5 = Main_compare_process(mouse_df_batch,method='CellAnnV5',folder=folder,mode='easy')
-NO6_cellAnnV5 = Main_compare_process(mouse_df_batch,method='CellAnnV5',folder=folder,mode='hard')
-
-NO4_cellAnnV5 = Visualize_res(NO4_cellAnnV5)
-NO5_cellAnnV5 = Visualize_res(NO5_cellAnnV5)
-NO6_cellAnnV5 = Visualize_res(NO6_cellAnnV5)
-
-NO4_cellAnnV5 = Visualize_res_plot(NO4_cellAnnV5)
-NO5_cellAnnV5 = Visualize_res_plot(NO5_cellAnnV5)
-NO6_cellAnnV5 = Visualize_res_plot(NO6_cellAnnV5)
-
-cellAnnV5_merge_all = rbind(NO4_cellAnnV5,NO5_cellAnnV5,NO6_cellAnnV5)
-cellAnnV5_merge_all_res = tapply(cellAnnV5_merge_all$counts,cellAnnV5_merge_all$class,sum)
-cellAnnV5_merge_all_res = data.frame(method='cellAnnV5',counts=cellAnnV5_merge_all_res,class=names(cellAnnV5_merge_all_res))
-
-
-#### OK let us try a new methods!!!! ######
-
-NO4_scpred = Main_compare_process(mouse_df_self,method='scpred',folder=folder,mode='easy')
-NO5_scpred = Main_compare_process(mouse_df_batch,method='scpred',folder=folder,mode='easy')
-NO6_scpred = Main_compare_process(mouse_df_batch,method='scpred',folder=folder,mode='hard')
-
-NO4_cellAnnV5 = Visualize_res(NO4_cellAnnV5)
-NO5_cellAnnV5 = Visualize_res(NO5_cellAnnV5)
-NO6_cellAnnV5 = Visualize_res(NO6_cellAnnV5)
-
-NO4_cellAnnV5 = Visualize_res_plot(NO4_cellAnnV5)
-NO5_cellAnnV5 = Visualize_res_plot(NO5_cellAnnV5)
-NO6_cellAnnV5 = Visualize_res_plot(NO6_cellAnnV5)
-
-cellAnnV5_merge_all = rbind(NO4_cellAnnV5,NO5_cellAnnV5,NO6_cellAnnV5)
-cellAnnV5_merge_all_res = tapply(cellAnnV5_merge_all$counts,cellAnnV5_merge_all$class,sum)
-cellAnnV5_merge_all_res = data.frame(method='cellAnnV5',counts=cellAnnV5_merge_all_res,class=names(cellAnnV5_merge_all_res))
-
-###############
-###############
-
-Seurat_merge_all_res = cellAnnV5_merge_all_res
-Seurat_merge_all_res$method = 'Seurat'
-
-Seurat_merge_all_res$counts = Seurat_merge_all_res$counts + c(-100,-7,-30,-40,40,50)
-
-scpred_merge_all_res = cellAnnV5_merge_all_res
-scpred_merge_all_res$method = 'Scpred'
-
-scpred_merge_all_res$counts = scpred_merge_all_res$counts + c(+100,-7,-35,-50,40,150)
-
-
-chetah_merge_all_res = cellAnnV5_merge_all_res
-chetah_merge_all_res$method = 'Chetah'
-
-chetah_merge_all_res$counts = chetah_merge_all_res$counts + c(0,-7,-35,0,40,100)
-
-
-Singler_merge_all_res = cellAnnV5_merge_all_res
-Singler_merge_all_res$method = 'Singler'
-
-Singler_merge_all_res$counts = Singler_merge_all_res$counts + c(0,-7,-35,-62,42,53)
-
-merge_all = rbind(cellAnnV5_merge_all_res,Seurat_merge_all_res,scmap_cluster_merge_all_res,Singler_merge_all_res,chetah_merge_all_res,scpred_merge_all_res)
-
-ggplot(merge_all,aes(x=method,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
-
-
-##############
-
-
-
-####yellow####
-####
-
-Then we merge these 2 and plot the results:
-
-combine_all = rbind(scmap_cluster_merge_all_res,cellAnnV5_merge_all_res)
-
-ggplot(combine_all,aes(x=method,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
-
-
+ggplot(human_self_scmap_cluster_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
 
 ########
 ########
@@ -1710,23 +1598,19 @@ for(i in 1:length(files)){
 
 human_df_batch = data.frame(query=files[c(1,2,1,4,1,5,2,4,2,5,4,5,3,6)],ref=files[c(2,1,4,1,5,1,4,2,5,2,5,4,6,3)])
 
-human_batch_scmap_cluster_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='scmap-cluster',folder=folder,mode='easy')
+human_batch_scmap_cluster_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='scmap-cluster',folder=folder,mode='hard')
 human_batch_scmap_cluster_res_0.5_v = Visualize_res(human_batch_scmap_cluster_res_0.5)
 human_batch_scmap_cluster_res_0.5_v = Visualize_res_plot(human_batch_scmap_cluster_res_0.5_v)
 human_batch_scmap_cluster_res_0.5_v = Visualize_res_plot_process2(human_batch_scmap_cluster_res_0.5_v)
-
 ggplot(human_batch_scmap_cluster_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
-
 
 i = length(human_batch_cellAnnV5_res_0.5_v)
 
-human_batch_cellAnnV5_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='CellAnnV5',folder=folder,mode='easy')
+human_batch_cellAnnV5_res_0.5 = Main_compare_process(human_df_batch[c(-5,-9,-11),],method='CellAnnV5',folder=folder,mode='hard')
 human_batch_cellAnnV5_res_0.5_v = Visualize_res(human_batch_cellAnnV5_res_0.5)
 human_batch_cellAnnV5_res_0.5_v = Visualize_res_plot(human_batch_cellAnnV5_res_0.5_v)
 human_batch_cellAnnV5_res_0.5_v = Visualize_res_plot_process2(human_batch_cellAnnV5_res_0.5_v)
-
 ggplot(human_batch_cellAnnV5_res_0.5_v,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('lightblue','#006994','lightgreen','grey','red','pink')) + ylab('%') + xlab('')
-
 
 
 ########
@@ -1773,11 +1657,6 @@ meta2 = read.table('annotations_facs.csv',sep=',',header=T)
 #########
 
 i = 4
-
-
-
-
-
 
 #########
 #########
@@ -2378,7 +2257,6 @@ for(i in 1:length(index)){
 #####
 #####
 #####
-
 for(i in 1:length(index)){
 	#####
 	tag = index[i]
@@ -2457,6 +2335,7 @@ for(i in 1:length(index)){
 #####
 ##### Next is the Human PMBC datasets: ######
 #####
+
 
 setwd('/zp1/data/plyu3/CellAnn_test_AUC/PBMC_bench')
 

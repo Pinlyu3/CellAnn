@@ -1,0 +1,411 @@
+#####
+##### important functions #####
+#####
+
+##### load files and pass it to a new object ######
+##### these files are saved by save() function ####
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+#####
+##### a dataframe to a matrix 
+##### the first column of df should be GENE 
+##### then GENE become the rownames of the output matrix
+#####
+
+df_to_mat <- function(df){
+	rowN = df$GENE
+	##
+	mat = as.matrix(df[,-1])
+	##
+	rownames(mat) = rowN
+	##
+	return(mat)
+}
+
+##### This is the functions for CellAnn_scmapcluster ######
+##### the input file is the raw counts file ###############
+
+CellAnn_scmapcluster = function(train,
+                        test,
+                        label_train,
+                        threshold = 0.7,
+                        time = T){
+  start_time = Sys.time()
+  ######
+  sce = SingleCellExperiment(list(counts = train),colData = data.frame(cell_type1 = label_train))
+  logcounts(sce) = log2(counts(sce) + 1)
+  rowData(sce)$feature_symbol = rownames(sce)
+  sce = selectFeatures(sce)
+  ######
+  sce_test = SingleCellExperiment(list(counts = test))
+  logcounts(sce_test) = log2(counts(sce_test) + 1)
+  rowData(sce_test)$feature_symbol = rownames(sce_test)
+  ######
+  sce = indexCluster(sce)
+  scmapCluster_results = scmapCluster(projection = sce_test,index_list = list(sce@metadata$scmap_cluster_index),threshold = threshold)
+  predict_label = scmapCluster_results$combined_labs
+  #######
+  end_time = Sys.time()
+  #######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  #######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  ########
+  return(predict_label)
+}
+
+
+
+
+
+###### This function convert cellAnn output #######
+###### and compare the results with ground truth ######
+
+
+Visualize_res <- function(cluster_res,ref_seurat_ct){
+	plot_res = list()
+	for(i in 1:length(cluster_res)){
+		######
+		names = names(cluster_res)[i]
+		library(stringr)
+		query_names = str_extract(names,"(?<=query:)(.+)(?=-->)")
+		ref_names = str_extract(names,"(?<=ref:)(.+)")
+		print(paste(query_names,ref_names))
+		###### load the query ground truth ######
+		query_truth_file = paste(query_names,'_test_input_GroundTruthLabel.txt',sep='')
+		query_truth = read.table(query_truth_file,sep='\t',header=T)
+		###### see the results ######
+		query_res = cluster_res[[i]]
+		###### merge the table ######
+		query_merge = merge(query_res,query_truth)
+		###### check ################
+		#if(dim(query_merge)[1] == dim(query_res)[1] & dim(query_truth)[1] == dim(query_res)[1]){
+		#	print('OK')
+		#}else{
+		#	print('Error')
+		#}
+		###### Next calculate the results: ###########
+		###### we need to know the reference ct in the datasets #######
+		#ref_seurat = loadRData(ref_names)
+		#ref_seurat_ct = levels(as.factor(ref_seurat$celltype))
+		######
+		###### Then calculate the accuracy ############
+		plot_res_sub = Class_results(query_merge,ref_seurat_ct[[i]],NDtag='unassigned')
+		plot_res = c(plot_res,list(plot_res_sub))
+	}
+	names(plot_res) = names(cluster_res)
+	return(plot_res)
+}
+
+#######
+####### tag alignment results ##### 
+#######
+
+Class_results <- function(query_merge,ref_ct,NDtag='unassigned'){
+	####
+	res_table = query_merge
+	res_table$class1 = 'ND'
+	res_table$class2 = 'ND'
+	res_table_cl = res_table
+	####
+	query_res = query_merge$result
+	query_truth = query_merge$ground.truth
+	####
+	for(j in 1:dim(res_table_cl)[1]){
+		query_truth_tmp = query_truth[j]
+		query_res_tmp = query_res[j]
+		if(query_truth_tmp %in% ref_ct == T){
+			if(length(grep(" & ",query_res_tmp))==0){
+				if(query_res_tmp == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+					res_table_cl$class1[j] = 'Failed_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))==1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				if(query_res_tmp[1] == query_truth_tmp | query_res_tmp[2] == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify_Half'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if((query_res_tmp[1] != query_truth_tmp) & (query_res_tmp[2] != query_truth_tmp)){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp)) > 1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				if(grep(query_truth_tmp,query_res_tmp) > 0){
+					res_table_cl$class1[j] = 'Correct_Classify_Half'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if(grep(query_truth_tmp,query_res_tmp) == 0){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+		}
+		if(query_truth_tmp %in% ref_ct == F){
+			if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+				res_table_cl$class1[j] = 'Correct_unClassify'
+	 			res_table_cl$class2[j] = 'Correct'
+			}
+			if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+				res_table_cl$class1[j] = 'Wrong_unClassify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+
+		}
+	}
+	return(res_table_cl)
+}
+
+#######
+##### Next function is Visualize_res_plot #######
+#######
+
+####### covert Visualize_res to a plot format ##########
+#######
+
+Visualize_res_plot <- function(res_v,tag1="mouse"){
+	##### res_v #####
+	res_tab = list()
+	for(i in 1:length(res_v)){
+		#######
+		tmp_table = data.frame(class=c('Correct_Classify','Correct_Classify_Half','Failed_Classify','Wrong_Classify','Correct_unClassify','Wrong_unClassify'),counts=0)
+		#######
+		res_v_sub = res_v[[i]]
+		res_v_subSum = data.frame(table(res_v_sub$class1))
+		m = match(res_v_subSum$Var1,tmp_table$class)
+		tmp_table$counts[m] = res_v_subSum$Freq
+		tmp_table$sample = names(res_v)[i]
+		res_tab = c(res_tab,list(tmp_table))
+	}
+	res_tab = do.call('rbind',res_tab)
+	if(tag1=="mouse"){
+		res_tab$sample2 = gsub('query:Tabula_Muris_mouse_','',res_tab$sample)
+		res_tab$sample2 = gsub('ref:Tabula_Muris_mouse_','',res_tab$sample2)
+	}
+	if(tag1=="H"){
+		res_tab$sample2 = gsub('query:','',res_tab$sample)
+		res_tab$sample2 = gsub('_seurat_human_pre3','',res_tab$sample2)
+		res_tab$sample2 = gsub('ref:','',res_tab$sample2)
+	}
+	return(res_tab)
+}
+
+
+
+######## OK next function !!! #######
+train = ref_mat_input
+test = query_mat_input
+label_train = ref_label_input
+
+CellAnn_chetah = function(train,
+                  test,
+                  label_train,
+                  time = F){
+  ##########
+  library(SingleCellExperiment)
+  library(CHETAH)
+  ###########
+  start_time = Sys.time()
+  ###########
+  sce = SingleCellExperiment(assays = list(counts = train),colData = data.frame(celltypes = label_train))
+  sce_test = SingleCellExperiment(assays = list(counts = test))
+  ###########
+  sce_test = CHETAHclassifier(input = sce_test, ref_cells = sce)
+  ###########
+  tmp_tab = sce_test@colData
+  ###########
+  predict_label = unname(tmp_tab$celltype_CHETAH)
+  ########### Then we may found the node !!! ##########
+  ### PlotCHETAH(input = sce_test, interm = TRUE)
+  nodes = sce_test@int_metadata$CHETAH$nodetypes
+  #### 
+  k = grep("Node",predict_label)
+  #### we change node to cell types ##########
+  if(length(k) > 0){
+  		for(ki in 1:length(k)){
+  			tmp_node = predict_label[k[ki]]
+  			tmp_node_index = as.numeric(gsub('Node','',tmp_node)) + 1
+  			tmp_ct = names(nodes[[tmp_node_index]])
+  			tmp_ct = paste(tmp_ct,collapse=' & ')
+  			predict_label[k[ki]] = tmp_ct
+  		}
+  }
+  ############
+  end_time = Sys.time()
+  ###########
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ###########
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+
+###### Next is the Seurat functions ########
+
+CellAnn_seurat = function(train,
+                  test,
+                  label_train,
+                  k.filter = NA,
+                  time = T,
+                  selection.method = 'vst',
+                  nfeatures = 2000,
+                  mean.cutoff = c(0.1, 8),
+                  dispersion.cutoff = c(1, Inf),
+                  prediction.score.max = 0.5){
+
+  start_time = Sys.time()
+
+  reference = CreateSeuratObject(train)
+  reference = NormalizeData(reference,
+                            verbose = F)
+  reference = FindVariableFeatures(reference,
+                                   mean.cutoff = mean.cutoff,
+                                   dispersion.cutoff = dispersion.cutoff,
+                                   verbose = F)
+  reference$celltype = label_train
+  query = CreateSeuratObject(test)
+  query = NormalizeData(query,
+                        verbose = F)
+  query = FindVariableFeatures(query,
+                               mean.cutoff = mean.cutoff,
+                               dispersion.cutoff = dispersion.cutoff,
+                               verbose = F)
+  k.score=5
+  k.anchor=5
+  if(dim(query)[2] < 6){
+  	k.score= dim(query)[2]-1
+  	k.anchor= dim(query)[2]-1
+  }
+  anchors = FindTransferAnchors(reference,query,k.filter = NA,k.score=k.score,k.anchor = k.anchor)
+  k.weight = dim(anchors@anchors)[1]
+  if(k.weight > 50){k.weight=50}
+  predictions = try(TransferData(anchors,as.character(reference$celltype),k.weight=k.weight))
+  while(inherits(predictions,'try-error')){
+  	k.weight=k.weight-1
+  	print(k.weight)
+  	predictions = try(TransferData(anchors,as.character(reference$celltype),k.weight=k.weight))
+  }
+  query = AddMetaData(query, metadata = predictions)
+  ######
+  print(summary(query$prediction.score.max))
+  ####### query$predicted.id[which(query$prediction.score.max < prediction.score.max)] <- 'ND'
+  #######
+  predict_label = unname(query$predicted.id)
+  ######
+  end_time = Sys.time()
+  ######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+####### Next is the scpred methods ########
+
+CellAnn_scpred = function(train,
+                  test,
+                  label_train,
+                  model = 'svmRadial',
+                  reclassify = NULL,
+                  time = F,
+                  threshold = 0.55){
+
+  library(scPred)
+  start_time = Sys.time()
+  reference = CreateSeuratObject(train)
+  query = CreateSeuratObject(test)
+  reference = reference %>%
+    NormalizeData() %>%
+    FindVariableFeatures() %>%
+    ScaleData() %>%
+    RunPCA() %>%
+    RunUMAP(dims = 1:30)
+  ###########
+  query = NormalizeData(query)
+  reference$cell_type = label_train
+  reference = getFeatureSpace(reference, "cell_type")
+  reference = trainModel(reference,
+                         model = model,
+                         reclassify = reclassify)
+  query = scPredict(query,
+                    reference,
+                    threshold = threshold)
+  predict_label = unname(query$scpred_prediction)
+  end_time = Sys.time()
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+
+
+###########################################
+##### Next: CellAnn scClassify ############
+###########################################
+train = ref_mat_input
+test = query_mat_input
+label_train = ref_label_input
+
+
+CellAnn_scClassify <- function(test = test,
+                  train = train,
+                  label_train = label_train,
+                  time=T,
+                  prob_threshold=0.5
+                  ){
+	#### first train the model ####
+	####
+	scClassify_res_ensemble <- scClassify(exprsMat_train = train,
+                                      cellTypes_train = label_train,
+                                      exprsMat_test = test,
+                                      tree = "HC",
+                                      algorithm = "WKNN",
+                                      selectFeatures = c("limma"),
+                                      similarity = c("pearson", "cosine"),
+                                      weighted_ensemble = FALSE,
+                                      returnList = FALSE,
+                                      verbose = FALSE)
+	####
+	####
+	start_time = Sys.time()
+	pred_res <- scClassify_res_ensemble$testRes$test$ensembleRes$cellTypes
+	#####
+	end_time = Sys.time()
+	times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+	if(time){
+    	return(list(predict_label = pred_res$ensembleRes,times = times))
+  	}
+	return(pred_res)
+}
+
+
+
+
+

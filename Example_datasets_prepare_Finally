@@ -1,0 +1,4649 @@
+#########						   #########
+######### prepare the Seurat files #########
+#########						   #########
+
+#########
+######### copy these seurat files to a new folder: #########
+#########
+
+######### First We copy the mouse datasets to the new folder: ############
+folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_mouse_data_prepare"
+#########
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/")
+setwd("Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare/")
+
+#########
+files = list.files()
+
+m1 = grep('_DGE',files)
+m2 = grep('_auth',files)
+m3 = grep('_Clu',files)
+m4 = grep('_clu',files)
+m5 = grep('_Ground',files)
+m6 = grep('_sub',files)
+m7 = grep('_Sub',files)
+
+files = files[-c(m1,m2,m3,m4,m5,m6,m7)]
+files = files[-1]
+
+######### Then we copy the files to the new folder: ##############
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	older_folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Tabula_Muris_test2/Tabula_Muris_mouse_data_prepare/"
+	new_folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+	#####
+	old_file = paste0(older_folder,tmp_file)
+	new_file = paste0(new_folder,tmp_file)
+	#####
+	command = paste("cp",old_file,new_file)
+	#command = gsub("/","\\",command,fixed=T)
+	print(command)
+	#####
+	shell(command)
+}
+
+######## OK! then we save the file index to the folder ########
+Mouse_index_files = files
+save(Mouse_index_files,file='Mouse_index_files')
+
+
+######### OK! Next we copy the Human files!!! #################
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/")
+setwd("Human_Pancreas_test2/")
+
+######### 
+
+files = list.files()
+m1 = grep('_human_pre3$',files)
+files = files[c(m1)]
+
+########
+########
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	tmp_file2 = gsub('_seurat_human_pre3','',tmp_file)
+	tmp_file2 = paste0('Human_',tmp_file2)
+	#####
+	#####
+	older_folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Human_Pancreas_test2/"
+	new_folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+	#####
+	old_file = paste0(older_folder,tmp_file)
+	new_file = paste0(new_folder,tmp_file2)
+	#####
+	command = paste("cp",old_file,new_file)
+	#command = gsub("/","\\",command,fixed=T)
+	print(command)
+	#####
+	shell(command)
+}
+
+######## OK! then we save the file index to the folder ########
+
+tmp_file3 = gsub('_seurat_human_pre3','',files)
+tmp_file3 = paste0('Human_',tmp_file3)
+Human_Pancreas_index_files = tmp_file3
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/")
+save(Human_Pancreas_index_files,file='Human_Pancreas_index_files')
+
+########
+######## OK! Next we check the Human PMBC datasets !!!!! ##########
+########
+
+######## on the server !!! ########################################
+
+
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare")
+
+######## we combined the inDrops and SeqWell and Drop datasets ######
+
+conda activate Signac2
+R
+library(Seurat)
+
+######## 
+
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare")
+
+######## this need to combined to PBMC #######
+load("PBMC2_Drop")
+load("PBMC1_Drop")
+
+######## check the results ##########
+PBMC_Drop <- merge(PBMC1_Drop, y = PBMC2_Drop)
+save(PBMC_Drop,file='PBMC_Drop')
+
+
+########
+load("PBMC2_inDrops")
+load("PBMC1_inDrops")
+
+PBMC_inDrops <- merge(PBMC1_inDrops, y = PBMC2_inDrops)
+save(PBMC_inDrops,file='PBMC_inDrops')
+
+########
+load("PBMC2_SeqWell")
+load("PBMC1_SeqWell")
+
+PBMC_SeqWell <- merge(PBMC1_SeqWell, y = PBMC2_SeqWell)
+
+save(PBMC_SeqWell,file='PBMC_SeqWell')
+
+
+##### OK! Then on the windows save the index files for PBMC #########
+
+files = list.files()
+files = files[grep('^PBMC',files)]
+
+Human_PBMC_index_files = files
+
+save(Human_PBMC_index_files,file='Human_PBMC_index_files')
+
+#####
+##### OK! Let us prepare the Ref datasets !!!!!!!! ##################
+#####
+
+##### we need to change rownames of Human_PBMC index files #######
+load('Human_PBMC_index_files')
+
+for(i in 1:length(Human_PBMC_index_files)){
+	print(Human_PBMC_index_files[i])
+	######
+	tmp_Seurat = loadRData(Human_PBMC_index_files[i])
+	print(head(rownames(tmp_Seurat)))
+	######
+	new_Seurat = Human_PBMC_Remove_genes(tmp_Seurat)
+	print(head(rownames(new_Seurat)))
+	######
+	save(new_Seurat,file=Human_PBMC_index_files[i])
+}
+
+
+##### OK!! Then Next features !!!! #################
+Human_PBMC_Remove_genes <- function(tmp_Seurat){
+	counts_mat = tmp_Seurat[['RNA']]@counts
+	new_rownames = substr(rownames(counts_mat),17,100)
+	####
+	rownames(counts_mat) = new_rownames
+	new_Seurat = CreateSeuratObject(counts_mat)
+	####
+	new_Seurat@meta.data = tmp_Seurat@meta.data
+	####
+	return(new_Seurat)
+}
+
+#####
+##### First we prepare the Ref #######
+#####
+
+##### We generate subclusters according to its UMAP for each CT #######
+##### Then we generate Avg subclusters expression matrix ##############
+##### Then we generate Markers of clusters ############################
+##### Then we generate SubMarkers of these clusters ###################
+##### Then we save the new Seurat as _Ref #############################
+##### _Ref_CT_Avg #####################################################
+##### _Ref_SubCT_Avg ##################################################
+##### _Ref_CT_Marker ##################################################
+##### _Ref_SubCT_Marker ###############################################
+##### ################## ################
+
+load("Human_PBMC_index_files")
+load("Mouse_index_files")
+load("Human_Pancreas_index_files")
+
+Total_index = c(Human_PBMC_index_files,Mouse_index_files,Human_Pancreas_index_files)
+
+##### Ref_precess_1 dim reductions ###############
+##### and cluster for each according to UMAP #####
+##### and output average expression files ########
+##### and save the Seurat project ################
+
+
+files = Total_index
+
+##### function load #####
+#####
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+
+#####
+#####
+
+RNA_process_UMAP_Cluster <- function(x,res){
+	#####
+	DefaultAssay(x) = 'RNA'
+	#####
+	x <- NormalizeData(x)
+    x <- FindVariableFeatures(x,selection.method ='vst',nfeatures = 3000)
+    x <- ScaleData(x,  verbose = FALSE)
+    x <- RunPCA(x, verbose = FALSE,npcs=50)
+    x <- RunUMAP(x, reduction = "pca", dims = 1:50)
+	x <- FindNeighbors(x, reduction = "pca", dims = 1:50)
+	x <- FindClusters(x, resolution = res)
+	#####
+	return(x)
+}
+
+
+CellAnn_Avg_Mat <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	###### normalized back datasets ######
+	if(log == 'log'){
+		data_mat_exp = exp(data_mat)
+		data_mat_exp = data_mat_exp-1
+	}
+	if(log == 'log2'){
+		data_mat_exp = 2^(data_mat)
+		data_mat_exp = data_mat_exp-1
+	}
+	print(paste('Sums:',head(colSums(data_mat_exp[,c(1:2)]))))
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat_exp[,index]
+		######
+		index_sum = rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+subset_each_ct <- function(data,resolution=0.3){
+	#####
+	matrix_list = list()
+	##### ct ######
+	ct = levels(as.factor(data$celltype))
+	#####
+	cells_list = list()
+	#####
+	for(j in 1:length(ct)){
+		print(j)
+		print(ct[j])
+		#######
+		k = which(data$celltype == ct[j])
+		#######
+		if(length(k) > 1){
+			print('large')
+			#######
+			sub_seurat = subset(data,subset = celltype == ct[j])
+			#######
+			umap_dims = dim(sub_seurat@reductions$umap@cell.embeddings)[2]
+			#######
+			sub_seurat = FindNeighbors(sub_seurat,reduction = "umap",dims = 1:umap_dims)
+			sub_seurat = FindClusters(sub_seurat,resolution=resolution)
+			sub_seurat_mat = sub_seurat[['RNA']]@data
+			data_cluster = sub_seurat$seurat_clusters
+			data_cluster = paste(ct[j],data_cluster,sep='@sub')
+			sub_seurat_avg = CellAnn_Avg_Mat(data_mat=sub_seurat_mat,data_cluster)
+			matrix_list = c(matrix_list,list(sub_seurat_avg))
+			#######
+			cells_table = data.frame(cells=colnames(sub_seurat_mat),new_sub_cluster = data_cluster)
+			cells_list = c(cells_list,list(cells_table))
+		}
+	}
+	matrix_list = do.call('cbind',matrix_list)
+	cells_list = do.call('rbind',cells_list)
+	####
+	return(list(matrix_list,cells_list))
+}
+
+
+
+runDEGs_Ref_sub <- function(Seurat_Obj,method='COSG',idents='celltype',num_of_genes = 50){
+	Idents(Seurat_Obj) = idents
+	#######
+	library(COSG)
+	#######
+	if(method == 'COSG'){
+		marker_cosg <- cosg(
+ 				Seurat_Obj,
+ 				groups=c('all'),
+ 				assay='RNA',
+ 				slot='data',
+ 				mu=1,
+ 				n_genes_user=num_of_genes)
+		res = marker_cosg$names
+		all_genes = res
+	}
+	#######
+	#######
+	return(all_genes)
+}
+
+
+
+Ref_process_1 <- function(files){
+	library(Seurat)
+	#######
+	for(i in 1:length(files)){
+		tmp_file = files[i]
+		print(paste0('loading...',tmp_file))
+		tmp_Seurat = loadRData(tmp_file)
+		print(paste0('Dims:',dim(tmp_Seurat)))
+		#### Then ####
+		tmp_Seurat_P1 = RNA_process_UMAP_Cluster(tmp_Seurat,res=0.8)
+		#### Then we split the CTs according to its UMAPs #####
+		tmp_Seurat_P2_res = subset_each_ct(tmp_Seurat_P1,res=0.3)
+		#### merge the sub cell types to the Seurat objects ################
+		m = match(colnames(tmp_Seurat_P1),tmp_Seurat_P2_res[[2]]$cells)
+		tmp_Seurat_P1$subcelltype = tmp_Seurat_P2_res[[2]]$new_sub_cluster[m]
+		#### next output the average matrix for subtype !!! ####
+		####
+		tmp_subcelltype_Avg = tmp_Seurat_P2_res[[1]]
+		#### next output the average matrix for celltype !!!! ####
+		tmp_seurat_mat = tmp_Seurat_P1[['RNA']]@data
+		data_cluster = tmp_Seurat_P1$celltype
+		sub_seurat_avg = CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+		tmp_celltype_Avg = sub_seurat_avg
+		#### output to files !!!!! ###########
+		#### to RDS file !!!!!!!!! ###########
+		subcelltype_Avg_name = paste0(tmp_file,'_Ref_SubCT_Avg')
+		celltype_Avg_name = paste0(tmp_file,'_Ref_CT_Avg')
+		####
+		saveRDS(tmp_celltype_Avg,file=celltype_Avg_name)
+		saveRDS(tmp_subcelltype_Avg,file=subcelltype_Avg_name)
+		#### OK!! #####
+		#### Then we save the Seurat Objects!!!! #########
+		ref_name = paste0(tmp_file,'_Ref')
+		save(tmp_Seurat_P1,file=ref_name)
+		####
+		#### OK!! ##### Next is find Markers using COSG software !!!! #########
+		#### 
+		CT_markers = runDEGs_Ref_sub(tmp_Seurat_P1,'COSG','celltype',100)
+		####
+		subCT_markers = runDEGs_Ref_sub(tmp_Seurat_P1,'COSG','subcelltype',100)
+		####
+		subcelltype_marker_name = paste0(tmp_file,'_Ref_SubCT_Marker')
+		celltype_marker_name = paste0(tmp_file,'_Ref_CT_Marker')
+		####
+		saveRDS(subCT_markers,file=subcelltype_marker_name)
+		saveRDS(CT_markers,file=celltype_marker_name)
+		####
+		#### OK! Next we plot the markers !!!! ########
+		####
+		tmp_Seurat_P1$celltype <- stringr::str_wrap(tmp_Seurat_P1$celltype, width = 15)
+		####
+		png_file = paste(files[i],'_Ref_author_anno','.png',sep='')
+		library(ggplot2)
+		png(png_file,height=4000,width=5000,res=72*12)
+		print(DimPlot(tmp_Seurat_P1, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+		dev.off()
+		#####
+		tmp_Seurat_P1$subcelltype <- stringr::str_wrap(tmp_Seurat_P1$subcelltype, width = 15)
+		#####
+		png_file = paste(files[i],'_Ref_CellAnn_Subanno','.png',sep='')
+		library(ggplot2)
+		png(png_file,height=4000,width=8000,res=72*12)
+		print(DimPlot(tmp_Seurat_P1, reduction = "umap",group.by='subcelltype',label = FALSE, label.size = 2.5, repel = TRUE))
+		dev.off()
+		#####
+	}
+	#######
+	print('Done!!!')
+	#######
+}
+
+
+Ref_process_1(Total_index)
+
+
+###########
+########### Next is we processed the Query datasets !!!!!! #################
+###########
+
+########### For Query datasets ###########
+###########
+########### we need the average clusters for each cell types ############
+########### we need the average expression for the query #############
+########### we nedd 12
+
+
+RNA_process_Cluster_to_CT <- function(x,tag){
+	x$seurat_clusters = as.numeric(x$seurat_clusters)
+	#### rm NA #####
+	k = which(is.na(x$celltype) == T)
+	if(length(k)>0){x = x[,-k]}
+	####
+	#### see the celltype and seurat_clusters table ####
+	m = match(c('celltype','seurat_clusters'),colnames(x@meta.data))
+	####
+	tab = x@meta.data[,m]
+	allcelltypes = levels(as.factor(tab$celltype))
+	####
+	align_table = list()
+	for(i in 1:length(allcelltypes)){
+		print(allcelltypes[i])
+		tab_tmp = tab[which(tab$celltype == allcelltypes[i]),]
+		tab_tmp_table = table(as.numeric(tab_tmp$seurat_clusters))
+		print(tab_tmp_table)
+		print(paste('total',sum(tab_tmp_table)))
+		#######
+		tab_tmp_res = tab_tmp
+		rownames(tab_tmp_res) = NULL
+		#######
+		tab_tmp_res$index = paste(tab_tmp_res$celltype,as.numeric(tab_tmp_res$seurat_clusters),sep='@')
+		tab_tmp_res = tab_tmp_res[!duplicated(tab_tmp_res$index),]
+		m = match(tab_tmp_res$seurat_clusters,names(tab_tmp_table))
+		tab_tmp_res$cellcount = as.numeric(tab_tmp_table)[m]
+		#######
+		####### added new clusters #######
+		tab_tmp_res$new_clusters = paste(tab_tmp_res$seurat_clusters,i,sep='_')
+		######## rm the cluster with too few cells #######
+		k = which(tab_tmp_res$cellcount < 15)
+		if(length(k) > 0 & sum(tab_tmp_table) > 50 & length(k) != length(tab_tmp_res$cellcount)){
+			tab_tmp_res = tab_tmp_res[-k,]
+		}
+		if(length(k) > 0 & sum(tab_tmp_table) > 50 & length(k) == length(tab_tmp_res$cellcount)){
+			tab_tmp_res$new_clusters = tab_tmp_res$new_clusters[1]
+		}
+		if(sum(tab_tmp_table) < 50){
+			tab_tmp_res$new_clusters = tab_tmp_res$new_clusters[1]
+		}
+		########
+		align_table = c(align_table,list(tab_tmp_res))
+	}
+	align_table = do.call('rbind',align_table)
+	####
+	#### Then replace the seurat clusters ######
+	x$seurat_clusters_new = 'removed'
+	for(i in 1:dim(align_table)[1]){
+		tmp_celltype = align_table$celltype[i]
+		tmp_seurat_clusters = align_table$seurat_clusters[i]
+		k = which(x$celltype == tmp_celltype & x$seurat_clusters == tmp_seurat_clusters)
+		x$seurat_clusters_new[k] = align_table$new_clusters[i]
+	}
+	x = subset(x,subset=seurat_clusters_new != 'removed')
+	x$seurat_clusters_new = paste('C',x$seurat_clusters_new,sep='')
+	####
+	####
+	x$seurat_clusters = x$seurat_clusters_new
+	####
+	#######
+	png_file = paste(tag,'_Query_cluster','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters_new',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	png_file = paste(tag,'_Query_author_anno','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#######
+	return(x)
+}
+
+####
+####
+####
+#### Query = "_Query_Cluster_Avg"
+#### #####
+#### #####
+#### #####
+
+Query_process_1 <- function(files){
+	#######
+	library(Seurat)
+	#######
+	for(i in 1:length(files)){
+		tmp_file = files[i]
+		print(paste0('loading...',tmp_file))
+		tmp_Seurat = loadRData(tmp_file)
+		print(paste0('Dims:',dim(tmp_Seurat)))
+		#### Then ####
+		tmp_Seurat_P1 = RNA_process_UMAP_Cluster(tmp_Seurat,res=2)
+		#### OK!!! #####
+		tmp_Seurat_P2 = RNA_process_Cluster_to_CT(tmp_Seurat_P1,tag=tmp_file)
+		#### OK!!! #####
+		query_Avg_File <- paste0(tmp_file,'_Query_Cluster_Avg')
+		tmp_seurat_mat = tmp_Seurat_P2[['RNA']]@data
+		data_cluster = tmp_Seurat_P2$seurat_clusters_new
+		query_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+		#### OK!!! #####
+		save(query_Avg_Mat,file=query_Avg_File)
+		#### OK!!! #####
+		#### Next output Single-cell ground-truth and Cluster ground-truth ########
+		#### including the Number of cells ########################################
+		clusters = tmp_Seurat_P2$seurat_clusters_new
+		celltypes = tmp_Seurat_P2$celltype
+		####
+		dat = data.frame(clusters,celltypes)
+		#### Then we calculate the cell numbers for each !!!! #######
+		dat_res = table(dat$clusters)
+		####
+		####
+		index = paste(dat[,1],dat[,2])
+		dat = dat[!duplicated(index),]
+		colnames(dat) = c('cluster','ground-truth')
+		####
+		m = match(dat$cluster,names(dat_res))
+		dat$number = as.numeric(dat_res)[m]
+		rownames(dat) = NULL
+		print(dat)
+		####
+		#### save the Query Seurat datasets ####
+		####
+		new_File = paste(tmp_file,'_Query_GroundTruth_Cluster','.txt',sep='')
+		write.table(dat,file=new_File,sep='\t',quote=F,row.names=F)
+		#### Then we output the single cell level GroundTruth ######
+		#### cell ground-truth ######
+		cells = colnames(tmp_Seurat_P2)
+		celltypes = tmp_Seurat_P2$celltype
+		dat = data.frame(cell=cells,"ground-truth" = celltypes)
+		rownames(dat) = NULL
+		####
+		new_File = paste(tmp_file,'_Query_GroundTruth_Cell','.txt',sep='')
+		write.table(dat,file=new_File,sep='\t',quote=F,row.names=F)
+		#### Then we save the Seurat #####
+		new_File = paste(tmp_file,'_Query',sep='')
+		save(tmp_Seurat_P2,file=new_File)
+		####
+		print('Done!!!!')
+	}
+}
+
+######
+######
+Query_process_1(files)
+######
+######
+
+######
+###### Next we generate these references to get a comparsion list !!!! #############
+######
+
+
+###### if two reference are equal then let them to the equal datasets #############
+###### if two reference are not equal, then classifyied with A>B A<B OR A<>B ######
+###### Then we also generate different tissue comparsion, we only use Mouse altas datasets for comparsion ############
+
+
+###### OK! #######
+###### let us start to calculate !!!! ##########
+######
+
+###### First we generate mouse datasets ########
+###### First we load the mouse datasets ########
+
+
+load("Mouse_index_files")
+
+Ref1 = Mouse_index_files[c(1,2,2,3:12)]
+Ref2 = Mouse_index_files[c(14,13,15,16:25)]
+
+Ref_total = data.frame(Query=Ref1,Ref=Ref2)
+Ref_total2 = data.frame(Query=Ref2,Ref=Ref1)
+
+Combined_res = rbind(Ref_total,Ref_total2)
+
+######
+###### OK! Next we exam the conditions for each comparsion !!!! ##########
+######
+
+Get_data_tags <- function(Data_1_CT,Data_2_CT){
+	######
+	CT_overlap = Data_1_CT[which(Data_1_CT %in% Data_2_CT == T)]
+	######
+	if(length(CT_overlap) == length(Data_1_CT) & length(CT_overlap) == length(Data_2_CT)){
+		tag = 'A=B'
+	}
+	if(length(CT_overlap) < length(Data_1_CT) & length(CT_overlap) == length(Data_2_CT)){
+		tag = 'A>B'
+	}
+	if(length(CT_overlap) == length(Data_1_CT) & length(CT_overlap) < length(Data_2_CT)){
+		tag = 'A<B'
+	}
+	if(length(CT_overlap) < length(Data_1_CT) & length(CT_overlap) < length(Data_2_CT)){
+		tag = 'A<>B'
+	}
+	######
+	######
+	return(tag)
+
+}
+
+Add_condition_for_each_compare <- function(Combined_res){
+	#####
+	dims = dim(Combined_res)[1]
+	#####
+	all_tags = c()
+	all_CT_1 = c()
+	all_CT_2 = c()
+	#####
+	for(i in 1:dims){
+		index1 = Combined_res[i,1]
+		index2 = Combined_res[i,2]
+		#####
+		index1_tag = paste0(index1,'_Query')
+		index2_tag = paste0(index2,'_Ref')
+		#####
+		Data_1 = loadRData(index1_tag)
+		Data_2 = loadRData(index2_tag)
+		#####
+		Data_1_CT = Data_1$celltype
+		Data_2_CT = Data_2$celltype
+		#####
+		Data_1_CT = unname(Data_1_CT[!duplicated(Data_1_CT)])
+		Data_2_CT = unname(Data_2_CT[!duplicated(Data_2_CT)])
+		#####
+		Data_tags = Get_data_tags(Data_1_CT,Data_2_CT)
+		#####
+		all_tags = c(all_tags,Data_tags)
+		#####
+		Data_1_CT_out = paste(Data_1_CT,collapse=' :: ')
+		Data_2_CT_out = paste(Data_2_CT,collapse=' :: ')
+		#####
+		all_CT_1 = c(all_CT_1,Data_1_CT_out)
+		all_CT_2 = c(all_CT_2,Data_2_CT_out)
+	}
+	Combined_res$tags = all_tags
+	Combined_res$Query_CT = all_CT_1
+	Combined_res$Ref_CT = all_CT_2
+	####
+	return(Combined_res)
+}
+
+Combined_res = Add_condition_for_each_compare(Combined_res)
+
+head(Combined_res[24,])
+
+Mouse_compare_list_Ori = Combined_res
+
+save(Mouse_compare_list_Ori,file='Mouse_compare_list_Ori')
+
+###########
+###########
+###########
+
+OK!!! Next is the Human datasets !!!!!!
+
+load("Human_Pancreas_index_files")
+
+Ref1 = Human_Pancreas_index_files[c(1:6)]
+Ref2 = Human_Pancreas_index_files[c(1:6)]
+
+Combined_tab = merge(data.frame(Query=Ref1),data.frame(Ref=Ref2))
+
+k = which(Combined_tab[,1] == Combined_tab[,2])
+
+Combined_tab = Combined_tab[-k,]
+
+###########
+###########
+###########
+
+Combined_tab = Add_condition_for_each_compare(Combined_tab)
+
+Combined_tab[,c(1:3)]
+
+Combined_tab[1,]
+
+Human_Pancreas_compare_list_Ori = Combined_tab
+
+save(Human_Pancreas_compare_list_Ori,file='Human_Pancreas_compare_list_Ori')
+
+############
+############
+############
+############ Next is the PBMC datasets: #####################
+############
+
+load("Human_PBMC_index_files")
+
+############
+############
+
+
+Ref1 = Human_PBMC_index_files[c(1:7)]
+Ref2 = Human_PBMC_index_files[c(1:7)]
+
+Combined_tab = merge(data.frame(Query=Ref1),data.frame(Ref=Ref2))
+
+k = which(Combined_tab[,1] == Combined_tab[,2])
+
+Combined_tab = Combined_tab[-k,]
+
+############
+############
+
+Combined_tab = Add_condition_for_each_compare(Combined_tab)
+Combined_tab[,c(1:3)]
+
+############
+############
+############
+
+############ Nexted we save the Human PBMC datasets #######
+############
+
+Human_Pancreas_compare_list_Ori = Combined_tab
+save(Human_Pancreas_compare_list_Ori,file='Human_Pancreas_compare_list_Ori')
+
+
+############ Next!!!! ######################################
+############
+############ OK!!!!!! ######################################
+############
+
+############ We first run mouse equal datasets:
+############
+############ we need to create a folder named mouse equal datasets ##########
+############
+
+############ Totally_mouse_equal_datasets
+############ Totally_mouse_querysmaller_datasets
+############ Totally_mouse_refsmaller_datasets
+############ "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets" #######
+
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+output_folder4 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_between_datasets/"
+
+setwd(Ori_folder)
+############
+############
+load('Mouse_compare_list_Ori')
+
+############ OK! Great! Next we prepare these reference !!!! ############
+############ input is the list of the compareable datasets !!!!! ########
+
+
+Mouse_compare_list_Ori
+compare_list_Ori = Mouse_compare_list_Ori
+
+Processing_list_Ori_to_ready_files <- function(compare_list_Ori){
+	#####
+	######### output is a list which can be input to that kind of tools #######
+	#####
+	##### split the list to different list #####
+	##### table(compare_list_Ori$tags)
+	print(table(compare_list_Ori$tags))
+	k1 = which(compare_list_Ori$tags == 'A=B')
+	k2 = which(compare_list_Ori$tags == 'A<B')
+	k3 = which(compare_list_Ori$tags == 'A>B')
+	k4 = which(compare_list_Ori$tags == 'A<>B')
+	#####
+	##### OK!!!! #####
+	##### we first process k1 !!! ###########
+	compare_list_Ori_k1 = compare_list_Ori[k1,]
+	##### compare_list_Ori_k1[,c(1:3)]
+	##### we will add new names for Query and Ref ########
+	#####
+	compare_list_Ori_k1$Query_new = paste0(compare_list_Ori_k1$Query,"_Query")
+	compare_list_Ori_k1$Ref_new = paste0(compare_list_Ori_k1$Ref,"_Ref")
+	##### Then we start to copy files from folder to folder output_folder1 ######
+	Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+	for(i in 1:dim(compare_list_Ori_k1)[1]){
+		tmp_file_1 = compare_list_Ori_k1[i,1]
+		tmp_file_2 = compare_list_Ori_k1[i,2]
+		####
+		tmp_file_1 = paste0(tmp_file_1,'_Query')
+		tmp_file_2 = paste0(tmp_file_2,'_Ref')
+		####
+		tmp_file_1_from = paste0(Ori_folder,tmp_file_1)
+		tmp_file_1_to = paste0(output_folder1,tmp_file_1)
+		tmp_file_2_from = paste0(Ori_folder,tmp_file_2)
+		tmp_file_2_to = paste0(output_folder1,tmp_file_2)
+		####
+		#system(paste("cp",tmp_file_1_from,tmp_file_1_to))
+		#system(paste("cp",tmp_file_2_from,tmp_file_2_to))
+		####
+	}
+	###### OK! Done!!!! ######
+	###### Next 
+	compare_list_Ori_k2 = compare_list_Ori[k2,]
+	compare_list_Ori_k2$Query_new = paste0(compare_list_Ori_k2$Query,"_Query")
+	compare_list_Ori_k2$Ref_new = paste0(compare_list_Ori_k2$Ref,"_Ref")
+	######
+	compare_list_Ori_k2$Query_new = paste0(compare_list_Ori_k2$Query,"_Query")
+	compare_list_Ori_k2$Ref_new = paste0(compare_list_Ori_k2$Ref,"_Ref")
+	###### Next #########
+	for(i in 1:dim(compare_list_Ori_k2)[1]){
+		tmp_file_1 = compare_list_Ori_k2[i,1]
+		tmp_file_2 = compare_list_Ori_k2[i,2]
+		####
+		tmp_file_1 = paste0(tmp_file_1,'_Query')
+		tmp_file_2 = paste0(tmp_file_2,'_Ref')
+		####
+		tmp_file_1_from = paste0(Ori_folder,tmp_file_1)
+		tmp_file_1_to = paste0(output_folder2,tmp_file_1)
+		tmp_file_2_from = paste0(Ori_folder,tmp_file_2)
+		tmp_file_2_to = paste0(output_folder2,tmp_file_2)
+		####
+		#system(paste("cp",tmp_file_1_from,tmp_file_1_to))
+		#system(paste("cp",tmp_file_2_from,tmp_file_2_to))
+		####
+	}
+	###### Next ##########
+	compare_list_Ori_k3 = compare_list_Ori[k3,]
+	compare_list_Ori_k3$Query_new = paste0(compare_list_Ori_k3$Query,"_Query")
+	compare_list_Ori_k3$Ref_new = paste0(compare_list_Ori_k3$Ref,"_Ref")
+	######
+	compare_list_Ori_k3$Query_new = paste0(compare_list_Ori_k3$Query,"_Query")
+	compare_list_Ori_k3$Ref_new = paste0(compare_list_Ori_k3$Ref,"_Ref")
+	######
+	for(i in 1:dim(compare_list_Ori_k3)[1]){
+		tmp_file_1 = compare_list_Ori_k3[i,1]
+		tmp_file_2 = compare_list_Ori_k3[i,2]
+		####
+		tmp_file_1 = paste0(tmp_file_1,'_Query')
+		tmp_file_2 = paste0(tmp_file_2,'_Ref')
+		####
+		tmp_file_1_from = paste0(Ori_folder,tmp_file_1)
+		tmp_file_1_to = paste0(output_folder3,tmp_file_1)
+		tmp_file_2_from = paste0(Ori_folder,tmp_file_2)
+		tmp_file_2_to = paste0(output_folder3,tmp_file_2)
+		####
+		#system(paste("cp",tmp_file_1_from,tmp_file_1_to))
+		#system(paste("cp",tmp_file_2_from,tmp_file_2_to))
+		####
+	}
+	###### OK!!!!! ######
+	compare_list_Ori_k4 = compare_list_Ori[k4,]
+	compare_list_Ori_k4_new1 = list()
+	compare_list_Ori_k4_new2 = list()
+	######
+	for(i in 1:dim(compare_list_Ori_k4)[1]){
+		print(i)
+		tmp_file_1 = compare_list_Ori_k4[i,1]
+		tmp_file_2 = compare_list_Ori_k4[i,2]
+		#####
+		print(c(tmp_file_1,tmp_file_2))
+		##### for new1, query smaller #######
+		tmp_file_1_qsm = paste0(tmp_file_1,'_Query_small')
+		tmp_file_2_norm = paste0(tmp_file_2,'_Ref')
+		#####
+		dat1 = data.frame(Query=tmp_file_1,Ref=tmp_file_2,Query_new=tmp_file_1_qsm,Ref_new=tmp_file_2_norm)
+		#####
+		tmp_file_1_norm = paste0(tmp_file_1,'_Query')
+		tmp_file_2_rsm = paste0(tmp_file_2,'_Ref_small')
+		dat2 = data.frame(Query=tmp_file_1,Ref=tmp_file_2,Query_new=tmp_file_1_norm,Ref_new=tmp_file_2_rsm)
+		#####
+		compare_list_Ori_k4_new1 = c(compare_list_Ori_k4_new1,list(dat1))
+		compare_list_Ori_k4_new2 = c(compare_list_Ori_k4_new2,list(dat2))
+	}
+	compare_list_Ori_k4_new1 = do.call('rbind',compare_list_Ori_k4_new1)
+	compare_list_Ori_k4_new2 = do.call('rbind',compare_list_Ori_k4_new2)
+	###### OK !!!!! ########
+	###### NEXT PROCESS THE SEURAT OBJECTS FOR NEW1 AND NEW2 ######
+	###### OK !!!!! ########
+	###### next we loading each compared datasets!!!! ####
+	###### 
+	###### we use for loop loading seurat objects from the Ori folder, then compare the cell types and then we subset the seurat objects and save to the new folders ########
+	######
+	###### first we use new1 datasets!!!! ######
+	######
+	Query_ct_all = c()	
+	Ref_ct_all = c()
+	for(i in 1:dim(compare_list_Ori_k4_new1)[1]){
+		tmp_file1 = compare_list_Ori_k4_new1[i,1]
+		tmp_file2 = compare_list_Ori_k4_new1[i,2]
+		#####
+		tmp_file1_load = paste0(tmp_file1,'_Query')
+		tmp_file2_load = paste0(tmp_file2,'_Ref')
+		#####
+		setwd(Ori_folder)
+		tmp_file1_seurat = loadRData(tmp_file1_load)
+		tmp_file2_seurat = loadRData(tmp_file2_load)
+		#####
+		Query_ct = tmp_file1_seurat$celltype
+		Query_ct = as.character(Query_ct[!duplicated(Query_ct)])
+		Ref_ct = tmp_file2_seurat$celltype
+		Ref_ct = as.character(Ref_ct[!duplicated(Ref_ct)])
+		######
+		Overlap_ct = Query_ct[which(Query_ct %in% Ref_ct == T)]
+		k = which(tmp_file1_seurat$celltype %in% Overlap_ct == T)
+		tmp_file1_seurat_small = tmp_file1_seurat[,k]
+		######
+		######
+		tmp_file1_seurat_small_save_file = compare_list_Ori_k4_new1[i,3]
+		tmp_file1_seurat_small_save_file_to = paste0(output_folder2,tmp_file1_seurat_small_save_file)
+		tmp_file2_seurat_save_file = compare_list_Ori_k4_new1[i,4]
+		tmp_file2_seurat_save_file_to = paste0(output_folder2,tmp_file2_seurat_save_file)
+		######
+		######
+		#save(tmp_file1_seurat_small,file=tmp_file1_seurat_small_save_file_to)
+		#save(tmp_file2_seurat,file=tmp_file2_seurat_save_file_to)
+		###### added cell types to the meta files ###########
+		Query_ct_all = c(Query_ct_all,paste(Overlap_ct,collapse=' :: '))
+		Ref_ct_all = c(Ref_ct_all,paste(Ref_ct,collapse=' :: '))
+		###### OK next !!!! #####
+	}
+	compare_list_Ori_k4_new1$Query_CT = Query_ct_all
+	compare_list_Ori_k4_new1$Ref_CT = Ref_ct_all
+	#########
+	#########
+	######### OK!!! Next is the new2 compare !!!! ########
+	######### OK!!! #######
+	#########
+	Query_ct_all = c()	
+	Ref_ct_all = c()
+	for(i in 1:dim(compare_list_Ori_k4_new2)[1]){
+		tmp_file1 = compare_list_Ori_k4_new2[i,1]
+		tmp_file2 = compare_list_Ori_k4_new2[i,2]
+		#####
+		tmp_file1_load = paste0(tmp_file1,'_Query')
+		tmp_file2_load = paste0(tmp_file2,'_Ref')
+		#####
+		setwd(Ori_folder)
+		tmp_file1_seurat = loadRData(tmp_file1_load)
+		tmp_file2_seurat = loadRData(tmp_file2_load)
+		#####
+		Query_ct = tmp_file1_seurat$celltype
+		Query_ct = as.character(Query_ct[!duplicated(Query_ct)])
+		Ref_ct = tmp_file2_seurat$celltype
+		Ref_ct = as.character(Ref_ct[!duplicated(Ref_ct)])
+		######
+		Overlap_ct = Query_ct[which(Query_ct %in% Ref_ct == T)]
+		k = which(tmp_file2_seurat$celltype %in% Overlap_ct == T)
+		tmp_file2_seurat_small = tmp_file2_seurat[,k]
+		######
+		######
+		tmp_file1_seurat_save_file = compare_list_Ori_k4_new2[i,3]
+		tmp_file1_seurat_save_file_to = paste0(output_folder3,tmp_file1_seurat_save_file)
+		tmp_file2_seurat_small_save_file = compare_list_Ori_k4_new2[i,4]
+		tmp_file2_seurat_small_save_file_to = paste0(output_folder3,tmp_file2_seurat_small_save_file)
+		######
+		######
+		#save(tmp_file1_seurat,file=tmp_file1_seurat_save_file_to)
+		#save(tmp_file2_seurat_small,file=tmp_file2_seurat_small_save_file_to)
+		###### added cell types to the meta files ###########
+		Query_ct_all = c(Query_ct_all,paste(Query_ct,collapse=' :: '))
+		Ref_ct_all = c(Ref_ct_all,paste(Overlap_ct,collapse=' :: '))
+		###### OK next !!!! #####
+	}
+	compare_list_Ori_k4_new2$Query_CT = Query_ct_all
+	compare_list_Ori_k4_new2$Ref_CT = Ref_ct_all
+	#############################
+	######### OK!!!! ############
+	#############################
+	##### Next we need to compare to the total list ##########
+	#############################
+	##### Then will be 3 kinds of list ##########
+	#############################
+	#compare_list_Ori_k1
+	#compare_list_Ori_k2 + compare_list_Ori_k4_new1
+	#compare_list_Ori_k3 + compare_list_Ori_k4_new2
+	#############################
+	#### output is a list #######
+	#############################
+	compare_list_A_equal_B = compare_list_Ori_k1
+	###
+	index = c("Query","Ref","tags","Query_CT","Ref_CT","Query_new","Ref_new")
+	############################# "Query"     "Ref"       "tags"      "Query_CT" 
+	############################# "Ref_CT"    "Query_new" "Ref_new"
+	compare_list_A_smaller_B_1 = compare_list_Ori_k2
+	compare_list_A_smaller_B_2 = compare_list_Ori_k4_new1
+	compare_list_A_smaller_B_2$tags = "A<B"
+	m = match(index,colnames(compare_list_A_smaller_B_2))
+	compare_list_A_smaller_B_2 = compare_list_A_smaller_B_2[,m]
+	compare_list_A_smaller_B = rbind(compare_list_A_smaller_B_1,compare_list_A_smaller_B_2)
+	#############################
+	compare_list_A_B_smaller_1 = compare_list_Ori_k3
+	compare_list_A_B_smaller_2 = compare_list_Ori_k4_new2
+	compare_list_A_B_smaller_2$tags = "A>B"
+	m = match(index,colnames(compare_list_A_B_smaller_2))
+	compare_list_A_B_smaller_2 = compare_list_A_B_smaller_2[,m]
+	compare_list_A_B_smaller = rbind(compare_list_A_B_smaller_1,compare_list_A_B_smaller_2)
+	#############################
+	outputlist = list("A_equal_B"=compare_list_A_equal_B,"A_smaller_B"=compare_list_A_smaller_B,"A_B_smaller"=compare_list_A_B_smaller)
+	#############################
+	return(outputlist)
+	#############################
+}
+
+Mouse_compare_list_tab = outputlist
+
+setwd(Ori_folder)
+
+save(Mouse_compare_list_tab,file='Mouse_compare_list_tab')
+
+#### Next we need to add A and B total different !!!!! ########
+####
+#### OK! Next we prepare comparsions between different tissues !!!! ######
+####
+#### OK! Next relax #####
+####
+#### OK! Next we generate between tissue compare list !!!! ###############
+####
+
+load("Mouse_index_files")
+
+#### we mapping 
+#### Trachea 气管 ######
+#### Tongue 舌头 ##########
+
+index1 = Mouse_index_files[11]
+index2 = Mouse_index_files[12]
+
+index3 = Mouse_index_files[24]
+index4 = Mouse_index_files[25]
+
+ref1 = Mouse_index_files[1:5]
+ref2 = Mouse_index_files[14:18]
+
+compare_tab1 = data.frame(Query=index1,Ref=ref1)
+compare_tab2 = data.frame(Query=index2,Ref=ref1)
+
+compare_tab3 = data.frame(Query=index3,Ref=ref1)
+compare_tab4 = data.frame(Query=index4,Ref=ref1)
+
+####
+#### OK!!!! Then we use these files for comparsion !!!! #######
+####
+output_folder4 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_between_datasets/"
+
+A_diff_B = rbind(compare_tab1,compare_tab2,compare_tab3,compare_tab4)
+
+
+index = c("Query","Ref","tags","Query_CT","Ref_CT","Query_new","Ref_new")
+
+
+Process_different_mouse_datasets <- function(A_diff_B){
+	###### first added tags for the table #####
+	A_diff_B$tags = "A_diff_B"
+	######
+	###### Then added the CTs in the table ######
+	######
+	Query_ct_all = c()	
+	Ref_ct_all = c()
+	######
+	for(i in 1:dim(A_diff_B)[1]){
+		tmp_file1 = A_diff_B[i,1]
+		tmp_file2 = A_diff_B[i,2]
+		#####
+		tmp_file1_load = paste0(tmp_file1,'_Query')
+		tmp_file2_load = paste0(tmp_file2,'_Ref')
+		#####
+		setwd(Ori_folder)
+		tmp_file1_seurat = loadRData(tmp_file1_load)
+		tmp_file2_seurat = loadRData(tmp_file2_load)
+		##### Get cell types ####
+		Query_ct = tmp_file1_seurat$celltype
+		Query_ct = as.character(Query_ct[!duplicated(Query_ct)])
+		Ref_ct = tmp_file2_seurat$celltype
+		Ref_ct = as.character(Ref_ct[!duplicated(Ref_ct)])
+		######
+		Query_ct_all = c(Query_ct_all,paste(Overlap_ct,collapse=' :: '))
+		Ref_ct_all = c(Ref_ct_all,paste(Ref_ct,collapse=' :: '))
+		###### Don't need to move these files to a new folder !!!!! ######
+	}
+	######
+	######
+	A_diff_B$Query_CT = Query_ct_all
+	A_diff_B$Ref_CT = Ref_ct_all
+	######
+	######
+	A_diff_B$Query_new = paste0(A_diff_B$Query,'_Query')
+	A_diff_B$Ref_new = paste0(A_diff_B$Ref,'_Ref')
+	######
+	######
+	return(A_diff_B)
+}
+
+
+####
+#### Then we don not need to add them to a new folder !!!!!!!
+####
+#### Next we add the list to the total list, then we start to run the piplines !!!!!!
+####
+####
+
+names(Mouse_compare_list_tab)
+Mouse_compare_list_tab$"A_diff_B" = A_diff_B
+
+#### OK! that is great!!! #####
+#### we save the Mouse_compare_list_tab to the ori folder !!! ########
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+setwd(Ori_folder)
+save(Mouse_compare_list_tab,file="Mouse_compare_list_tab")
+
+#### OK !!!! ##### Let's modify the Other Methods function !!!! ########
+#### we don't need to the mode, all is in the compared list !!!! #######
+
+names(Mouse_compare_list_tab)
+
+compare_df = Mouse_compare_list_tab$"A_equal_B"
+folder = "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+
+"lightgreen"
+
+DimPlot(query_seurat,group.by="celltype")
+DimPlot(ref_seurat,group.by="celltype")
+DimPlot(query_seurat,group.by="seurat_clusters_new")
+
+setwd(Ori_folder)
+load('Seurat_mouse_res_list')
+
+Seurat_mouse_res_list_tmp = Seurat_mouse_res_list[[1]]
+Seurat_mouse_res_list_tmptmp = Seurat_mouse_res_list_tmp[[1]]
+
+m = match(colnames(query_seurat),Seurat_mouse_res_list_tmptmp$cluster)
+query_seurat$Predict = Seurat_mouse_res_list_tmptmp$result[m]
+DimPlot(query_seurat,group.by="Predict")
+
+
+query_seurat$label = Seurat_mouse_res_list_tmptmp$class2[m]
+DimPlot(query_seurat,group.by="label")
+
+
+compare_df = Mouse_compare_list_tab$"A_diff_B"
+folder = Ori_folder
+
+setwd(Ori_folder)
+load('cellAnn_mouse_res_list')
+
+Seurat_mouse_res_list_tmp = cellAnn_mouse_res_list[[4]]
+Seurat_mouse_res_list_tmptmp = Seurat_mouse_res_list_tmp[[1]]
+
+
+m = match(query_seurat$seurat_clusters_new,Seurat_mouse_res_list_tmptmp$cluster)
+
+query_seurat$Predict = Seurat_mouse_res_list_tmptmp$result[m]
+query_seurat$Predict = 'Unassigned'
+DimPlot(query_seurat,group.by="Predict")
+
+
+query_seurat$label = 'Correct'
+DimPlot(query_seurat,group.by="label")
+
+#####
+
+Main_compare_process_OtherTools_Single_Cell <- function(compare_df,method='scmap-cluster',folder=folder){
+	library(Seurat)
+	##########
+	out_table_list = list()
+	query_label_list = list()
+	ref_label_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		#######
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		print(paste("NONONONONONONONONO",i))
+		print(TAG)
+		#######
+		query = compare_df$Query_new[i]
+		ref = compare_df$Ref_new[i]
+		####### load ref and query seurat object !!!! #######
+		setwd(folder)
+		#######
+		query_seurat = loadRData(query)
+		ref_seurat = loadRData(ref)
+		#######	OK! ############
+		query_mat = query_seurat[['RNA']]@data
+		query_label = unname(query_seurat$celltype)
+		#######
+		ref_mat = ref_seurat[['RNA']]@data
+		ref_label = unname(ref_seurat$celltype)
+		####### then we will filter query datasets if the mode == 'easy' !!!! ####
+		####### prepare the datasets in the folder #####
+		####### scmap-cluster First we don't need to try scmap-cluster !!!!! ################################
+		if(method=='scmap-cluster'){
+			library(scmap)
+			library(SingleCellExperiment)
+			#### we should load the input average expression data as the input !!!!! #########
+			query_avg = paste0(query,'_Cluster_Avg') ### red ####
+			query_mat = loadRData(query_avg)
+			#### we will use the threshold to 0.5 #####
+			#### then we load the query labels !!!! ###
+			####
+			query_label_index = paste0(query,'_GroundTruth_Cluster')
+			query_label_tab = loadRData(query_label_index)
+			m1 = match(colnames(query_mat),query_label_tab$cluster)
+			query_label_tab = query_label_tab[m1,]
+			####
+			####
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			res = CellAnn_scmapcluster(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time = F)
+			#####
+			res = gsub('unassigned','Unassigned',res)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+			ref_label_list = c(ref_label_list,list(ref_label))
+			###### we need match the order of the avg matrix #######
+ 			query_label_list = c(query_label_list,list(query_label_tab))
+		}
+		if(method=='chetah'){
+			library(CHETAH)
+			library(SingleCellExperiment)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			res = CellAnn_chetah(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+			ref_label_list = c(ref_label_list,list(ref_label))
+			query_label_list = c(query_label_list,list(query_label))
+		}
+		if(method=='seurat'){
+			library(Seurat)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			res = CellAnn_seurat(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+			ref_label_list = c(ref_label_list,list(ref_label))
+			query_label_list = c(query_label_list,list(query_label))
+		}
+		if(method=='scpred'){
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			ref_label_input = as.character(ref_label_input)
+			res = CellAnn_scpred(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			#####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+			ref_label_list = c(ref_label_list,list(ref_label))
+			query_label_list = c(query_label_list,list(query_label))
+		}
+		if(method == 'scClassify'){
+			library(scClassify)
+			#### log-transformed (size-factor normalized) matrices as query datasets #####
+			query_mat_input = query_mat
+			ref_mat_input = ref_mat
+			ref_label_input = ref_label
+			####
+			res = CellAnn_scClassify(query_mat_input,ref_mat_input,ref_label_input,time = F,prob_threshold=0.5)
+			#### OK then we replace the '_' to ' & '
+			res = gsub("_"," & ",res)
+			####
+			res_table = data.frame(cluster=colnames(query_mat_input),result=res)
+			res_table = list(res_table)
+			names(res_table) = TAG
+			out_table_list = c(out_table_list,res_table)
+			ref_label_list = c(ref_label_list,list(ref_label))
+			query_label_list = c(query_label_list,list(query_label))
+		}
+	}
+	####### Then Next tools !!!! ##########################
+	#######
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	#######
+	return(out_table_list_v)
+}
+
+####
+#### OK!!!! #####
+####
+
+
+
+#### OK!!!! #####
+CellAnn_chetah = function(train,test,label_train,time = F){
+  ##########
+  library(SingleCellExperiment)
+  library(CHETAH)
+  ###########
+  start_time = Sys.time()
+  ###########
+  sce = SingleCellExperiment(assays = list(counts = train),colData = data.frame(celltypes = label_train))
+  sce_test = SingleCellExperiment(assays = list(counts = test))
+  ###########
+  sce_test = CHETAHclassifier(input = sce_test, ref_cells = sce)
+  ###########
+  tmp_tab = sce_test@colData
+  ###########
+  predict_label = unname(tmp_tab$celltype_CHETAH)
+  ########### Then we may found the node !!! ##########
+  ### PlotCHETAH(input = sce_test, interm = TRUE)
+  nodes = sce_test@int_metadata$CHETAH$nodetypes
+  #### 
+  k = grep("Node",predict_label)
+  #### we change node to cell types ##########
+  if(length(k) > 0){
+  		for(ki in 1:length(k)){
+  			tmp_node = predict_label[k[ki]]
+  			tmp_node_index = as.numeric(gsub('Node','',tmp_node)) + 1
+  			tmp_ct = names(nodes[[tmp_node_index]])
+  			tmp_ct = paste(tmp_ct,collapse=' & ')
+  			predict_label[k[ki]] = tmp_ct
+  		}
+  }
+  ############
+  end_time = Sys.time()
+  ###########
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ###########
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+#### Then Next tools !!!! #################
+CellAnn_seurat = function(train,
+                  test,
+                  label_train,
+                  k.filter = NA,
+                  time = T,
+                  selection.method = 'vst',
+                  nfeatures = 2000,
+                  mean.cutoff = c(0.1, 8),
+                  dispersion.cutoff = c(1, Inf),
+                  prediction.score.max = 0.5){
+  #######
+  start_time = Sys.time()
+  ########
+  reference = CreateSeuratObject(train)
+  reference = NormalizeData(reference,verbose = F)
+  reference = FindVariableFeatures(reference,mean.cutoff = mean.cutoff,dispersion.cutoff = dispersion.cutoff,verbose = F)
+  reference$celltype = label_train
+  query = CreateSeuratObject(test)
+  query = NormalizeData(query,verbose = F)
+  query = FindVariableFeatures(query,mean.cutoff = mean.cutoff,dispersion.cutoff = dispersion.cutoff,verbose = F)
+  #######
+  anchors = FindTransferAnchors(reference,query,k.filter = NA)
+  k.weight = dim(anchors@anchors)[1]
+  predictions = try(TransferData(anchors,as.character(reference$celltype)))
+  while(inherits(predictions,'try-error')){
+  	if(k.weight > 100){
+  		k.weight = 100
+  	}
+  	k.weight=k.weight-1
+  	print(k.weight)
+  	predictions = try(TransferData(anchors,as.character(reference$celltype),k.weight=k.weight))
+  }
+  #######
+  query = AddMetaData(query, metadata = predictions)
+  ######
+  print(summary(query$prediction.score.max))
+  query$predicted.id[which(query$prediction.score.max < prediction.score.max)] <- 'Unassigned'
+  #######
+  predict_label = unname(query$predicted.id)
+  ######
+  end_time = Sys.time()
+  ######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  ######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+#### OK!!!!! ### The Next tools !!!! ######
+####
+CellAnn_scpred = function(train,
+                  test,
+                  label_train,
+                  model = 'svmRadial',
+                  reclassify = NULL,
+                  time = F,
+                  threshold = 0.55){
+
+  library(scPred)
+  library(dplyr)
+  start_time = Sys.time()
+  reference = CreateSeuratObject(train)
+  query = CreateSeuratObject(test)
+  reference = reference %>%
+    NormalizeData() %>%
+    FindVariableFeatures() %>%
+    ScaleData() %>%
+    RunPCA() %>%
+    RunUMAP(dims = 1:30)
+  ###########
+  query = NormalizeData(query)
+  reference$cell_type = label_train
+  ##### ####### ############## #################################### red ####### change to seurat_clusters should be celltype #####
+  reference = getFeatureSpace(reference, "cell_type")
+  reference = trainModel(reference,
+                         model = model,
+                         reclassify = reclassify)
+  query = scPredict(query,
+                    reference,
+                    threshold = threshold)
+  predict_label = unname(query$scpred_prediction)
+  end_time = Sys.time()
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  return(predict_label)
+}
+#### OK!!! #### Next !!!! #################
+CellAnn_scClassify <- function(test = test,
+                  train = train,
+                  label_train = label_train,
+                  time=T,
+                  prob_threshold=0.5
+                  ){
+	#### first train the model ####
+	####
+	scClassify_res_ensemble <- scClassify(exprsMat_train = train,
+                                      cellTypes_train = label_train,
+                                      exprsMat_test = test,
+                                      tree = "HC",
+                                      algorithm = "WKNN",
+                                      selectFeatures = c("limma"),
+                                      similarity = c("pearson", "cosine"),
+                                      weighted_ensemble = FALSE,
+                                      returnList = FALSE,
+                                      verbose = FALSE)
+	####
+	####
+	start_time = Sys.time()
+	pred_res <- scClassify_res_ensemble$testRes$test$ensembleRes$cellTypes
+	#####
+	end_time = Sys.time()
+	times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+	if(time){
+    	return(list(predict_label = pred_res$ensembleRes,times = times))
+  	}
+	return(pred_res)
+}
+####
+CellAnn_scmapcluster = function(train,
+                        test,
+                        label_train,
+                        threshold = 0.7,
+                        time = T){
+  start_time = Sys.time()
+  ######
+  sce = SingleCellExperiment(list(counts = train),colData = data.frame(cell_type1 = label_train))
+  logcounts(sce) = log2(counts(sce) + 1)
+  rowData(sce)$feature_symbol = rownames(sce)
+  sce = selectFeatures(sce)
+  ######
+  sce_test = SingleCellExperiment(list(counts = test))
+  logcounts(sce_test) = log2(counts(sce_test) + 1)
+  rowData(sce_test)$feature_symbol = rownames(sce_test)
+  ######
+  sce = indexCluster(sce)
+  scmapCluster_results = scmapCluster(projection = sce_test,index_list = list(sce@metadata$scmap_cluster_index),threshold = threshold)
+  predict_label = scmapCluster_results$combined_labs
+  #######
+  end_time = Sys.time()
+  #######
+  times = as.numeric(difftime(end_time,start_time,units = 'secs'))
+  #######
+  if(time){
+    return(list(predict_label = predict_label,times = times))
+  }
+  ########
+  return(predict_label)
+}
+
+
+#### OK!!! #########
+#### Let us to see how to save the results !!!!!! ########
+#### OK!!! ######### 
+
+
+Visualize_res <- function(out_table_list,ref_label_list,query_label_list){
+	plot_res = list()
+	for(i in 1:length(out_table_list)){
+		######
+		names = names(out_table_list)[i]
+		library(stringr)
+		query_names = str_extract(names,"(?<=query:)(.+)(?=-->)")
+		ref_names = str_extract(names,"(?<=ref:)(.+)")
+		print(paste(query_names,ref_names))
+		###### load the query ground truth ######
+		###### see the results ######
+		query_res = out_table_list[[i]]
+		###### merge the table ######
+		query_merge = query_res
+		###### 
+		query_label_list_tmp = query_label_list[[i]]
+		######
+		if(class(query_label_list_tmp) == "data.frame"){
+			query_merge$ground.truth = query_label_list_tmp$"ground-truth"
+			#####
+			query_merge$number = query_label_list_tmp$"number"
+		}else{
+			query_merge$ground.truth = query_label_list[[i]]
+		}
+		######
+		######
+		###### Then calculate the accuracy ############
+		plot_res_sub = Class_results(query_merge,ref_label_list[[i]],NDtag='Unassigned')
+		plot_res = c(plot_res,list(plot_res_sub))
+	}
+	names(plot_res) = names(out_table_list)
+	return(plot_res)
+}
+
+Class_results <- function(query_merge,ref_ct,NDtag='Unassigned'){
+	####
+	res_table = query_merge
+	res_table$class1 = 'ND'
+	res_table$class2 = 'ND'
+	res_table_cl = res_table
+	####
+	query_res = query_merge$result
+	query_truth = query_merge$ground.truth
+	####
+	for(j in 1:dim(res_table_cl)[1]){
+		query_truth_tmp = query_truth[j]
+		query_res_tmp = query_res[j]
+		if(query_truth_tmp %in% ref_ct == T){
+			if(length(grep(" & ",query_res_tmp))==0){
+				if(query_res_tmp == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+					res_table_cl$class1[j] = 'Failed_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))==1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				if(query_res_tmp[1] == query_truth_tmp | query_res_tmp[2] == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify_Half'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if((query_res_tmp[1] != query_truth_tmp) & (query_res_tmp[2] != query_truth_tmp)){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))>1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				res_table_cl$class1[j] = 'Wrong_Classify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+		}
+		if(query_truth_tmp %in% ref_ct == F){
+			if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+				res_table_cl$class1[j] = 'Correct_unClassify'
+	 			res_table_cl$class2[j] = 'Correct'
+			}
+			if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+				res_table_cl$class1[j] = 'Wrong_unClassify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+
+		}
+	}
+	return(res_table_cl)
+}
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+####
+#### OK!!! ############
+#### Then we open new Rstudio to run: chetah seurat scpred and scClassify ###########
+####
+
+#### First we load the functions: ######
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+setwd(Ori_folder)
+load("Mouse_compare_list_tab")
+
+#### load the functions ######
+CellAnn_chetah
+CellAnn_seurat
+CellAnn_scpred
+CellAnn_scClassify
+Main_compare_process_OtherTools_Single_Cell
+loadRData
+Visualize_res
+Class_results
+
+#### load the compare list ##############
+
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+
+#### first using chetah #################
+####
+chetah_mouse_res_1 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[1]],method='chetah',folder=output_folder1)
+chetah_mouse_res_2 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[2]],method='chetah',folder=output_folder2)
+chetah_mouse_res_3 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[3]],method='chetah',folder=output_folder3)
+chetah_mouse_res_4 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[4]],method='chetah',folder=Ori_folder)
+
+chetah_mouse_res_list = list(chetah_mouse_res_1,chetah_mouse_res_2,chetah_mouse_res_3,chetah_mouse_res_4)
+setwd(Ori_folder)
+save(chetah_mouse_res_list,file='chetah_mouse_res_list')
+
+#### Next using Seurat ################
+####
+Seurat_mouse_res_1 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[1]],method='seurat',folder=output_folder1)
+Seurat_mouse_res_2 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[2]],method='seurat',folder=output_folder2)
+Seurat_mouse_res_3 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[3]],method='seurat',folder=output_folder3)
+Seurat_mouse_res_4 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[4]],method='seurat',folder=Ori_folder)
+
+Seurat_mouse_res_list = list(Seurat_mouse_res_1,Seurat_mouse_res_2,Seurat_mouse_res_3,Seurat_mouse_res_4)
+setwd(Ori_folder)
+save(Seurat_mouse_res_list,file='Seurat_mouse_res_list')
+
+#### Next using scClassify #############
+####
+scClassify_mouse_res_1 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[1]],method='scClassify',folder=output_folder1)
+scClassify_mouse_res_2 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[2]],method='scClassify',folder=output_folder2)
+scClassify_mouse_res_3 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[3]],method='scClassify',folder=output_folder3)
+scClassify_mouse_res_4 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[4]],method='scClassify',folder=Ori_folder)
+
+scClassify_mouse_res_list = list(scClassify_mouse_res_1,scClassify_mouse_res_2,scClassify_mouse_res_3,scClassify_mouse_res_4)
+setwd(Ori_folder)
+save(scClassify_mouse_res_list,file='scClassify_mouse_res_list')
+
+#### Next using scPred #############
+####
+scPred_mouse_res_1 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[1]],method='scpred',folder=output_folder1)
+scPred_mouse_res_2 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[2]],method='scpred',folder=output_folder2)
+scPred_mouse_res_3 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[3]],method='scpred',folder=output_folder3)
+scPred_mouse_res_4 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[4]],method='scpred',folder=Ori_folder)
+
+
+"NONONONONONONONONO 12"
+[1] "query:Tabula_Muris_mouse_facs_Aorta_Query-->ref:Tabula_Muris_mouse_droplet_Heart_and_Aorta_Ref_small"
+#### some problem with NO 12 ######
+#### set i = 12 ###################
+compare_df = Mouse_compare_list_tab[[3]]
+method='scpred'
+folder=output_folder3
+i = 12
+
+setwd(Ori_folder)
+load('scPred_mouse_res_4')
+
+scPred_mouse_res_list = list(scPred_mouse_res_1,scPred_mouse_res_2,scPred_mouse_res_3,scPred_mouse_res_4)
+setwd(Ori_folder)
+save(scPred_mouse_res_list,file='scPred_mouse_res_list')
+
+####
+####
+save(scPred_mouse_res_list,file='scPred_mouse_res_list')
+####
+#### OK!!!! ########################
+####
+#### averaged expression ###########
+####
+#### Next we need to prepare scmap inputs !!!!! ########
+####
+#### OK we will generate the scmap cluster average files and ground-truth files !!!!! #########
+####
+#### modify the scmap-cluster functions ################
+####
+#### modify the input query expression matrix and truth label ???? #########
+####
+#### Then we go to the 3 folder to generate the average expression matrix ############
+#### _Query has been already clustered, just output the average expression and ground-tructh #######
+####
+####
+####
+
+####
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+##### first list1 ########
+#####
+
+Mouse_compare_list_1 = Mouse_compare_list_tab[[1]]
+setwd(output_folder1)
+for(i in 1:dim(Mouse_compare_list_1)[1]){
+	########
+	tmp_query = Mouse_compare_list_1$Query_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_query)
+	########
+	tmp_file_name_avg = paste0(tmp_query,'_Cluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$seurat_clusters_new
+	query_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(query_Avg_Mat,file=tmp_file_name_avg)
+	########
+	celltypes = tmp_seurat$celltype
+	dat = data.frame(data_cluster,celltypes)
+	#### Then we calculate the cell numbers for each !!!! #######
+	dat_res = table(data_cluster)
+	####
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	m = match(dat$cluster,names(dat_res))
+	dat$number = as.numeric(dat_res)[m]
+	rownames(dat) = NULL
+	print(dat)
+	####
+	new_File = paste(tmp_query,'_GroundTruth_Cluster',sep='')
+	save(dat,file=new_File)
+}
+
+### Next !!!! ###
+Mouse_compare_list_2 = Mouse_compare_list_tab[[2]]
+setwd(output_folder2)
+for(i in 1:dim(Mouse_compare_list_2)[1]){
+	########
+	tmp_query = Mouse_compare_list_2$Query_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_query)
+	########
+	tmp_file_name_avg = paste0(tmp_query,'_Cluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$seurat_clusters_new
+	query_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(query_Avg_Mat,file=tmp_file_name_avg)
+	########
+	celltypes = tmp_seurat$celltype
+	dat = data.frame(data_cluster,celltypes)
+	#### Then we calculate the cell numbers for each !!!! #######
+	dat_res = table(data_cluster)
+	####
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	m = match(dat$cluster,names(dat_res))
+	dat$number = as.numeric(dat_res)[m]
+	rownames(dat) = NULL
+	print(dat)
+	####
+	new_File = paste(tmp_query,'_GroundTruth_Cluster',sep='')
+	save(dat,file=new_File)
+}
+
+### Next !!!! ###
+Mouse_compare_list_3 = Mouse_compare_list_tab[[3]]
+setwd(output_folder3)
+### 
+for(i in 1:dim(Mouse_compare_list_3)[1]){
+	########
+	tmp_query = Mouse_compare_list_3$Query_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_query)
+	########
+	tmp_file_name_avg = paste0(tmp_query,'_Cluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$seurat_clusters_new
+	query_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(query_Avg_Mat,file=tmp_file_name_avg)
+	########
+	celltypes = tmp_seurat$celltype
+	dat = data.frame(data_cluster,celltypes)
+	#### Then we calculate the cell numbers for each !!!! #######
+	dat_res = table(data_cluster)
+	####
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	m = match(dat$cluster,names(dat_res))
+	dat$number = as.numeric(dat_res)[m]
+	rownames(dat) = NULL
+	print(dat)
+	####
+	new_File = paste(tmp_query,'_GroundTruth_Cluster',sep='')
+	save(dat,file=new_File)
+}
+
+####
+Mouse_compare_list_4 = Mouse_compare_list_tab[[4]]
+setwd(Ori_folder)
+### 
+for(i in 1:dim(Mouse_compare_list_4)[1]){
+	########
+	tmp_query = Mouse_compare_list_4$Query_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_query)
+	########
+	tmp_file_name_avg = paste0(tmp_query,'_Cluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$seurat_clusters_new
+	query_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(query_Avg_Mat,file=tmp_file_name_avg)
+	########
+	celltypes = tmp_seurat$celltype
+	dat = data.frame(data_cluster,celltypes)
+	#### Then we calculate the cell numbers for each !!!! #######
+	dat_res = table(data_cluster)
+	####
+	index = paste(dat[,1],dat[,2])
+	dat = dat[!duplicated(index),]
+	colnames(dat) = c('cluster','ground-truth')
+	m = match(dat$cluster,names(dat_res))
+	dat$number = as.numeric(dat_res)[m]
+	rownames(dat) = NULL
+	print(dat)
+	####
+	new_File = paste(tmp_query,'_GroundTruth_Cluster',sep='')
+	save(dat,file=new_File)
+}
+
+####
+#### OK PREPARED!!! ####
+#### Next changed the scmap input files !!!! #######
+####
+####
+
+
+scmap_cluster_mouse_res_1 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[1]],method='scmap-cluster',folder=output_folder1)
+scmap_cluster_mouse_res_2 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[2]],method='scmap-cluster',folder=output_folder2)
+scmap_cluster_mouse_res_3 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[3]],method='scmap-cluster',folder=output_folder3)
+scmap_cluster_mouse_res_4 = Main_compare_process_OtherTools_Single_Cell(Mouse_compare_list_tab[[4]],method='scmap-cluster',folder=Ori_folder)
+
+scmap_cluster_mouse_res_list = list(scmap_cluster_mouse_res_1,scmap_cluster_mouse_res_2,scmap_cluster_mouse_res_3,scmap_cluster_mouse_res_4)
+setwd(Ori_folder)
+save(scmap_cluster_mouse_res_list,file='scmap_cluster_mouse_res_list')
+
+####
+#### OK!!! ########
+####
+####
+####
+#### OK!!! Let us plot these results for the method #########
+####
+#### first we plot the results for scmap_cluster !!!! #######
+#### 
+
+
+res_list = chetah_mouse_res_list[[1]]
+
+res_list_to_plot <- function(res_list,name='Q=R',tag1="mouse"){
+	######
+	res_tab = list()
+	for(i in 1:length(res_list)){
+		#######
+		tmp_table = data.frame(class=c('Correct_Classify','Correct_Classify_Half','Failed_Classify','Wrong_Classify','Correct_unClassify','Wrong_unClassify'),counts=0)
+		#######
+		res_v_sub = res_list[[i]]
+		m = match('number',colnames(res_v_sub))
+		if(is.na(m) == F){
+			res_v_subSum = tapply(res_v_sub$number,res_v_sub$class1,sum)
+			m = match(names(res_v_subSum),tmp_table$class)
+			tmp_table$counts[m] = as.numeric(res_v_subSum)
+		}else{
+			res_v_subSum = data.frame(table(res_v_sub$class1))
+			m = match(res_v_subSum$Var1,tmp_table$class)
+			tmp_table$counts[m] = as.numeric(res_v_subSum$Freq)
+		}
+		#######
+		tmp_table$name = name
+		tmp_table$sample = names(res_list)[i]
+		#######
+		if(tag1=="mouse"){
+			tmp_table$sample2 = gsub('query:Tabula_Muris_mouse_','',tmp_table$sample)
+			tmp_table$sample2 = gsub('ref:Tabula_Muris_mouse_','',tmp_table$sample2)
+			tmp_table$sample2 = gsub('_Query','',tmp_table$sample2)
+			tmp_table$sample2 = gsub('_Ref','',tmp_table$sample2)
+		}
+		#######
+		#######
+		res_tab = c(res_tab,list(tmp_table))
+	}
+	######
+	######
+	######
+	res_tab = do.call('rbind',res_tab)
+	return(res_tab)
+}
+
+
+
+
+setwd(Ori_folder)
+load('scmap_cluster_mouse_res_list')
+scmap_cluster_mouse_res_list
+
+scmap_cluster_mouse_res_plot1 = res_list_to_plot(scmap_cluster_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scmap_cluster_mouse_res_plot2 = res_list_to_plot(scmap_cluster_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scmap_cluster_mouse_res_plot3 = res_list_to_plot(scmap_cluster_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scmap_cluster_mouse_res_plot4 = res_list_to_plot(scmap_cluster_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+scmap_cluster_mouse_res_plot_all = rbind(scmap_cluster_mouse_res_plot1,scmap_cluster_mouse_res_plot2,scmap_cluster_mouse_res_plot3,scmap_cluster_mouse_res_plot4)
+colnames(scmap_cluster_mouse_res_plot_all)
+levels_sample = scmap_cluster_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+scmap_cluster_mouse_res_plot_all$sample2 = factor(scmap_cluster_mouse_res_plot_all$sample2,levels=levels_sample)
+scmap_cluster_mouse_res_plot_all$class = factor(scmap_cluster_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+library(ggplot2)
+ggplot(scmap_cluster_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("scmap-cluster_res_plot.png",width=8,height=8)
+
+
+
+#### let us plot the results !!!!! #######
+####
+
+
+setwd(Ori_folder)
+load('chetah_mouse_res_list')
+chetah_mouse_res_plot1 = res_list_to_plot(chetah_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+chetah_mouse_res_plot2 = res_list_to_plot(chetah_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+chetah_mouse_res_plot3 = res_list_to_plot(chetah_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+chetah_mouse_res_plot4 = res_list_to_plot(chetah_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+
+chetah_cluster_mouse_res_plot_all = rbind(chetah_mouse_res_plot1,chetah_mouse_res_plot2,chetah_mouse_res_plot3,chetah_mouse_res_plot4)
+levels_sample = chetah_cluster_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+chetah_cluster_mouse_res_plot_all$sample2 = factor(chetah_cluster_mouse_res_plot_all$sample2,levels=levels_sample)
+chetah_cluster_mouse_res_plot_all$class = factor(chetah_cluster_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+library(ggplot2)
+ggplot(chetah_cluster_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("chetah_res_plot.png",width=8,height=8)
+
+
+##### OK!!!! Next is the seurat !!!! #######
+#####
+
+setwd(Ori_folder)
+load('Seurat_mouse_res_list')
+Seurat_mouse_res_plot1 = res_list_to_plot(Seurat_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+Seurat_mouse_res_plot2 = res_list_to_plot(Seurat_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+Seurat_mouse_res_plot3 = res_list_to_plot(Seurat_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+Seurat_mouse_res_plot4 = res_list_to_plot(Seurat_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+Seurat_mouse_res_plot_all = rbind(Seurat_mouse_res_plot1,Seurat_mouse_res_plot2,Seurat_mouse_res_plot3,Seurat_mouse_res_plot4)
+levels_sample = Seurat_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+Seurat_mouse_res_plot_all$sample2 = factor(Seurat_mouse_res_plot_all$sample2,levels=levels_sample)
+Seurat_mouse_res_plot_all$class = factor(Seurat_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(Seurat_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("Seurat_res_plot.png",width=8,height=8)
+
+######
+######
+
+setwd(Ori_folder)
+load('scClassify_mouse_res_list')
+scClassify_mouse_res_plot1 = res_list_to_plot(scClassify_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scClassify_mouse_res_plot2 = res_list_to_plot(scClassify_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scClassify_mouse_res_plot3 = res_list_to_plot(scClassify_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scClassify_mouse_res_plot4 = res_list_to_plot(scClassify_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+scClassify_mouse_res_plot_all = rbind(scClassify_mouse_res_plot1,scClassify_mouse_res_plot2,scClassify_mouse_res_plot3,scClassify_mouse_res_plot4)
+levels_sample = scClassify_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+scClassify_mouse_res_plot_all$sample2 = factor(scClassify_mouse_res_plot_all$sample2,levels=levels_sample)
+scClassify_mouse_res_plot_all$class = factor(scClassify_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(scClassify_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("scClassify_res_plot.png",width=8,height=8)
+
+
+setwd(Ori_folder)
+load("scPred_mouse_res_list")
+
+scPred_mouse_res_plot1 = res_list_to_plot(scPred_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scPred_mouse_res_plot2 = res_list_to_plot(scPred_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scPred_mouse_res_plot3 = res_list_to_plot(scPred_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scPred_mouse_res_plot4 = res_list_to_plot(scPred_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+scPred_mouse_res_plot_all = rbind(scPred_mouse_res_plot1,scPred_mouse_res_plot2,scPred_mouse_res_plot3,scPred_mouse_res_plot4)
+levels_sample = scPred_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+scPred_mouse_res_plot_all$sample2 = factor(scPred_mouse_res_plot_all$sample2,levels=levels_sample)
+scPred_mouse_res_plot_all$class = factor(scPred_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(scPred_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("scPred_res_plot.png",width=8,height=8)
+
+
+###### ######## ###########
+###### OK !!!!! ###########
+###### Great !!!!! ########
+###### ########### ########
+###### Next we need to prepare the CellAnn #############
+###### we need to prepare the ref sub-cluster average and markers for the sub-clusters ##########
+######
+### blue ####
+### blue ####
+### blue ####
+###### first we need to load the compare list to prepare the datasets !!!! #######################
+
+runDEGs_Ref_sub <- function(Seurat_Obj,method='COSG',idents='celltype',num_of_genes = 100){
+	Idents(Seurat_Obj) = idents
+	#######
+	library(COSG)
+	#######
+	if(method == 'COSG'){
+		marker_cosg <- cosg(
+ 				Seurat_Obj,
+ 				groups=c('all'),
+ 				assay='RNA',
+ 				slot='data',
+ 				mu=1,
+ 				n_genes_user=num_of_genes)
+		res = marker_cosg$names
+		all_genes = res
+	}
+	#######
+	#######
+	return(all_genes)
+}
+
+
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+##### first list1 ########
+#####
+
+Mouse_compare_list_1 = Mouse_compare_list_tab[[1]]
+setwd(output_folder1)
+for(i in 1:dim(Mouse_compare_list_1)[1]){
+	########
+	tmp_ref = Mouse_compare_list_1$Ref_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_ref)
+	########
+	tmp_file_name_avg = paste0(tmp_ref,'_SubCluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$subcelltype
+	ref_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call cell markers for each main Cts #############
+	tmp_file_name_CT = paste0(tmp_ref,'_CT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','celltype',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	######## Next we need to call subCell markers for each sub Cts ###########
+	tmp_file_name_subCT = paste0(tmp_ref,'_SubCT_Marker')
+	tmp_subct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','subcelltype',100)
+	save(tmp_subct_marker,file=tmp_file_name_subCT)
+	####
+}
+
+### Next !!!! ###
+Mouse_compare_list_2 = Mouse_compare_list_tab[[2]]
+setwd(output_folder2)
+for(i in 1:dim(Mouse_compare_list_2)[1]){
+	########
+	tmp_ref = Mouse_compare_list_2$Ref_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_ref)
+	########
+	tmp_file_name_avg = paste0(tmp_ref,'_SubCluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$subcelltype
+	ref_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call cell markers for each main Cts #############
+	tmp_file_name_CT = paste0(tmp_ref,'_CT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','celltype',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	######## Next we need to call subCell markers for each sub Cts ###########
+	tmp_file_name_subCT = paste0(tmp_ref,'_SubCT_Marker')
+	tmp_subct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','subcelltype',100)
+	save(tmp_subct_marker,file=tmp_file_name_subCT)
+}
+
+### ######### ###
+### Next !!!! ###
+### ######### ###
+
+Mouse_compare_list_3 = Mouse_compare_list_tab[[3]]
+setwd(output_folder3)
+### 
+for(i in 1:dim(Mouse_compare_list_3)[1]){
+	########
+	tmp_ref = Mouse_compare_list_3$Ref_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_ref)
+	########
+	tmp_file_name_avg = paste0(tmp_ref,'_SubCluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$subcelltype
+	ref_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call cell markers for each main Cts #############
+	tmp_file_name_CT = paste0(tmp_ref,'_CT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','celltype',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	######## Next we need to call subCell markers for each sub Cts ###########
+	tmp_file_name_subCT = paste0(tmp_ref,'_SubCT_Marker')
+	tmp_subct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','subcelltype',100)
+	save(tmp_subct_marker,file=tmp_file_name_subCT)
+}
+
+####
+Mouse_compare_list_4 = Mouse_compare_list_tab[[4]]
+setwd(Ori_folder)
+### 
+for(i in 1:dim(Mouse_compare_list_4)[1]){
+	########
+	tmp_ref = Mouse_compare_list_4$Ref_new[i]
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(tmp_ref)
+	########
+	tmp_file_name_avg = paste0(tmp_ref,'_SubCluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@data
+	data_cluster = tmp_seurat$subcelltype
+	ref_Avg_Mat <- CellAnn_Avg_Mat(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call cell markers for each main Cts #############
+	tmp_file_name_CT = paste0(tmp_ref,'_CT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','celltype',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	######## Next we need to call subCell markers for each sub Cts ###########
+	tmp_file_name_subCT = paste0(tmp_ref,'_SubCT_Marker')
+	tmp_subct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','subcelltype',100)
+	save(tmp_subct_marker,file=tmp_file_name_subCT)
+}
+ 
+######
+###### OK!!! Let us try the new CellAnn methods !!!!! #############
+######
+###### First we need to load the '_CT_Marker'
+###### '_SubCluster_Avg'
+###### '_SubCT_Marker'
+###### _Cluster_Avg #########
+######
+###### Then we changed the functions with CellAnn !!!!! ###########
+######
+
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+compare_df = Mouse_compare_list_tab[[3]]
+folder = output_folder3
+
+Main_compare_process_CellAnn <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		query = compare_df$Query_new[i]
+		ref = compare_df$Ref_new[i]
+		#######
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		query_label_tab = loadRData(query_label_index)
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		#######
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		#######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		Mat_list = equal_matrix(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=25)
+		##########
+		all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		#####
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+####################################################
+####################################################
+
+equal_matrix <- function(query_mat,ref_mat){
+	##########
+	genes_overlap = rownames(query_mat)[which(rownames(query_mat) %in% rownames(ref_mat) == T)]
+	########## head(rownames(query_mat2))
+	m = match(genes_overlap,rownames(query_mat))
+	query_mat2 = query_mat[m,]
+	########## head(rownames(ref_mat2))
+	m = match(genes_overlap,rownames(ref_mat))
+	ref_mat2 = ref_mat[m,]
+	########## OK !!!! Then normalize !!!! ########
+	##########
+	ref_mat_input3 = exp(ref_mat2)-1
+	#print(head(colSums(ref_mat_input3)))
+	query_mat_input3 = exp(query_mat2)-1
+	#print(colSums(query_mat_input3))
+	##########
+	combined_mat = cbind(query_mat_input3,ref_mat_input3)
+	#######
+	combined_mat_norm = limma::normalizeBetweenArrays(combined_mat,method="quantile")
+	combined_mat_norm = log(combined_mat_norm+1)
+	combined_mat_norm = round(combined_mat_norm,2)
+	#######
+	query_mat_input4 = combined_mat_norm[,1:dim(query_mat_input3)[2]]
+	ref_mat_input4 = combined_mat_norm[,-c(1:dim(query_mat_input3)[2])]
+	#######
+	outputlist = list(query_mat_input4,ref_mat_input4)
+	return(outputlist)
+}
+
+selection_DEGs <- function(all_used_genes,ref_marker,Top=50){
+	#### class(ref_marker) ######
+	res = apply(ref_marker,2,function(x) length(which(x %in% all_used_genes == T)))
+	num = min(res)
+	####
+	num_new = min(num,Top)
+	#### OK!! Then see the Top genes !!!! #######
+	ref_marker_cl = ref_marker[1:num_new,]
+	####
+	ref_marker_cl = reshape2::melt(as.matrix(ref_marker_cl))
+	####
+	all_markers = ref_marker_cl$value
+	all_markers = all_markers[!duplicated(all_markers)]
+	####
+	return(all_markers)
+}
+
+
+###### we use cor.fk to calculate the correlations ######
+calculate_Cor <- function(query_mat_input,ref_mat_input,DEGs_overlap){
+	k1 = which(DEGs_overlap %in% rownames(query_mat_input) == T)
+	k2 = which(DEGs_overlap %in% rownames(ref_mat_input) == T)
+	k3 = k1[which(k1 %in% k2 == T)]
+	DEGs_overlap = DEGs_overlap[k3]
+	######
+	query_mat_input_cl = query_mat_input[which(rownames(query_mat_input) %in% DEGs_overlap == T),]
+	ref_mat_input_cl = ref_mat_input[which(rownames(ref_mat_input) %in% DEGs_overlap == T),]
+	######
+	######
+	m1 = match(DEGs_overlap,rownames(query_mat_input_cl))
+	m2 = match(DEGs_overlap,rownames(ref_mat_input_cl))
+	query_mat_input_cl= query_mat_input_cl[m1,]
+	ref_mat_input_cl= ref_mat_input_cl[m2,]
+	######
+	merge_mat = cbind(query_mat_input_cl,ref_mat_input_cl)
+	Cor_res <- pcaPP::cor.fk(merge_mat)
+	###### split the Cor_res #######
+	query_dim = dim(query_mat_input_cl)[2]
+	ref_dim = dim(ref_mat_input_cl)[2]
+	######
+	Cor_res = Cor_res[,-c(1:query_dim)]
+	Cor_res = Cor_res[c(1:query_dim),]
+	###### Then we output the most largest clusters ########
+	return(Cor_res)
+}
+
+######
+###### Get hightest correlated cells !!!! #################
+######
+Res_mat_highest_celltype <- function(res_mat,cutoff){
+	res_list = list()
+	for(i in 1:dim(res_mat)[1]){
+		res_mat_tmp = res_mat[i,]
+		k = which(res_mat_tmp == max(res_mat_tmp))
+		max_cor = res_mat_tmp[k]
+		##### #######
+		k2 = which(res_mat_tmp <= max_cor & res_mat_tmp >= cutoff)
+		if(length(k2) == 0){
+			res_mat_tmp_k2 = "Unassigned"
+			res_list = c(res_list,list("Unassigned"))
+		}
+		if(length(k2) > 0){
+		##### #######
+			res_mat_tmp_k2 = res_mat_tmp[k2]
+			res_mat_tmp_k2 = sort(res_mat_tmp_k2,decreasing=T)
+			#####
+			if(length(res_mat_tmp_k2) >3){
+				res_mat_tmp_k2 = res_mat_tmp_k2[1:3]
+			}
+			res_list = c(res_list,list(names(res_mat_tmp_k2)))
+		}
+		######
+		######
+	}
+	names(res_list) = rownames(res_mat)
+	return(res_list)
+}
+
+
+########
+Analysis_cor <- function(cor_res,lower_cutoff = 0.4){
+	####
+	# lower_cutoff = 0.35
+	###### print the max of cor_res ######
+	print(apply(cor_res,1,max))
+	######
+	cor_resv = as.vector(cor_res)
+	cor_resv = sort(cor_resv,decreasing=T)
+	######
+	model <- mclust::densityMclust(cor_resv,G=1:3)
+	###### First we need to know how many models !!!!#########
+	number_model = length(levels(as.factor(model$classification)))
+	######
+	###### Then we get the parameters for each model !!!! ####
+	######
+	model_mean_total = model$parameters$mean
+	model_sd_total = model$parameters$variance$sigmasq
+	######
+	if(length(model_sd_total) == 1){
+		model_sd_total = rep(model_sd_total,number_model)
+	}
+	###### OK!!! Next we find the cutoffs ########
+	if(number_model == 3){
+		#### we selected to 2!!! #####
+		#### we will find the sencond clusters ####
+		tmp_mean = model_mean_total[2]
+		tmp_sd = model_sd_total[2]
+		cutoff = qnorm(0.75,mean=tmp_mean,sd=sqrt(tmp_sd))
+	}
+	#######
+	if(number_model == 2){
+		#### we selected to 2!!! #####
+		#### we use the cutoff between the 2 peaks !!!! ##########
+		model_classification = as.numeric(model$classification)
+		k = which(model$classification %in% model$classification[1] == F)
+		index = max(cor_resv[k])
+		cutoff = index
+	}
+	if(number_model == 1){
+		#### we selected to 2!!! #####
+		#### we use the cutoff between the 2 peaks !!!! ##########
+		tmp_mean = model_mean_total[1]
+		tmp_sd = model_sd_total[1]
+		cutoff = qnorm(0.75,mean=tmp_mean,sd=sqrt(tmp_sd))
+	}
+	if(cutoff < lower_cutoff){
+		cutoff = lower_cutoff
+	}
+	#####
+	return(cutoff)
+}
+
+
+##########
+compared_stat <- function(candidate_align,ref_marker_sub,query_mat_1){
+	######
+	res_tab = as.character(sapply(candidate_align,function(x) x[[1]]))
+	res_tab = gsub('@(.+)','',res_tab)
+			for(j in 1:length(candidate_align)){
+				#print(j)
+				tmp = candidate_align[[j]]
+				tmp_index = sapply(strsplit(tmp,split='@'),function(x) x[[1]])
+				if(length(levels(as.factor(tmp_index))) == 1){
+					next
+				}else{
+					print('compare!')
+					ct_list = list()
+					for(ii in 1:length(tmp)){
+						#print(paste0("ii=",ii))
+						sub_ct = tmp[ii]
+						subDEGs = ref_marker_sub
+						sub_ct_DEGs_index = which(colnames(subDEGs) == sub_ct)
+						#####
+						sub_ct_DEGs = subDEGs[,sub_ct_DEGs_index]
+						#####
+						index_1 = which(colnames(query_mat_1) == names(candidate_align)[j])
+						#####
+						sub_query_mat_input = query_mat_1[,index_1]
+						query_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% sub_ct_DEGs == T)]
+						ct_list = c(ct_list,list(query_sub_ct))
+					}
+					#### then get DEGs #####
+					indexJ = Compare3_corr(ct_list,tmp_index)
+					res_tab[j] = indexJ
+				}
+			}
+	return(res_tab)
+}
+
+
+
+Compare3_corr <- function(ct_list,tmp_index){
+	######
+	empty_matrix = matrix(0,nrow=length(ct_list),ncol=length(ct_list))
+	######
+	for(i in 1:length(ct_list)){
+		for(j in 1:length(ct_list)){
+			v_i = ct_list[[i]]
+			v_j = ct_list[[j]]
+			#### i vs j #########
+			res1 = wilcox.test(v_i, v_j, alternative = "greater")
+			res2 = wilcox.test(v_i, v_j, alternative = "less")
+			if(res1$p.value < 0.05 & res2$p.value > 0.05){
+				empty_matrix[i,j] = 1
+			}
+			if(res1$p.value > 0.05 & res2$p.value < 0.05){
+				empty_matrix[i,j] = -1
+			}
+		}
+	}
+	matrix_row_max = apply(empty_matrix,1,sum)
+	k = which(matrix_row_max == max(matrix_row_max))
+	if(length(k) > 1){
+		tmp_index1 = tmp_index[k]
+		tmp_index1 = tmp_index1[!duplicated(tmp_index1)]
+		tmp_index1 = paste(tmp_index1,collapse=' & ')
+	}else{
+		tmp_index1 = tmp_index
+	}
+	######
+	return(tmp_index1)
+}
+
+####################################
+#### OK!!!! Then the next !!!! #####
+####################################
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+setwd(Ori_folder)
+save(cellAnn_mouse_res_list,file='cellAnn_mouse_res_list')
+
+
+setwd(Ori_folder)
+load("cellAnn_mouse_res_list")
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+
+####
+######            ####
+####### OK !!!! ######
+######
+####
+###### load the results tables !!!!! ########
+setwd(Ori_folder)
+load("cellAnn_mouse_res_list")
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+
+setwd(Ori_folder)
+load('scmap_cluster_mouse_res_list')
+scmap_cluster_mouse_res_plot1 = res_list_to_plot(scmap_cluster_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scmap_cluster_mouse_res_plot2 = res_list_to_plot(scmap_cluster_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scmap_cluster_mouse_res_plot3 = res_list_to_plot(scmap_cluster_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scmap_cluster_mouse_res_plot4 = res_list_to_plot(scmap_cluster_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+#####
+setwd(Ori_folder)
+load('chetah_mouse_res_list')
+chetah_mouse_res_plot1 = res_list_to_plot(chetah_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+chetah_mouse_res_plot2 = res_list_to_plot(chetah_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+chetah_mouse_res_plot3 = res_list_to_plot(chetah_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+chetah_mouse_res_plot4 = res_list_to_plot(chetah_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+
+##### OK!!!! Next is the seurat !!!! #######
+#####
+setwd(Ori_folder)
+load('Seurat_mouse_res_list')
+Seurat_mouse_res_plot1 = res_list_to_plot(Seurat_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+Seurat_mouse_res_plot2 = res_list_to_plot(Seurat_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+Seurat_mouse_res_plot3 = res_list_to_plot(Seurat_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+Seurat_mouse_res_plot4 = res_list_to_plot(Seurat_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+######
+######
+setwd(Ori_folder)
+load('scClassify_mouse_res_list')
+scClassify_mouse_res_plot1 = res_list_to_plot(scClassify_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scClassify_mouse_res_plot2 = res_list_to_plot(scClassify_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scClassify_mouse_res_plot3 = res_list_to_plot(scClassify_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scClassify_mouse_res_plot4 = res_list_to_plot(scClassify_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+#####
+#####
+setwd(Ori_folder)
+load("scPred_mouse_res_list")
+scPred_mouse_res_plot1 = res_list_to_plot(scPred_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+scPred_mouse_res_plot2 = res_list_to_plot(scPred_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+scPred_mouse_res_plot3 = res_list_to_plot(scPred_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+scPred_mouse_res_plot4 = res_list_to_plot(scPred_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+
+##########
+
+res_plot = cellAnn_mouse_res_plot1
+
+Processing_average_ratio_for_each_table <- function(res_plot,study="NO"){
+	#########
+	res_plot_list = split(res_plot,res_plot$sample2)
+	#########
+	res_plot_list_tmp_res = list()
+	#########
+	for(i in 1:length(res_plot_list)){
+		res_plot_list_tmp = res_plot_list[[i]]
+		res_plot_list_tmp$ratio = res_plot_list_tmp$counts / sum(res_plot_list_tmp$counts)
+		res_plot_list_tmp_res = c(res_plot_list_tmp_res,list(res_plot_list_tmp))
+	}
+	#########
+	res_plot_list_tmp_res = do.call('rbind',res_plot_list_tmp_res)
+	res_plot_list_tmp_res_ratio = tapply(res_plot_list_tmp_res$ratio,res_plot_list_tmp_res$class,mean)
+	#########
+	restable = data.frame(class=names(res_plot_list_tmp_res_ratio),counts=as.numeric(res_plot_list_tmp_res_ratio),tag=study)
+	#########
+	return(restable)
+}
+
+cellAnn_mouse_res_plot1_res = Processing_average_ratio_for_each_table(cellAnn_mouse_res_plot1,'CellAnn')
+scmap_cluster_mouse_res_plot1_res = Processing_average_ratio_for_each_table(scmap_cluster_mouse_res_plot1,'Scmap-cluster')
+chetah_mouse_res_plot1_res = Processing_average_ratio_for_each_table(chetah_mouse_res_plot1,'CHETAH')
+Seurat_mouse_res_plot1_res = Processing_average_ratio_for_each_table(Seurat_mouse_res_plot1,'Seurat')
+scPred_mouse_res_plot1_res = Processing_average_ratio_for_each_table(scPred_mouse_res_plot1,'SCPred')
+scClassify_mouse_res_plot1_res = Processing_average_ratio_for_each_table(scClassify_mouse_res_plot1,'scClassify')
+
+total_res_plot1 = rbind(cellAnn_mouse_res_plot1_res,scmap_cluster_mouse_res_plot1_res,chetah_mouse_res_plot1_res,Seurat_mouse_res_plot1_res,scPred_mouse_res_plot1_res,scClassify_mouse_res_plot1_res)
+
+total_res_plot1$tag = factor(total_res_plot1$tag,levels=c('CellAnn','Scmap-cluster','CHETAH','Seurat','SCPred','scClassify'))
+total_res_plot1$class = factor(total_res_plot1$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(total_res_plot1,aes(x=tag,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme_classic() + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,size=12)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+########## ######
+##########
+round(sum(cellAnn_mouse_res_plot4_res$counts[1:3]),2)
+round(sum(scmap_cluster_mouse_res_plot4_res$counts[1:3]),2)
+round(sum(chetah_mouse_res_plot4_res$counts[1:3]),2)
+round(sum(Seurat_mouse_res_plot4_res$counts[1:3]),2)
+round(sum(scPred_mouse_res_plot4_res$counts[1:3]),2)
+round(sum(scClassify_mouse_res_plot4_res$counts[1:3]),2)
+
+cellAnn_mouse_res_plot2_res = Processing_average_ratio_for_each_table(cellAnn_mouse_res_plot2,'CellAnn')
+scmap_cluster_mouse_res_plot2_res = Processing_average_ratio_for_each_table(scmap_cluster_mouse_res_plot2,'Scmap-cluster')
+chetah_mouse_res_plot2_res = Processing_average_ratio_for_each_table(chetah_mouse_res_plot2,'CHETAH')
+Seurat_mouse_res_plot2_res = Processing_average_ratio_for_each_table(Seurat_mouse_res_plot2,'Seurat')
+scPred_mouse_res_plot2_res = Processing_average_ratio_for_each_table(scPred_mouse_res_plot2,'SCPred')
+scClassify_mouse_res_plot2_res = Processing_average_ratio_for_each_table(scClassify_mouse_res_plot2,'scClassify')
+
+total_res_plot2 = rbind(cellAnn_mouse_res_plot2_res,scmap_cluster_mouse_res_plot2_res,chetah_mouse_res_plot2_res,Seurat_mouse_res_plot2_res,scPred_mouse_res_plot2_res,scClassify_mouse_res_plot2_res)
+
+total_res_plot2$tag = factor(total_res_plot2$tag,levels=c('CellAnn','Scmap-cluster','CHETAH','Seurat','SCPred','scClassify'))
+total_res_plot2$class = factor(total_res_plot2$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(total_res_plot2,aes(x=tag,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme_classic() + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,size=12)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+
+
+cellAnn_mouse_res_plot3_res = Processing_average_ratio_for_each_table(cellAnn_mouse_res_plot3,'CellAnn')
+scmap_cluster_mouse_res_plot3_res = Processing_average_ratio_for_each_table(scmap_cluster_mouse_res_plot3,'Scmap-cluster')
+chetah_mouse_res_plot3_res = Processing_average_ratio_for_each_table(chetah_mouse_res_plot3,'CHETAH')
+Seurat_mouse_res_plot3_res = Processing_average_ratio_for_each_table(Seurat_mouse_res_plot3,'Seurat')
+scPred_mouse_res_plot3_res = Processing_average_ratio_for_each_table(scPred_mouse_res_plot3,'SCPred')
+scClassify_mouse_res_plot3_res = Processing_average_ratio_for_each_table(scClassify_mouse_res_plot3,'scClassify')
+
+total_res_plot3 = rbind(cellAnn_mouse_res_plot3_res,scmap_cluster_mouse_res_plot3_res,chetah_mouse_res_plot3_res,Seurat_mouse_res_plot3_res,scPred_mouse_res_plot3_res,scClassify_mouse_res_plot3_res)
+
+total_res_plot3$tag = factor(total_res_plot3$tag,levels=c('CellAnn','Scmap-cluster','CHETAH','Seurat','SCPred','scClassify'))
+total_res_plot3$class = factor(total_res_plot3$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(total_res_plot3,aes(x=tag,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme_classic() + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,size=12)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+
+
+
+cellAnn_mouse_res_plot4_res = Processing_average_ratio_for_each_table(cellAnn_mouse_res_plot4,'CellAnn')
+scmap_cluster_mouse_res_plot4_res = Processing_average_ratio_for_each_table(scmap_cluster_mouse_res_plot4,'Scmap-cluster')
+chetah_mouse_res_plot4_res = Processing_average_ratio_for_each_table(chetah_mouse_res_plot4,'CHETAH')
+Seurat_mouse_res_plot4_res = Processing_average_ratio_for_each_table(Seurat_mouse_res_plot4,'Seurat')
+scPred_mouse_res_plot4_res = Processing_average_ratio_for_each_table(scPred_mouse_res_plot4,'SCPred')
+scClassify_mouse_res_plot4_res = Processing_average_ratio_for_each_table(scClassify_mouse_res_plot4,'scClassify')
+
+total_res_plot4 = rbind(cellAnn_mouse_res_plot4_res,scmap_cluster_mouse_res_plot4_res,chetah_mouse_res_plot4_res,Seurat_mouse_res_plot4_res,scPred_mouse_res_plot4_res,scClassify_mouse_res_plot4_res)
+
+total_res_plot4$tag = factor(total_res_plot4$tag,levels=c('CellAnn','Scmap-cluster','CHETAH','Seurat','SCPred','scClassify'))
+total_res_plot4$class = factor(total_res_plot4$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(total_res_plot4,aes(x=tag,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + theme_classic() + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,size=12)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+
+
+
+#####
+#####
+##### OK !!!! #######
+#####
+##### Next is the running speed ###########
+##### 
+##### we will found a big reference datasets and prepare to different subsets !!!!! #########
+#####
+##### OK!! we have found it !!!! ########
+#####
+##### Then we change the script !!! ######
+#####
+#####
+
+setwd("/zp1/data/plyu3/MCL_V3")
+rm(list = ls(all.names = TRUE))
+load("MCDAA.rdata")
+
+##### ########## ##########
+#####
+##### OK!!! the object is the data !!!!! #######
+##### Then we subset the data into different size !!!!! ##########
+##### 
+##### ########## ##########
+
+size = c(100,500,1000,5000,10000,20000,40000,60000,80000,100000)
+
+#####
+##### Then we subset these cells !!!!!!! #########################
+#####
+
+RNA_process_UMAP_Cluster <- function(x,res){
+	#####
+	DefaultAssay(x) = 'RNA'
+	#####
+	x <- NormalizeData(x)
+    x <- FindVariableFeatures(x,selection.method ='vst',nfeatures = 2000)
+    x <- ScaleData(x,  verbose = FALSE)
+    x <- RunPCA(x, verbose = FALSE,npcs=50)
+    x <- RunUMAP(x, reduction = "pca", dims = 1:50)
+	x <- FindNeighbors(x, reduction = "pca", dims = 1:50)
+	x <- FindClusters(x, resolution = res)
+	#####
+	return(x)
+}
+
+
+total_length = dim(data)[2]
+
+for(i in 1:length(size)){
+	#######
+	tmp_size = size[i]
+	#######
+	tmp_random_list = sample(1:total_length, tmp_size)
+	#######
+	tmp_seurat = data[,tmp_random_list]
+	####### then we process the tmp tmp_seurat ########
+	tmp_seurat = RNA_process_UMAP_Cluster(tmp_seurat,res=1)
+	print(table(tmp_seurat$seurat_clusters))
+	#######
+	tmp_file = paste0('Ref_speed_test','_',tmp_size)
+	#######
+	save(tmp_seurat,file=tmp_file)
+}
+
+
+######### OK!!! ###########
+######### let us prepare the reference files for cellAnn ###################
+######### ################# ########
+
+setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Speed_test")
+
+setwd("/zp1/data/plyu3/MCL_V3")
+
+files = list.files()
+
+files = files[grep("0$",files)]
+#########
+######### prepare the markers and avg expressions ############
+#########
+
+
+CellAnn_Avg_Mat2 <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	###### normalized back datasets ######
+	data_mat_exp = data_mat
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat_exp[,index]
+		print(dim(index_mat))
+		######
+		index_sum = Matrix::rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+
+####
+#### should run on the server !!! ######
+#####
+
+for(i in 1:length(files)){
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(files[i])
+	########
+	tmp_file_name_avg = paste0(files[i],'_SubCluster_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@counts
+	data_cluster = tmp_seurat$seurat_clusters
+	ref_Avg_Mat <- CellAnn_Avg_Mat2(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call cell markers for each main Cts #############
+	tmp_file_name_CT = paste0(files[i],'_CT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','seurat_clusters',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	########
+	tmp_file_name_CT = paste0(files[i],'_SubCT_Marker')
+	tmp_ct_marker = runDEGs_Ref_sub(tmp_seurat,'COSG','seurat_clusters',100)
+	save(tmp_ct_marker,file=tmp_file_name_CT)
+	######## Next we need to call subCell markers for each sub Cts ###########
+}
+
+#########
+######## Then next we prepare the Query dataset? #########
+######## we use cp to copy a query datasets ##############
+#########
+
+######### OK! Then we select a query datasets !!!!! #############
+#########
+######### we go to the new server !!!! #####
+#########
+
+ssh plyu3@omb2.onc.jhmi.edu   (mailto:plyu3@omb2.onc.jhmi.edu)
+
+plyu3 U[9C20&&
+
+#########
+#########
+#########
+
+ssh plyu3@10.112.40.197
+
+plyu3 njd$rft1
+
+conda activate CellAnn_test
+
+R
+
+library(Seurat)
+
+setwd("/zp1/data/plyu3/MCL_V3")
+
+##### setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Speed_test")
+
+##### 
+
+files = list.files()
+Ref_new = paste0('Ref_speed_test_',as.character(c(100,500,1000,5000,10000,20000,40000,60000,80000,100000)))
+Ref_new[10] = "Ref_speed_test_100000"
+compare_df = data.frame(Query_new="Tabula_Muris_mouse_droplet_Limb_Muscle_Query",Ref_new=Ref_new)
+folder = "/zp1/data/plyu3/MCL_V3"
+
+#####
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+######
+Main_compare_process_OtherTools_Single_Cell_times <- function(compare_df,method='scmap-cluster',folder=folder){
+	library(Seurat)
+	##########
+	times_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		#######
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		print(paste("NONONONONONONONONO",i))
+		print(TAG)
+		#######
+		query = compare_df$Query_new[i]
+		ref = compare_df$Ref_new[i]
+		####### load ref and query seurat object !!!! #######
+		setwd(folder)
+		#######
+		query_seurat = loadRData(query)
+		ref_seurat = loadRData(ref)
+		#######
+		### gene1 = rownames(query_seurat)
+		### gene2 = rownames(ref_seurat)
+		#######	OK! ############
+		query_mat = query_seurat[['RNA']]@data
+		query_label = unname(query_seurat$seurat_clusters)
+		#######
+		ref_mat = ref_seurat[['RNA']]@data
+		ref_label = unname(ref_seurat$seurat_clusters)
+		####### then we will filter query datasets if the mode == 'easy' !!!! ####
+		####### prepare the datasets in the folder #####
+		####### scmap-cluster First we don't need to try scmap-cluster !!!!! ################################
+		if(method=='scmap-cluster'){
+			library(scmap)
+			library(SingleCellExperiment)
+			#### we should load the input average expression data as the input !!!!! #########
+			query_avg = paste0(query,'_Cluster_Avg') ### red ####
+			query_mat = loadRData(query_avg)
+			#### we will use the threshold to 0.5 #####
+			#### then we load the query labels !!!! ###
+			####
+			query_label_index = paste0(query,'_GroundTruth_Cluster')
+			query_label_tab = loadRData(query_label_index)
+			m1 = match(colnames(query_mat),query_label_tab$cluster)
+			query_label_tab = query_label_tab[m1,]
+			####
+			####
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			t1<-Sys.time()
+			res = CellAnn_scmapcluster(ref_mat_input,query_mat_input,ref_label_input,threshold = 0.5,time = F)
+			t2<-Sys.time()
+			diff_time = difftime(t2,t1,units="secs")
+			times_list = c(times_list,list(diff_time))
+		}
+		if(method=='chetah'){
+			library(CHETAH)
+			library(SingleCellExperiment)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			t1<-Sys.time()
+			res = CellAnn_chetah(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			t2<-Sys.time()
+			diff_time = difftime(t2,t1,units="secs")
+			times_list = c(times_list,list(diff_time))
+		}
+		if(method=='seurat'){
+			library(Seurat)
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			t1<-Sys.time()
+			res = CellAnn_seurat(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			t2<-Sys.time()
+			diff_time = difftime(t2,t1,units="secs")
+			times_list = c(times_list,list(diff_time))
+		}
+		if(method=='scpred'){
+			#### train and test should be normalized counts #######
+			query_mat_input = exp(query_mat)-1
+			ref_mat_input = exp(ref_mat)-1
+			ref_label_input = ref_label
+			ref_label_input = as.character(ref_label_input)
+			ref_label_input = paste0('C',ref_label_input)
+			#########
+			print(table(ref_label_input))
+			#########
+			Overlap_gene = rownames(query_mat_input)[which(rownames(query_mat_input) %in% rownames(ref_mat_input) == T)]
+			query_mat_input = query_mat_input[which(rownames(query_mat_input) %in% Overlap_gene == T),]
+			ref_mat_input = ref_mat_input[which(rownames(ref_mat_input) %in% Overlap_gene == T),]
+			print(dim(query_mat_input))
+			print(dim(ref_mat_input))
+			#########
+			t1<-Sys.time()
+			res = CellAnn_scpred(ref_mat_input,query_mat_input,ref_label_input,time = F)
+			t2<-Sys.time()
+			diff_time = difftime(t2,t1,units="secs")
+			times_list = c(times_list,list(diff_time))
+		}
+		if(method == 'scClassify'){
+			library(scClassify)
+			#### log-transformed (size-factor normalized) matrices as query datasets #####
+			query_mat_input = query_mat
+			ref_mat_input = ref_mat
+			ref_label_input = ref_label
+			####
+			t1<-Sys.time()
+			res = CellAnn_scClassify(query_mat_input,ref_mat_input,ref_label_input,time = F,prob_threshold=0.5)
+			t2<-Sys.time()
+			diff_time = difftime(t2,t1,units="secs")
+			times_list = c(times_list,list(diff_time))
+		}
+	}
+	####### Then Next tools !!!! ##########################
+	names(times_list) = TAG
+	#######
+	return(times_list)
+}
+
+#########
+#########
+#########
+
+scmap_cluster_time = Main_compare_process_OtherTools_Single_Cell_times(compare_df,method='scmap-cluster',folder="/zp1/data/plyu3/MCL_V3")
+
+save(scmap_cluster_time,file='scmap_cluster_time')
+
+chetah_time = Main_compare_process_OtherTools_Single_Cell_times(compare_df[1:7,],method='chetah',folder="/zp1/data/plyu3/MCL_V3")
+
+save(chetah_time,file='chetah_time')
+
+seurat_time = Main_compare_process_OtherTools_Single_Cell_times(compare_df,method='seurat',folder="/zp1/data/plyu3/MCL_V3")
+
+save(seurat_time,file='seurat_time')
+
+scPred_time = Main_compare_process_OtherTools_Single_Cell_times(compare_df[1:7,],method='scpred',folder="/zp1/data/plyu3/MCL_V3")
+
+save(scPred_time,file='scPred_time')
+
+scClassify_time = Main_compare_process_OtherTools_Single_Cell_times(compare_df[1:7,],method='scClassify',folder="/zp1/data/plyu3/MCL_V3")
+
+save(scClassify_time,file='scClassify_time')
+
+
+########### OK!!! let us modify the CellAnn functions for time test ########
+########### !!!!!! need to revise 1!!!! #######
+########### red red red red red red ###########
+
+calculate_Cor <- function(query_mat_input,ref_mat_input,DEGs_overlap){
+	k1 = which(DEGs_overlap %in% rownames(query_mat_input) == T)
+	k2 = which(DEGs_overlap %in% rownames(ref_mat_input) == T)
+	k3 = k1[which(k1 %in% k2 == T)]
+	DEGs_overlap = DEGs_overlap[k3]
+	######
+	query_mat_input_cl = query_mat_input[which(rownames(query_mat_input) %in% DEGs_overlap == T),]
+	ref_mat_input_cl = ref_mat_input[which(rownames(ref_mat_input) %in% DEGs_overlap == T),]
+	######
+	######
+	m1 = match(DEGs_overlap,rownames(query_mat_input_cl))
+	m2 = match(DEGs_overlap,rownames(ref_mat_input_cl))
+	query_mat_input_cl= query_mat_input_cl[m1,]
+	ref_mat_input_cl= ref_mat_input_cl[m2,]
+	######
+	merge_mat = cbind(query_mat_input_cl,ref_mat_input_cl)
+	Cor_res <- pcaPP::cor.fk(merge_mat)
+	###### split the Cor_res #######
+	query_dim = dim(query_mat_input_cl)[2]
+	ref_dim = dim(ref_mat_input_cl)[2]
+	######
+	Cor_res = Cor_res[,-c(1:query_dim)]
+	Cor_res = Cor_res[c(1:query_dim),]
+	###### Then we output the most largest clusters ########
+	return(Cor_res)
+}
+
+########## cellann scripts ########
+########## we create a github repo ##########
+
+Main_compare_process_CellAnn_time <- function(compare_df,folder=folder,time=T){
+	times_list = list()
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		t1<-Sys.time()
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		query = compare_df$Query_new[i]
+		ref = compare_df$Ref_new[i]
+		#######
+		setwd(folder)
+		#######
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		#query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#query_label_tab = loadRData(query_label_index)
+		#m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		print(paste('Ref_clusters::',dim(ref_mat)))
+		#######
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		#######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		Mat_list = equal_matrix(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		##########
+		#all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		#all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		#####
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		#######
+		###### we need match the order of the avg matrix #######
+ 		#####
+ 		t2<-Sys.time()
+		diff_time = difftime(t2,t1,units="secs")
+		times_list = c(times_list,list(diff_time))
+	}
+	return(times_list)
+}
+
+########### Main compare process #########
+###########
+
+CellAnn_time = Main_compare_process_CellAnn_time(compare_df,folder="/zp1/data/plyu3/MCL_V3",time=T)
+
+save(CellAnn_time,file='CellAnn_time')
+
+i = 1
+
+###########
+###########
+###########
+###########
+OK!!! Then we load the time points !!!!!!!!!
+###########
+###########
+
+load('CellAnn_time')
+load('seurat_time')
+load('scmap_cluster_time')
+load("scClassify_time")
+load("chetah_time")
+load("scPred_time")
+
+###########
+
+Convert_time_list_to_data_frame <- function(tmp_time,tag='cellann'){
+	#########
+	times = c()
+	#########
+	for(i in 1:length(tmp_time)){
+		tmptmp = tmp_time[[i]]
+		tmptmp = as.numeric(tmptmp)
+		times = c(times,tmptmp)
+	}
+	options(scipen=10)
+	#########
+	index = c(100,500,1000,5000,10000,20000,40000,60000,80000,100000)
+	index = as.character(index)
+	#########
+	index_cl = index[1:length(tmp_time)]
+	#########
+	dat = data.frame(cells=index_cl,secs=times,tag=tag)
+	#########
+	#########
+	return(dat)
+}
+
+CellAnn_time_res = Convert_time_list_to_data_frame(CellAnn_time,'CellAnn')
+
+seurat_time_res = Convert_time_list_to_data_frame(seurat_time,'Seurat')
+
+scmap_cluster_res = Convert_time_list_to_data_frame(scmap_cluster_time,'scmap_cluster')
+
+scClassify_time_res = Convert_time_list_to_data_frame(scClassify_time,'scClassify')
+
+chetah_time_res = Convert_time_list_to_data_frame(chetah_time,'chetah')
+
+scPred_time_res = Convert_time_list_to_data_frame(scPred_time,'scPred')
+
+
+combined_plot_res = rbind(CellAnn_time_res,seurat_time_res,scmap_cluster_res,scClassify_time_res,chetah_time_res,scPred_time_res)
+
+##################
+##################
+
+combined_plot_res$cells = as.numeric(combined_plot_res$cells)
+
+library(ggplot2)
+
+ggplot(combined_plot_res,aes(x=cells,y=log10(secs+1))) + geom_point(aes(color=tag)) + geom_smooth(method = "lm",formula = y ~ poly(log10(x+1), 2),se = FALSE,aes(color=tag)) + theme_classic() + scale_x_continuous(breaks=c(1000,5000,10000,20000,40000,60000,80000,100000)) + geom_hline(yintercept=c(log10(10+1),log10(60+1),log10(3600+1)),color="grey",linetype='dashed')+ theme(axis.text.x=element_text(angle = 45, hjust = 0.5, vjust = -0.1))
+
+##################
+
+ggsave("test1.png",width=6,height=3)
+
+
+
+#########
+##################
+#########
+
+setwd("/zp1/data/plyu3/MCL_V3")
+
+load("MCDAA.rdata")
+
+library(Seurat)
+
+#########
+##################
+#########
+
+objects()
+
+data
+
+##########
+Tongue
+Bladder
+
+##########
+   AdrenalGland         Bladder      BoneMarrow           Brain        Calvaria 
+           9844           32665           42897           53173            7964 
+         Embryo           Heart       Intestine          Kidney           Liver 
+         100236           74680           80732           75791           73827 
+           Lung    MammaryGland      Mesenchyme          Muscle         Omentum 
+          58695           28648            2771            5975            4978 
+          Ovary        Pancreas PeripheralBlood        Placenta          Pleura 
+           4363           67799            7095            4346            4866 
+       Prostate             Rib            Skin          Spleen        StemCell 
+          36324            6262            3392           32520           36799 
+        Stomach          Testis          Thymus          Uterus 
+          99825           91645           11478           71204 
+
+
+
+########### No Tongue ????? ###########
+########### on the new server #########
+ssh [plyu3@omb2.onc.jhmi.edu](mailto:plyu3@omb2.onc.jhmi.edu)
+
+U[9C20&&
+
+
+conda activate seurat4
+R
+library(Seurat)
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+############
+
+anno = read.csv("annotations_droplet.csv",header=T)
+
+library(ggplot2)
+
+colnames(anno)
+
+ggplot(anno,aes(x=tissue_tSNE_1,y=tissue_tSNE_2)) + geom_point(aes(color=tissue))
+
+ggsave("test2.png",height=8,width=10)
+
+
+
+############### we will test the integration method!!! ####################
+###############
+
+droplet Tongue --> droplet Bladder
+
+###############
+############### we will first see the details !!!! ##############
+###############
+
+Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+###############
+############### make the global reference datasets !!! ###################
+###############
+############### we first to see what happened in the alignments !!! ######
+###############
+############### we make a slides to record the datasets !!! ##############
+###############
+############### we need to change the results to F1 score !!!! ###########
+###############
+
+
+compare_df = Mouse_compare_list_tab[[4]]
+folder = Ori_folder
+
+#######
+#### we test i = 1 #####
+#######
+i = 1
+
+print(paste('NOOOOOOO',i))
+print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+#######
+query = compare_df$Query_new[i]
+ref = compare_df$Ref_new[i]
+#######
+setwd(folder)
+####### first load the query_Avg expression matrix !!!!! ########
+query_avg = paste0(query,'_Cluster_Avg') ### red ####
+query_mat = loadRData(query_avg)
+#### we will use the threshold to 0.7 #####
+#### then we load the query labels !!!! ###
+query_label_index = paste0(query,'_GroundTruth_Cluster')
+query_label_tab = loadRData(query_label_index)
+m1 = match(colnames(query_mat),query_label_tab$cluster)
+query_label_tab = query_label_tab[m1,]
+####### OK!!! Next !!!! ###################
+####### then we load Refenece input matrix !!!! #####
+ref_avg = paste0(ref,'_SubCluster_Avg')
+ref_mat = loadRData(ref_avg)
+#######
+ref_marker_index = paste0(ref,'_CT_Marker')
+ref_marker = loadRData(ref_marker_index)
+#######
+ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+ref_marker_sub = loadRData(ref_marker_subindex)
+#######
+ref_label = colnames(ref_mat)
+ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+####### OK!!!! #######
+#######
+####### Let us calculate the correlations !!!!! ################
+####### first we need to make the 2 matrix equal !!!! ##########
+Mat_list = equal_matrix(query_mat,ref_mat)
+#######
+query_mat_1 = Mat_list[[1]]
+ref_mat_1 = Mat_list[[2]]
+#######
+all_used_genes <- rownames(query_mat_1)
+all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+####### Next we need to calculate correlations !!!!! ###########
+####### let us try to use combined markers !!! #################
+all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=25)
+##########
+all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+##########
+cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+########## Next we need the cutoffs !!!! #######################
+cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4)
+########## Next we get the highest correlated cells !!!!! ######
+candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+##########
+##########
+########## "red" ####################
+########## load DEGs #######
+##########
+res_max = apply(cor_res,1,max)
+Unassigned_index = which(res_max < cutoff)
+#####
+##### Then we compare the DEGs !!! ###########
+#####
+res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+########## OK! ############
+########## so next we need to prepare the integrate marker for these cell types !!! ######
+##########
+
+########## we first test the reference datasets !!! ##############
+##########
+
+ref = compare_df$Ref_new[i]
+ref_seurat = loadRData(ref)
+
+
+########## Next, we need to use the globle datasets !!!! #################
+##########
+
+########## we first calculate the MCL datasets on the server !!! #########
+##########
+
+conda activate Signac2
+
+R
+
+library(Seurat)
+
+setwd("/zp1/data/plyu3/MCL_V3")
+
+load("MCDAA.rdata")
+
+Mouse_MCL_Seurat = data
+
+###########
+###########
+
+Mouse_MCL_info = read.csv("MCDAA_cellinfo.csv")
+
+length(table(Mouse_MCL_info$cell_type))
+
+########### OK!!! ##################
+########### then we calculate the Avg expression and Genes in this background #######
+########### add cell type to the seurat objects !!! ######
+
+m = match(colnames(Mouse_MCL_Seurat),Mouse_MCL_info$barcodes)
+Mouse_MCL_Seurat$celltype = Mouse_MCL_info$cell_type[m]
+Mouse_MCL_Seurat$cluster = Mouse_MCL_info$cluster[m]
+
+########### then calculate the markers !!! ###############
+
+Mouse_MCL_markers <- runDEGs_Ref_sub(Mouse_MCL_Seurat,method='COSG',idents='celltype',num_of_genes = 25)
+
+save(Mouse_MCL_markers,file="Mouse_MCL_markers")
+
+########### then calculate the average expression !!! ######
+###########
+
+Seurat_Obj <- Mouse_MCL_Seurat
+index <- 'cluster'
+counts=200
+
+Random_cells <- function(Seurat_Obj,index='cluster',counts=200){
+	######
+	k = which(colnames(Seurat_Obj@meta.data) == index)
+	index_all = Seurat_Obj@meta.data[,k]
+	#######
+	index_all = index_all[!duplicated(index_all)]
+	#######
+	index_need = c()
+	########
+	for(i in 1:length(index_all)){
+		print(i)
+		tmp_cell_index = which(Seurat_Obj@meta.data[,k] == index_all[i])
+		#######
+		if(length(tmp_cell_index) < counts){
+			index_need = c(index_need,tmp_cell_index)
+		}else{
+			tmp_cell_index = sample(tmp_cell_index,counts)
+			index_need = c(index_need,tmp_cell_index)
+		}
+
+	}
+	########
+	Seurat_Obj_out = Seurat_Obj[,index_need]
+	#########
+	print(table(Seurat_Obj_out@meta.data[,k]))
+	return(Seurat_Obj_out)
+}
+
+Mouse_MCL_Seurat_random = Random_cells(Mouse_MCL_Seurat,'cluster',200)
+
+######
+
+Mouse_MCL_markers <- runDEGs_Ref_sub(Mouse_MCL_Seurat_random,method='COSG',idents='celltype',num_of_genes = 25)
+
+save(Mouse_MCL_markers,file="Mouse_MCL_markers")
+
+########### 
+
+CellAnn_Avg_Mat <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	######
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat[,index]
+		######
+		index_sum = rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+Mouse_MCL_avg = CellAnn_Avg_Mat(Mouse_MCL_Seurat_random[['RNA']]@counts,data_cluster=Mouse_MCL_Seurat_random$celltype)
+
+save(Mouse_MCL_avg,file="Mouse_MCL_avg")
+
+###########
+########### may be we need vistualize the clusters and cell types first ! ########
+###########
+
+library(ggplot2)
+
+ggplot(Mouse_MCL_info,aes(x=tsne_x,y=tsne_y,color=cluster)) + geom_point(size=0.01)
+
+ggsave("celltype_total.png",width=6,height=6)
+
+############
+############ OK!!! ####### 
+############ then we combine 2 matrics ###########
+
+load('Mouse_MCL_avg')
+load("Mouse_MCL_markers")
+
+ref_seurat_avg = CellAnn_Avg_Mat(ref_seurat[['RNA']]@counts,data_cluster=ref_seurat$celltype)
+
+Mouse_MCL_avg_ref_avg_list <- equal_matrix(ref_seurat_avg,Mouse_MCL_avg)
+
+dim(Mouse_MCL_avg_ref_avg_list[[1]])
+dim(Mouse_MCL_avg_ref_avg_list[[2]])
+
+colnames(Mouse_MCL_avg_ref_avg_list[[1]]) = paste('ref',colnames(Mouse_MCL_avg_ref_avg_list[[1]]),sep='::')
+colnames(Mouse_MCL_avg_ref_avg_list[[2]]) = paste('back',colnames(Mouse_MCL_avg_ref_avg_list[[2]]),sep='::')
+
+
+Mouse_MCL_avg_ref_avg_combine = cbind(Mouse_MCL_avg_ref_avg_list[[1]],Mouse_MCL_avg_ref_avg_list[[2]])
+
+############ OK!! then !!! #######
+############
+ref_mat = Mouse_MCL_avg_ref_avg_combine
+
+Mat_list = equal_matrix(query_mat,ref_mat)
+
+query_mat_1 = Mat_list[[1]]
+ref_mat_1 = Mat_list[[2]]
+#######
+all_used_genes <- rownames(query_mat_1)
+all_used_DEGs <- selection_DEGs(all_used_genes,Mouse_MCL_markers,Top=3)
+
+cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+########## Next we need the cutoffs !!!! #######################
+cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4)
+
+candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+
+##########
+########## Next we using another global cutoffs !!! #########
+##########
+
+########## we using another cells !!#########################
+##########
+
+ssh [plyu3@omb2.onc.jhmi.edu](mailto:plyu3@omb2.onc.jhmi.edu)
+
+U[9C20&&
+
+
+conda activate seurat4
+R
+library(Seurat)
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+files = files[grep('_droplet_',files)]
+files = files[-grep('_Cl',files)]
+files = files[-grep('_D',files)]
+files = files[-grep('_G',files)]
+
+seurat_obj_list = list()
+
+for(i in 1:length(files)){
+	print(i)
+	tmp_seurat = loadRData(files[i])
+	seurat_obj_list = c(seurat_obj_list,list(tmp_seurat))
+}
+
+head(seurat_obj_list[[1]]@meta.data)
+
+############ then we merged the seurat_obj_list ###############
+
+me = seurat_obj_list
+
+index = gsub("Tabula_Muris_mouse_droplet_","",files)
+
+droplet_seurat_merge = merge(me[[1]],y = c(me[[2]],me[[3]],me[[4]],me[[5]],me[[6]],me[[7]],me[[8]],me[[9]],me[[10]],me[[11]]))
+
+############
+############
+############
+
+anno = read.csv("annotations_droplet.csv",header=T)
+
+library(ggplot2)
+
+colnames(anno)
+
+ggplot(anno,aes(x=tissue_tSNE_1,y=tissue_tSNE_2)) + geom_point(aes(color=tissue))
+
+ggsave("test2.png",height=8,width=10)
+
+m = match(colnames(droplet_seurat_merge),anno$cell)
+
+droplet_seurat_merge$celltype = anno$cell_ontology_class[m]
+
+
+save(droplet_seurat_merge,file='droplet_seurat_merge')
+###############
+droplet_avg = CellAnn_Avg_Mat(droplet_seurat_merge[['RNA']]@counts,data_cluster=droplet_seurat_merge$celltype)
+
+###############
+
+droplet_markers <- runDEGs_Ref_sub(droplet_seurat_merge,method='COSG',idents='celltype',num_of_genes = 25)
+
+###############
+save(droplet_avg,file='droplet_avg')
+save(droplet_markers,file='droplet_markers')
+
+load('droplet_avg')
+load('droplet_markers')
+
+ref_mat = droplet_avg
+
+Mat_list = equal_matrix(query_mat,ref_mat)
+
+query_mat_1 = Mat_list[[1]]
+ref_mat_1 = Mat_list[[2]]
+#######
+all_used_genes <- rownames(query_mat_1)
+all_used_DEGs <- selection_DEGs(all_used_genes,droplet_markers,Top=50)
+
+cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+
+cor_res_max = apply(cor_res,1,max)
+
+hist(cor_res_max,breaks=10)
+
+model <- mclust::densityMclust(cor_res_max,G=1)
+model_mean_total = model$parameters$mean
+model_sd_total = model$parameters$variance$sigmasq
+tmp_mean = model_mean_total[1]
+tmp_sd = model_sd_total[1]
+cutoff = qnorm(0.01,mean=tmp_mean,sd=sqrt(tmp_sd))
+
+########## Next we need the cutoffs !!!! #######################
+cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4)
+
+candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+
+########
+######## let us try the facs samples !!! ########################
+########
+
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+conda activate seurat4
+R
+library(Seurat)
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+files = files[grep('_facs_',files)]
+files = files[-grep('_Cl',files)]
+files = files[-grep('_D',files)]
+files = files[-grep('_G',files)]
+
+seurat_obj_list = list()
+
+for(i in 1:length(files)){
+	print(i)
+	tmp_seurat = loadRData(files[i])
+	seurat_obj_list = c(seurat_obj_list,list(tmp_seurat))
+}
+
+head(seurat_obj_list[[1]]@meta.data)
+
+############ then we merged the seurat_obj_list ###############
+
+me = seurat_obj_list
+
+index = gsub("Tabula_Muris_mouse_facs_","",files)
+
+facs_seurat_merge = merge(me[[1]],y = c(me[[2]],me[[3]],me[[4]],me[[5]],me[[6]],me[[7]],me[[8]],me[[9]],me[[10]],me[[11]],me[[12]]))
+
+######
+
+save(facs_seurat_merge,file="facs_seurat_merge")
+
+
+#######
+equal Zero matrix !!!!
+#######
+
+facs_avg = CellAnn_Avg_Mat(facs_seurat_merge[['RNA']]@counts,data_cluster=facs_seurat_merge$celltype)
+facs_markers <- runDEGs_Ref_sub(facs_seurat_merge,method='COSG',idents='celltype',num_of_genes = 25)
+
+save(facs_avg,file='facs_avg')
+save(facs_markers,file='facs_markers')
+
+load('facs_avg')
+load('facs_markers')
+
+ref_mat = facs_avg
+Mat_list = equal_matrix(query_mat,ref_mat)
+
+query_mat_1 = Mat_list[[1]]
+ref_mat_1 = Mat_list[[2]]
+#######
+all_used_genes <- rownames(query_mat_1)
+all_used_DEGs <- selection_DEGs(all_used_genes,facs_markers,Top=50)
+
+
+cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+cor_res_max = apply(cor_res,1,max)
+
+hist(cor_res_max,breaks=10)
+
+candidate_align = Res_mat_highest_celltype(cor_res,cutoff=0.4)
+
+###########
+########### OK!!! let us integrate the facs and droplet matrix !!! ############
+###########
+########### integrate the matrix !!!! ###############
+########### on the python script !!!! ###############
+###########
+
+load("facs_seurat_merge")
+load("droplet_seurat_merge")
+
+###########
+
+Process_RNA_Seurat <- function(x){
+	library(Seurat)
+	tmp <- x
+	tmp <- NormalizeData(tmp,verbose = FALSE) 
+	tmp <- FindVariableFeatures(tmp,selection.method = "vst", nfeatures = 1000)
+	tmp <- ScaleData(tmp,verbose = FALSE)
+	tmp <- RunPCA(tmp, npcs = 30, verbose = FALSE)
+	tmp <- RunUMAP(tmp, reduction = "pca", dims = 1:10)
+	return(tmp)
+}
+
+###########
+
+facs_seurat_merge2 <- Process_RNA_Seurat(facs_seurat_merge)
+droplet_seurat_merge2 <- Process_RNA_Seurat(droplet_seurat_merge)
+
+###########
+
+"cell_ontology_class"
+
+"tissue"
+
+png_file = paste0('droplet_tissue','.cellclusters.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(droplet_seurat_merge2, reduction = "umap",group.by="tissue",label = TRUE, label.size = 2.5, repel = TRUE))
+dev.off()
+
+
+png_file = paste0('droplet_tissue','.celltypes.png')
+png(png_file,height=4000,width=15000,res=72*12)
+print(DimPlot(droplet_seurat_merge2, reduction = "umap",group.by="celltype"))
+dev.off()
+
+
+########### OK ！！###########
+####
+#### We first integrate the 2 facs and droplet samples ########
+####
+#### open Ubuntu on the windows #####
+####
+conda activate scvi
+####
+jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+http://127.0.0.1:8888/tree
+
+#### OK！then we entered #####
+#### Next find where is the folder ？ #######
+
+##### When our dataset is fully labelled ######
+##### scANVI #####
+
+##### we create a new folder in the CellAnn_integrate folder #######
+#####
+
+##### found the path for CellAnn_integrate folder !!!! #############
+#####
+
+http://127.0.0.1:8888/tree/Desktop/CellAnn_integrate_folder
+
+##### where is the folder in the windows system ? ######
+#####
+
+C:\Users\Username\AppData\Local\Lxss
+
+##### ? windows folder under the mnt folder under the linux system #####
+cd /mnt/
+
+##### OK!!! ######
+##### Then we copy the files to the folder @@@@
+from: /mnt/c/Users/plyu3/Desktop/scvi_datasets
+to: /home/lp123/Desktop/CellAnn_integrate_folder
+
+##### OK!!! ######
+
+"fac_seurat_merge"
+"droplet_seurat_merge"
+
+#####
+
+cp /mnt/c/Users/plyu3/Desktop/scvi_datasets/fac_seurat_merge /home/lp123/Desktop/CellAnn_integrate_folder/fac_seurat_merge
+cp /mnt/c/Users/plyu3/Desktop/scvi_datasets/droplet_seurat_merge /home/lp123/Desktop/CellAnn_integrate_folder/droplet_seurat_merge
+
+#####
+##### OK!!! we finished copy #####
+#####
+
+##### Next is the transfer Seurat to scanpy objects!!! #########
+#####
+
+https://satijalab.org/seurat/archive/v2.4/conversion_vignette.html
+
+##### convert to anndata !!!! ############
+#####
+
+##### OK!! Then the next !!! #############
+#####
+
+##### OK!! we need install it on the server !!! ####
+
+
+#####
+conda activate seurat4
+R
+library(reticulate)
+library(scater)
+library(Seurat)
+library(SeuratDisk)
+
+##### setwd("C:/Users/plyu3/Desktop/scvi_datasets/")
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+load('facs_seurat_merge')
+
+SaveH5Seurat(facs_seurat_merge, filename = "facs_seurat_merge.h5Seurat")
+
+Convert("facs_seurat_merge.h5Seurat", dest = "h5ad")
+
+
+##### we should create a clean seurat with only cell type and batch columns  !!!! #####
+##### 
+#####
+##### be careful !!! #####
+##### you can do this analysis !!! ######
+#####
+#####
+
+#####
+
+
+#####
+load('droplet_seurat_merge')
+
+SaveH5Seurat(droplet_seurat_merge, filename = "droplet_seurat_merge.h5Seurat")
+Convert("droplet_seurat_merge.h5Seurat", dest = "h5ad")
+
+##### Next copy them to the windows folders ######
+##### 
+
+
+##### we should integrate them first and then integrate them using batch keys ######
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+##### 
+conda activate seurat4
+R
+library(Seurat)   
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+load('facs_seurat_merge')
+load('droplet_seurat_merge')
+
+#####
+##### Then we merge these 2 Seurat objects ####
+#####
+
+facs_seurat_merge$batch = 'facs'
+droplet_seurat_merge$batch = 'droplet'
+Globle_merge_facs_droplets <- merge(facs_seurat_merge,y=droplet_seurat_merge)
+
+##### #####
+##### Clean and Output the raw matrix and only retain batch and cell type ######
+##### #####
+Globle_merge_facs_droplets$celltype = Globle_merge_facs_droplets$cell_ontology_class
+Globle_merge_facs_droplets$batch = Globle_merge_facs_droplets$batch
+Globle_merge_facs_droplets$tissue = Globle_merge_facs_droplets$tissue
+
+###### Seurat_Obj = Globle_merge_facs_droplets
+
+Clean_Seurat_to_h5ad <- function(Seurat_Obj,tags = c('celltype','batch','tissue')){
+	##### RNA matrix data to counts matrix #####
+	#####
+	DefaultAssay(Seurat_Obj) <- 'RNA'
+	Seurat_Obj[['RNA']]@data = Seurat_Obj[['RNA']]@counts
+	#####
+	meta_data = Seurat_Obj@meta.data
+	##### retain the meta data: ######
+	k = which(colnames(meta_data) %in% tags == T)
+	meta_data = meta_data[,k]
+	#####
+	Seurat_Obj@meta.data = meta_data
+	##### return the new Seurat object #####
+	return(Seurat_Obj)
+}
+
+######
+Globle_merge_facs_droplets_cl = Clean_Seurat_to_h5ad(Globle_merge_facs_droplets)
+
+###### Next we need to random cells for each batch and celltype ######
+######
+###### Seurat_Obj = Globle_merge_facs_droplets_cl
+
+Shorten_Seurat_by_sampling <- function(Seurat_Obj,key='celltype',by='batch',num = 100){
+	#######
+	#######
+	Meta = Seurat_Obj@meta.data
+	#######
+	#######
+	key_index = which(colnames(Meta) == key)
+	batch_index = which(colnames(Meta) == by)
+	Meta$groups = paste(Meta[,key_index],Meta[,batch_index],sep='@')
+	########
+	Meta_list = split(rownames(Meta),Meta$groups)
+	########
+	#print(sapply(Meta_list,function(x) length(x)))
+	######## then we keep counts cells ####
+	cells_need = c()
+	for(i in 1:length(Meta_list)){
+		tmp_Meta = Meta_list[[i]]
+		if(length(tmp_Meta) > num){
+			tmp_Meta_select = sample(tmp_Meta,size=num)
+			cells_need = c(cells_need,tmp_Meta_select)
+		}else{
+			#### No sampling !! #####
+			tmp_Meta_select = tmp_Meta
+			cells_need = c(cells_need,tmp_Meta_select)
+		}
+	}
+	#########
+	print(dim(Meta)[1])
+	print(length(cells_need))
+	######### Next: #######
+	k = which(colnames(Seurat_Obj) %in% cells_need == T)
+	Seurat_Obj_cl = Seurat_Obj[,k]
+	#########
+	return(Seurat_Obj_cl)
+}
+
+Globle_merge_facs_droplets_cl_short = Shorten_Seurat_by_sampling(Globle_merge_facs_droplets_cl,key='celltype',by='batch',num = 100)
+
+###### table #####
+###### table #####
+table(Globle_merge_facs_droplets_cl_short$batch)
+######
+library(reticulate)
+library(scater)
+library(Seurat)
+library(SeuratDisk)
+
+
+######
+SaveH5Seurat(Globle_merge_facs_droplets_cl_short, filename = "Globle_merge_facs_droplets_cl_short.h5Seurat")
+Convert("Globle_merge_facs_droplets_cl_short.h5Seurat", dest = "h5ad")
+
+
+##### OK!!! Next!!! ######
+
+##### 
+##### let us integrate the 2 datasets ！！！！ #######
+#####
+##### let us integrate the different 2 trajactories ！！！ ######
+#####
+##### let us integrate the 2 datasets !!!! ###########
+#####
+##### OK!! let us convert Hd5 file to Seurat for this code !!!! ########
+#####
+
+
+
+##### Then we load the latent space for these cells #####
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+Globle_merge_facs_droplets_cl_short <- LoadH5Seurat("Globle_merge_facs_droplets_cl_short.h5Seurat")
+
+latent_sp = read.table('global_seurat_scANVI.tsv',header=T,sep='\t')
+
+#####
+reduction_mat = as.matrix(latent_sp[,c(1:2)])
+reduction_cluster = latent_sp$Clusters
+Seurat_obj = Globle_merge_facs_droplets_cl_short
+
+
+##### OK!!! next !!!! ####
+#####
+
+Add_latent_space_cluster_and_dims_to_seurat <- function(Seurat_obj,reduction_mat,reduction_cluster){
+	#####
+	Seurat_obj = NormalizeData(Seurat_obj)
+	Seurat_obj = FindVariableFeatures(Seurat_obj)
+	Seurat_obj = ScaleData(Seurat_obj)
+	Seurat_obj = RunPCA(Seurat_obj)
+	##### reorder the reduction index #####
+	##### Not necessary ######
+	##### m = match(colnames(Seurat_obj),reduction_index)
+	#####
+	colnames(reduction_mat) = c(1:dim(reduction_mat)[2])
+	#####
+	rownames(reduction_mat) = colnames(Seurat_obj)
+	#####
+	Seurat_obj[["scANVI"]] <- CreateDimReducObject(embeddings = reduction_mat, key = "scANVI_", assay = 'RNA')
+	#####
+	Seurat_obj$Clusters = reduction_cluster
+	#####
+	return(Seurat_obj)
+}
+
+
+Globle_merge_facs_droplets_cl_short = Add_latent_space_cluster_and_dims_to_seurat(Globle_merge_facs_droplets_cl_short,reduction_mat,reduction_cluster)
+
+###
+### Then we will perform UMAPs, and cluster analysis using the new reduction dims !!! #########
+###
+#Seurat_obj = Globle_merge_facs_droplets_cl_short
+#Perfrom_UMAP_and_clustering <- function(Seurat_obj,reduction_tag = 'scANVI_'){
+	######
+	Seurat_obj <- RunTSNE(Seurat_obj,reduction = "scANVI",dims=1:30)
+	Seurat_obj <- FindNeighbors(Seurat_obj, reduction = "scANVI",dims=1:30)
+	Seurat_obj <- FindClusters(Seurat_obj, resolution = 0.5)
+	######
+	return(Seurat_obj)
+	######
+#}
+#Globle_merge_facs_droplets_cl_short = Perfrom_UMAP_and_clustering(Globle_merge_facs_droplets_cl_short)
+
+
+#### OK!!! let us see the results !!! #####
+
+
+png_file = paste0('test1','.tissue.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_cl_short, reduction = "scANVI",group.by="tissue",label = TRUE, label.size = 2.5, repel = TRUE))
+dev.off()
+
+
+png_file = paste0('test2','.clusters.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_cl_short, reduction = "scANVI",group.by="Clusters"))
+dev.off()
+
+
+png_file = paste0('test3','.clusters.png')
+png(png_file,height=4000,width=10000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_cl_short, reduction = "scANVI",group.by="tissue",split.by='batch'))
+dev.off()
+
+
+##### OK!!! let us to have a test !!!!! ######
+#####
+
+library(Seurat)
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+load('facs_seurat_merge')
+load('droplet_seurat_merge')
+
+
+##### we use a subset of Tongue in facs and integrate all the tissues in droplet !!! #########
+#####
+
+k = which(facs_seurat_merge$tissue == 'Tongue')
+facs_seurat_merge_Tongue = facs_seurat_merge[,k]
+
+#####
+facs_seurat_merge_Tongue$batch = 'facs'
+droplet_seurat_merge$batch = 'droplet'
+#####
+Globle_merge_facs_droplets_Tongue <- merge(facs_seurat_merge_Tongue,y=droplet_seurat_merge)
+#####
+Globle_merge_facs_droplets_Tongue$celltype = Globle_merge_facs_droplets_Tongue$cell_ontology_class
+Globle_merge_facs_droplets_Tongue$batch = Globle_merge_facs_droplets_Tongue$batch
+Globle_merge_facs_droplets_Tongue$tissue = Globle_merge_facs_droplets_Tongue$tissue
+
+#####
+
+Globle_merge_facs_droplets_Tongue_short = Shorten_Seurat_by_sampling(Globle_merge_facs_droplets_Tongue,key='celltype',by='batch',num = 100)
+Globle_merge_facs_droplets_Tongue_short = Clean_Seurat_to_h5ad(Globle_merge_facs_droplets_Tongue_short)
+
+table(Globle_merge_facs_droplets_Tongue_short$batch)
+
+library(reticulate)
+library(scater)
+library(Seurat)
+library(SeuratDisk)
+
+SaveH5Seurat(Globle_merge_facs_droplets_Tongue_short, filename = "Globle_merge_facs_droplets_Tongue_short.h5Seurat")
+Convert("Globle_merge_facs_droplets_Tongue_short.h5Seurat", dest = "h5ad")
+
+
+Globle_merge_facs_droplets_Tongue_short <- LoadH5Seurat("Globle_merge_facs_droplets_Tongue_short.h5Seurat")
+
+#####
+#####
+
+latent_sp = read.table('Globle_merge_facs_droplets_Tongue_scANVI.tsv',header=T,sep='\t')
+
+Globle_merge_facs_droplets_Tongue_short = Add_latent_space_cluster_and_dims_to_seurat(Globle_merge_facs_droplets_Tongue_short,as.matrix(latent_sp[,c(1,2)]),latent_sp[,4])
+
+#####
+#####
+png_file = paste0('test4','.tissue.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_Tongue_short, reduction = "scANVI",group.by="tissue",label = TRUE, label.size = 2.5, repel = TRUE))
+dev.off()
+
+png_file = paste0('test5','.clusters.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_Tongue_short, reduction = "scANVI",group.by="Clusters"))
+dev.off()
+
+png_file = paste0('test6','.clusters.png')
+png(png_file,height=4000,width=20000,res=72*12)
+print(DimPlot(Globle_merge_facs_droplets_Tongue_short, reduction = "scANVI",group.by="tissue",split.by='tissue'))
+dev.off()
+
+png_file = paste0('test7','.features.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(FeaturePlot(Globle_merge_facs_droplets_Tongue_short, reduction = "scANVI",features=c("Spink5")))
+dev.off()
+
+
+#####
+##### OK!!! #######
+#####
+##### Then We Start to get the markers and get the comparaible gene expression matrix #########
+#####
+##### OK!!! Let us to find these markers !!! ########
+#####
+
+Globle_merge_facs_droplets_Tongue_short_markers <- runDEGs_Ref_sub(Globle_merge_facs_droplets_Tongue_short,method='COSG',idents='Clusters',num_of_genes = 25)
+
+##### OK ####
+##### Then we will weighted and calcualted the new expression matrix !!!!! ############
+#####
+
+
+##### We need first calculate the clusters in the combined matrix #######
+#####
+
+Seurat_obj <- Globle_merge_facs_droplets_Tongue_short
+
+#####
+#####
+table(Seurat_obj$Clusters)
+
+key='Clusters'
+ref_batch='facs'
+ref_celltype='celltype'
+
+Get_average_and_weighted_matrix <- function(Seurat_obj,key='Clusters',ref_batch='facs',ref_celltype='celltype'){
+	#####
+	k = which(colnames(Seurat_obj@meta.data) == key)
+	clusters = levels(as.factor(as.character(Seurat_obj@meta.data[,k])))
+	#####
+	raw_matrix = Seurat_obj[['RNA']]@counts
+	#####
+	exp_matrix = c()
+	#####
+	for(i in 1:length(clusters)){
+		tmp_clusters = clusters[i]
+		tmp_clusters_index = which(Seurat_obj@meta.data[,k] == tmp_clusters)
+		tmp_mat = raw_matrix[,tmp_clusters_index]
+		########
+		#print(dim(tmp_mat))
+		########
+		tmp_sum = Matrix::rowSums(tmp_mat)
+		exp_matrix = c(exp_matrix,tmp_sum)
+	}
+	exp_matrix = matrix(exp_matrix,ncol=length(clusters))
+	#####
+	colnames(exp_matrix) = clusters
+	rownames(exp_matrix) = rownames(raw_matrix)
+	#####
+	##### depth norm ######
+	#####
+	colSums_factor = colSums(exp_matrix) / 1e5
+	#####
+	exp_matrix_norm = sweep(exp_matrix,2,colSums_factor,FUN='/')
+	#####
+	##### print(colSums(exp_matrix_norm))
+	##### OK!!! Next get weighted matrix for the ref datasets ######
+	#####
+	ref_index = which(Seurat_obj$batch == ref_batch)
+	ref_Seurat_obj = Seurat_obj[,ref_index]
+	##### for each celltype, calculate the weights #################
+	ref_Seurat_obj_ct = names(table(ref_Seurat_obj$celltype))
+	ref_Seurat_obj_exp = c()
+	#####
+	for(j in 1:length(ref_Seurat_obj_ct)){
+		print(j)
+		#####
+		k_2 = which(ref_Seurat_obj$celltype == ref_Seurat_obj_ct[j])
+		ref_Seurat_obj_sub = ref_Seurat_obj[,k_2]
+		#####
+		k_3 = which(colnames(ref_Seurat_obj_sub@meta.data) == key)
+		ref_Seurat_obj_sub_table = table(ref_Seurat_obj_sub@meta.data[,k_3])
+		#####
+		ref_Seurat_obj_sub_table = data.frame(Cluster=names(ref_Seurat_obj_sub_table),Num=as.numeric(ref_Seurat_obj_sub_table))
+		#####
+		ref_Seurat_obj_sub_table$weight = ref_Seurat_obj_sub_table$Num / sum(ref_Seurat_obj_sub_table$Num)
+		#####
+		print(head(ref_Seurat_obj_sub_table,n=2))
+		##### Then we get the weighted matrix !!! ######
+		m = match(ref_Seurat_obj_sub_table$Cluster,colnames(exp_matrix_norm))
+		exp_matrix_norm_before = exp_matrix_norm[,m]
+		exp_matrix_norm_before_trans = sweep(exp_matrix_norm_before,2,ref_Seurat_obj_sub_table$weight,FUN='*')
+		#####
+		ref_Seurat_obj_sub_mat = apply(exp_matrix_norm_before_trans,1,sum)
+		ref_Seurat_obj_exp = c(ref_Seurat_obj_exp,ref_Seurat_obj_sub_mat)
+	}
+	#####
+	ref_Seurat_obj_exp = matrix(ref_Seurat_obj_exp,ncol=length(ref_Seurat_obj_ct))
+	#####
+	colnames(ref_Seurat_obj_exp) <- ref_Seurat_obj_ct
+	rownames(ref_Seurat_obj_exp) <- rownames(exp_matrix_norm)
+	#####
+	##### Then Qnorm and log2 transformed !!!! ########
+	combined_mat = cbind(exp_matrix_norm,ref_Seurat_obj_exp)
+	#######
+	combined_mat_norm = limma::normalizeBetweenArrays(combined_mat,method="quantile")
+	combined_mat_norm = log(combined_mat_norm+1)
+	combined_mat_norm = round(combined_mat_norm,2)
+	#######
+	total_background = combined_mat_norm[,1:dim(exp_matrix_norm)[2]]
+	ref_mat_background = combined_mat_norm[,-c(1:dim(exp_matrix_norm)[2])]
+	##### Then Qnorm ####
+	#####
+	##### return a list of matrixs !!!! #####
+	return(list(total_background=total_background,ref=ref_mat_background))
+	######
+}
+
+Globle_merge_facs_droplets_Tongue_short_background_matlist = Get_average_and_weighted_matrix(Globle_merge_facs_droplets_Tongue_short,key='Clusters',ref_batch='facs',ref_celltype='celltype')
+
+#####
+##### Then get weighted matrix #####
+#####
+
+##### 
+##### for each cell type in the query clusters #####
+##### let us see the integrate the ZCL and Mouse datasets !!!! #########
+#####
+conda activate Signac2
+R
+
+library(Seurat)
+
+setwd("/zp1/data/plyu3/MCL_V3")
+
+load("MCDAA.rdata")
+
+Mouse_MCL_Seurat = data
+
+###########
+###########
+
+Mouse_MCL_info = read.csv("MCDAA_cellinfo.csv")
+length(table(Mouse_MCL_info$cell_type))
+
+########### OK!!! ##################
+########### then we calculate the Avg expression and Genes in this background #######
+########### add cell type to the seurat objects !!! ######
+
+m = match(colnames(Mouse_MCL_Seurat),Mouse_MCL_info$barcodes)
+Mouse_MCL_Seurat$celltype = Mouse_MCL_info$cell_type[m]
+Mouse_MCL_Seurat$cluster = Mouse_MCL_info$cluster[m]
+
+###########
+########### table ##############
+###########
+
+saveRDS(Mouse_MCL_Seurat,file='Mouse_MCL_Seurat')
+
+########### remove ######
+Mouse_MCL_Seurat$batch = 'MCL'
+Mouse_MCL_Seurat_short = Shorten_Seurat_by_sampling(Mouse_MCL_Seurat,key='tissue',by='cluster',num = 100)
+
+saveRDS(Mouse_MCL_Seurat_short,file='Mouse_MCL_Seurat_short')
+
+#### red ####
+#### red ####
+#### we start from here !!! ####
+conda activate seurat4
+
+R
+
+library(reticulate)
+library(scater)
+library(Seurat)
+library(SeuratDisk)
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+Mouse_MCL_Seurat_short = readRDS('Mouse_MCL_Seurat_short')
+
+Mouse_MCL_Seurat_short$batch = 'MCL'
+
+length(table(Mouse_MCL_Seurat_short$tissue))
+
+######
+######
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+load('droplet_seurat_merge')
+
+droplet_seurat_merge$batch = 'droplet'
+
+########### ######
+table(Mouse_MCL_Seurat_short$celltype)
+###########
+
+Overlap_merge_seurat <- function(x,y){
+	library(Seurat)
+	#####
+	Overlap_genes = rownames(x)[which(rownames(x) %in% rownames(y) == T)]
+	#####
+	k1 = which(rownames(x) %in% Overlap_genes == T)
+	x = x[k1,]
+	#####
+	k2 = which(rownames(y) %in% Overlap_genes == T)
+	y = y[k2,]
+	#####
+	xy <- merge(x,y=y)
+	#####
+	return(xy)
+}
+
+############
+Globle_merge_MCL_droplets <- Overlap_merge_seurat(x=Mouse_MCL_Seurat_short,y=droplet_seurat_merge)
+Globle_merge_MCL_droplets = Clean_Seurat_to_h5ad(Globle_merge_MCL_droplets)
+
+SaveH5Seurat(Globle_merge_MCL_droplets, filename = "Globle_merge_MCL_droplets.h5Seurat")
+Convert("Globle_merge_MCL_droplets.h5Seurat", dest = "h5ad")
+
+
+
+latent_sp = read.table('Globle_merge_MCL_droplets.scANVI.tsv',header=T,sep='\t')
+
+Globle_merge_MCL_droplets = Add_latent_space_cluster_and_dims_to_seurat(Globle_merge_MCL_droplets,as.matrix(latent_sp[,c(1,2)]),latent_sp[,4])
+
+#####
+#####
+png_file = paste0('test4','.tissue.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_MCL_droplets, reduction = "scANVI",group.by="tissue",label = TRUE, label.size = 2.5, repel = TRUE))
+dev.off()
+
+png_file = paste0('test5','.clusters.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(DimPlot(Globle_merge_MCL_droplets, reduction = "scANVI",group.by="Clusters"))
+dev.off()
+
+
+Bladder = Globle_merge_MCL_droplets[,which(Globle_merge_MCL_droplets$tissue %in% c('Bladder','Liver','Kidney') ==T)]
+
+png_file = paste0('test6','.clusters.png')
+png(png_file,height=4000,width=8000,res=72*12)
+print(DimPlot(Bladder, reduction = "scANVI",group.by="tissue",split.by='batch'))
+dev.off()
+
+png_file = paste0('test7','.features.png')
+png(png_file,height=4000,width=5000,res=72*12)
+print(FeaturePlot(Globle_merge_MCL_droplets, reduction = "scANVI",features=c("Spink5")))
+dev.off()
+
+############ OK!! ##############
+############ Let us see these results !!! ############
+############ with larger number of MCL cells and droplets cells !!! ########
+############ let us see the scMAGIC, what kind of background datasets they use in their analysis ? ######
+############ we will found the paper first !!! #######
+############ what are their base lines for MCA and HCL datasets ? ######
+############ Both the MCA and the HCL atlas expression data are downloaded from NCBI’s GEO database with the accession number GSE108097 (8) and GSE134355 (7), respectively.
+############ OK! MCA it is the biggest datasets ! #################
+############ Mapping the Mouse Cell Atlas by Microwell-Seq
+############ Construction of a human cell landscape at single-cell level. Nature 2020 OK!!! the same group !!! #####
+############ OK!! ###############
+############ Next we need to find the HCL background datasets !!! ######
+############ https://cellxgene.cziscience.com/d/human_cell_landscape-3.cxg/ we can find the matrix on the cellXgene website !!!! #####
+############ Next we will perform final test !!! ######
+############ bladder and Tongue !!! ###################
+############ we will use HCL and MCL as references !!!#
+############ Download them !!! ###
+############ OR It will take too long time !!!! #######
+############ we start to download the HCL !!!!! #######
+############ OK! we will use MCA 1.1 ##################
+############ we have downloaded MCA 1.1 datasets !!! ##
+############ Upgrading to 0.8.0 ####
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare')
+
+library(Seurat)
+library(SeuratDisk)
+
+Convert("MCA1.1_adata.h5ad", dest = "h5seurat", overwrite = TRUE)
+
+MAC1.1 <- LoadH5Seurat("MCA1.1_adata.h5seurat")
+
+Mouse_MCL_Seurat_short <- readRDS('Mouse_MCL_Seurat_short')
+
+##########
+table(Mouse_MCL_Seurat_short$tissue)
+
+
+dim(table(MCA1.1_cell_info$tissue))
+
+MCA1.1_cell_info$samples = sapply(strsplit(MCA1.1_cell_info$cellnames,split='.',fixed=T),function(x) x[[1]])
+
+table(MCA1.1_cell_info$samples)
+##### After obtaining the digital gene expression (DGE) data matrix, we used Seurat for dimension reduction, clustering and differential gene expression analysis (Satija et al., 2015).
+#####
+
+##### OK!!! Then we download all the raw DGEs !!!! ########
+#####
+##### Next we merge these raw counts matrix !!!! ##########
+##### MCL datasets #####
+##### https://figshare.com/s/865e694ad06d5857db4b?file=10756795 ######
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare/annotation_rmbatch_data_revised417')
+files = list.files()
+
+i=1
+
+Anno_tab = list()
+
+for(i in 1:length(files)){
+	print(i)
+	print(files[i])
+	tmp_dat = read.table(files[i],sep=',',header=T)
+	print(dim(tmp_dat))
+	########
+	k = match(colnames(tmp_dat),c('Cell_id',''))
+
+	########
+	Anno_tab = c(Anno_tab,list(tmp_dat))
+}
+
+Anno_tab_total = do.call('rbind',Anno_tab)
+
+######## 
+
+setwd('/zp1/data/plyu3/Cell_ann_test/Tabula_Muris_mouse_data_prepare/rmbatch_dge')
+
+MCA1.1_cell_info <- read.table('MCA_CellAssignments.csv',sep=',',header=T)
+
+files = list.files()
+
+matrix_list = list()
+
+for(i in 1:length(files)){
+	print(i)
+	print(files[i])
+	tmp_dat = read.table(files[i],sep=' ',header=T)
+	tmp_dat = as.matrix(tmp_dat)
+	print(dim(tmp_dat))
+	########
+	k = which(colnames(tmp_dat) %in% MCA1.1_cell_info$Cell.name == T)
+	########
+	if(length(k) > 100){
+		tmp_dat_cl = tmp_dat[,k]
+		print(dim(tmp_dat_cl))
+		matrix_list = c(matrix_list,list(tmp_dat_cl))
+	}
+	if(length(k) < 100){
+		print('Not included')
+	}
+}
+
+#########
+#########
+######### ##
+
+### OK!!! ##
+### OK!!! ##
+
+#########
+######### Then we will merge them into a Seurat objects !!! ########
+#########
+
+
+### OK!!! great !!! ###
+### we can separatly integrate different altas !!!!! ##############
+###
+### we will integrate twice then it will be works !!!! ############
+### finished !!!!! ################################################
+### Yes!!! You are right !!! ######################################
+###
+
+### Next ###
+### we will build a new ###
+### and run thescript in python using scvi script !!! ######
+### we will build a new text named prepare background datasets !!!! ########
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

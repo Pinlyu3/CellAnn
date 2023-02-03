@@ -1,0 +1,1607 @@
+
+
+
+
+
+cd /zp1/data/plyu3/QF_RNAseq
+
+mkdir raw_fastq
+
+conda activate seurat4
+
+R
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+####
+
+files = list.files()
+
+folder1 = 'LiverNCD_0428'
+folder2 = 'LiverNCD_1023'
+
+command1 = paste('mkdir',folder1)
+command2 = paste('mkdir',folder2)
+
+system(command1)
+system(command2)
+
+setwd('/zp1/data/plyu3/QF_RNAseq/20210428 LIVER NCD l30 RNA-Seq')
+
+files = list.files()
+files1 = files[grep("(md5-1)",files,fixed=T)]
+files2 = files[grep("(md5-2)",files,fixed=T)]
+
+all_files = c(files1,files2)
+
+for(i in 1:length(all_files)){
+	tmp_folder = paste0("/zp1/data/plyu3/QF_RNAseq/20210428 LIVER NCD l30 RNA-Seq/",all_files[i])
+	setwd(tmp_folder)
+	tmp_files = list.files()
+	tmp_files_need = tmp_files[grep('fq.gz',tmp_files,fixed=T)]
+	####
+	for(j in 1:length(tmp_files_need)){
+		tmp_files_need_path = paste0(tmp_folder,'/',tmp_files_need[j])
+		####
+		tmp_files_need_path = paste0('\'',tmp_files_need_path,'\'')
+		#####
+		tmp_files_cp_path = paste0("'/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428/",tmp_files_need[j],'\'')
+		####
+		command = paste('cp',tmp_files_need_path,tmp_files_cp_path)
+		print(command)
+		system(command)
+	}
+}
+
+setwd('/zp1/data/plyu3/QF_RNAseq/20211023 LIVER NCD l30 RNA-Seq')
+
+files = list.files()
+files1 = files[grep("KO",files,fixed=T)]
+files2 = files[grep("Ctrl",files,fixed=T)]
+
+all_files = c(files1,files2)
+
+####### ##### ######
+
+for(i in 1:length(all_files)){
+	tmp_folder = paste0("/zp1/data/plyu3/QF_RNAseq/20211023 LIVER NCD l30 RNA-Seq/",all_files[i])
+	setwd(tmp_folder)
+	tmp_files = list.files()
+	tmp_files_need = tmp_files[grep('fq.gz',tmp_files,fixed=T)]
+	####
+	####
+	for(j in 1:length(tmp_files_need)){
+		tmp_files_need_path = paste0(tmp_folder,'/',tmp_files_need[j])
+		####
+		tmp_files_need_path = paste0('\'',tmp_files_need_path,'\'')
+		#####
+		tmp_files_cp_path = paste0("'/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023/",tmp_files_need[j],'\'')
+		####
+		command = paste('cp',tmp_files_need_path,tmp_files_cp_path)
+		print(command)
+		system(command)
+	}
+}
+
+#######
+####### OK!!!! #########
+####### Next we modify the python files for the JH piplines !!!!!!!! ###########
+#######
+#######
+####### we need to install tophat!!!!!! ######
+####### we need to install the tophat ######
+#######
+#######
+
+hisat2_extract_splice_sites.py gencode.vM30.basic.annotation.gtf > vM30_genome.ss
+hisat2_extract_exons.py gencode.vM30.basic.annotation.gtf > vM30_genome.exon
+
+#######
+#######
+#######
+
+cd 
+
+hisat2 -p 40 --rna-strandness=R --no-discordant --no-mixed -x /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus_GRCm38 -1  Ctrl-5_R1.fq.gz -2 Ctrl-5_R2.fq.gz -S accepted_hits.sam
+samtools view -S -b accepted_hits.sam > accepted_hits.bam
+
+
+#######
+#######
+####### we will filter these samples !!!! ##########
+#######
+#######
+
+####### control 1023 
+Ctrl: 2-5
+KO: 1-5
+
+####### aml12 splicing hishat2 mapping ######
+#######
+
+####### we need to mapping and see the results !!!! #########
+#######
+
+cd  /zp1/data/plyu3/QF_RNAseq/"AML12 RNA-seq（可诱导系统）"/Cleandata
+
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping
+
+R
+
+files = list.files()
+
+folder = getwd()
+
+for(i in 1:length(files)){
+	folder_sub = paste(folder,'/',files[i],sep='')
+	print(folder_sub)
+	setwd(folder_sub)
+	files_sub = list.files()
+	files_sub = files_sub[grep('fq.gz',files_sub)]
+	######
+	for(j in 1:length(files_sub)){
+		command = paste("cp",files_sub[j],'/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping')
+		print(command)
+		system(command,wait=F)
+	}
+	#####
+}
+
+####### OK!!! let us run the Hisat ##########
+#######
+
+setwd('/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping')
+
+files = list.files()
+files = gsub('_R1.fq.gz','',files)
+files = gsub('_R2.fq.gz','',files)
+files = files[!duplicated(files)]
+
+for(i in 1:length(files)){
+	#######
+	command1 = paste('nohup','hisat2 -p 4 --rna-strandness=R --no-discordant --no-mixed -x /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus_GRCm38')
+	command2 = paste0(' -1 ',files[i],'_R1.fq.gz',' -2 ',files[i],'_R2.fq.gz')
+	command3 = paste0('-S ',files[i],'_accepted_hits.sam',' &')
+	#######
+	command_all = paste(command1,command2,command3)
+	print(command_all)
+
+}
+
+########################
+conda activate RNAseq
+########################
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping
+
+######################## OK!!! ######
+######################## Done !!! ###
+######################## OK!!! ######
+### sam to bam files ################
+conda activate seurat4
+
+R
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping")
+
+files = list.files()
+
+files = files[grep('_hits.sam',files)]
+
+
+
+for(i in 1:length(files)){
+	tmp_file = files[i]
+	#print(tmp_file)
+	tmp_file_bam = gsub('sam','bam',tmp_file)
+	#print(tmp_file_bam)
+	command = paste('samtools','view -S -b',tmp_file,'>',tmp_file_bam)
+	print(command)
+	system(command,wait=F)
+}
+#######
+#######
+#######
+
+files = gsub('sam','bam',files)
+
+#######
+#######
+
+for(i in 18){
+	print(i)
+	index = files[i]
+	tag = gsub('_accepted_hits.bam','',index)
+	######
+	command1 = paste0("samtools view -bh -f 64 ",index,' > ',tag,'_R1.bam')
+	command2 = paste0("samtools view -bh -f 128 ",index,' > ',tag,'_R2.bam')
+	command3 = paste0("samtools view -bh -f 16 ",tag,'_R1.bam',' > ',tag,'_R1_minus.bam')
+	command4 = paste0("samtools view -bh -F 16 ",tag,'_R1.bam',' > ',tag,'_R1_plus.bam')
+	command5 = paste0("samtools view -bh -f 16 ",tag,'_R2.bam',' > ',tag,'_R2_minus.bam')
+	command6 = paste0("samtools view -bh -F 16 ",tag,'_R2.bam',' > ',tag,'_R2_plus.bam')
+	#######
+	#print(command1)
+	#print(command4)
+	system(command1)	
+	system(command2)	
+	system(command3)	
+	system(command4)	
+	system(command5)	
+	system(command6)	
+}
+
+#######
+#######
+
+
+
+
+
+
+#######
+####### let us see the lincFoxa2 expression in liver cells !!!!!!!
+#######
+####### on the windows !!!! #######
+#######
+#######
+#######
+
+####### Next we will find the bam and run command !!!!! #######
+#######
+conda activate seurat4
+
+R
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023")
+
+files = list.files()
+
+files = files[grep('.bam',files)]
+
+files = files[-grep('R',files)]
+
+#### samtools view -bh -f 64 %(folder)s/%(filename)s > %(folder)s/%(fileindex)s_R1.bam
+
+for(i in 1:length(files)){
+	index = files[i]
+	tag = gsub('.bam','',index)
+	######
+	command1 = paste0("samtools view -bh -f 64 ",index,' > ',tag,'_R1.bam')
+	command2 = paste0("samtools view -bh -f 128 ",index,' > ',tag,'_R2.bam')
+	command3 = paste0("samtools view -bh -f 16 ",tag,'_R1.bam',' > ',tag,'_R1_minus.bam')
+	command4 = paste0("samtools view -bh -F 16 ",tag,'_R1.bam',' > ',tag,'_R1_plus.bam')
+	command5 = paste0("samtools view -bh -f 16 ",tag,'_R2.bam',' > ',tag,'_R2_minus.bam')
+	command6 = paste0("samtools view -bh -F 16 ",tag,'_R2.bam',' > ',tag,'_R2_plus.bam')
+	#######
+	system(command1)	
+	system(command2)	
+	system(command3)	
+	system(command4)	
+	system(command5)	
+	system(command6)	
+}
+
+####
+#### 
+####
+####
+####
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428")
+
+files = list.files()
+
+files = files[grep('.bam',files)]
+
+####
+####
+####
+
+
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+conda activate seurat4
+
+R
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428")
+
+files = list.files()
+
+
+conda create -n htseq
+conda activate htseq
+
+
+####### bam file !!! ################
+#######
+
+####### call genes expression !!! ########
+
+####### 
+
+conda create -n kallisto
+
+conda activate kallisto
+
+conda install kallisto
+
+cd /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2
+
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto
+
+#####
+
+cd /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2
+
+kallisto index gencode.vM31.transcripts.fa --index=gencode.vM31.transcripts
+
+
+#####
+##### then we test the new index !!! ######
+##### red #######
+##### red #######
+##### red #######
+#####
+conda activate kallisto
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1_out  1-1_R1.fq.gz 1-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-2_out  1-2_R1.fq.gz 1-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3_out  1-3_R1.fq.gz 1-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-1_out  6-1_R1.fq.gz 6-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-2_out  6-2_R1.fq.gz 6-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-3_out  6-3_R1.fq.gz 6-3_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-1_out  7-1_R1.fq.gz 7-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-2_out  7-2_R1.fq.gz 7-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/7-3_out  7-3_R1.fq.gz 7-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-1_out  14-1_R1.fq.gz 14-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-2_out  14-2_R1.fq.gz 14-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/14-3_out  14-3_R1.fq.gz 14-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-1_out  17-1_R1.fq.gz 17-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-2_out  17-2_R1.fq.gz 17-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/17-3_out  17-3_R1.fq.gz 17-3_R2.fq.gz
+
+
+#########
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-1
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-1_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-1_out  19-1_R1.fq.gz 19-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-2
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-2_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-2_out  19-2_R1.fq.gz 19-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-3
+mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-3_out
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/19-3_out  19-3_R1.fq.gz 19-3_R2.fq.gz
+
+##########
+########## then we load the matrix and do the dexseq analysis ########
+##########
+
+
+
+
+library(readr)
+tx2knownGene <- read_tsv("/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcripts_to_genes.txt",col_names = FALSE)
+tx2knownGene = tx2knownGene[,c(1,3)]
+colnames(tx2knownGene) <- c("TXNAME","GENEID")
+save(tx2knownGene,file='tx2knownGene')
+
+
+
+t = read.table('/zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1_out/abundance.tsv',header=T)
+
+k = which(t$tpm > 0)
+
+length(k)
+
+index = c("TXNAME","GENEID")
+
+Gtf = rtracklayer::import('/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.basic.annotation.gtf.gz')
+
+TXNAME = Gtf$transcript_id
+GENEID = Gtf$gene_name
+
+data = data.frame(TXNAME=TXNAME,GENEID=GENEID)
+k = which(is.na(data$TXNAME) == T)
+data = data[-k,]
+
+index = paste(data[,1],data[,2])
+data_cl = data[!duplicated(index),]
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce/")
+
+tx2knownGenevM31 = data_cl
+
+save(tx2knownGenevM31,file='tx2knownGenevM31')
+
+
+aboundance_files = "/zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1_out/abundance.tsv"
+
+txi.kallisto.2.tsv <- tximport(aboundance_files, type = "kallisto", tx2gene = tx2knownGenevM31, ignoreAfterBar = TRUE)
+
+head(txi.kallisto.2.tsv$counts)
+counts = txi.kallisto.2.tsv$counts
+
+k = which(rownames(counts) == "9030622O22Rik")
+
+#### OK!!! ########################
+####
+#### then we try to import tx #####
+####
+
+
+library(tximport)
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce")
+
+files = list.files()
+
+load('tx2knownGenevM31')
+
+files = files[grep("_out",files)]
+
+aboundance_files = c()
+
+for(i in 1:length(files)){
+	print(files[i])
+	########
+	files_long = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_induce/",files[i],"/abundance.tsv")
+	########
+	aboundance_files = c(aboundance_files,files_long)
+}
+
+files_index = gsub('_out','',files)
+
+names(aboundance_files) = files_index
+
+####
+####
+####
+
+
+txi.kallisto.tsv <- tximport(aboundance_files, type = "kallisto", tx2gene = tx2knownGenevM31, ignoreAfterBar = TRUE)
+head(txi.kallisto.tsv$counts)
+
+counts1 = txi.kallisto.1.tsv$counts
+counts2 = txi.kallisto.2.tsv$counts
+
+all.equal(rownames(counts1),rownames(counts2))
+
+Counts_all = txi.kallisto.tsv$counts
+
+colSums(Counts_all)
+
+AML12_induce_counts = Counts_all
+
+save(AML12_induce_counts,file='AML12_induce_counts')
+
+####
+#### then we go to server1 #####
+####
+
+#### yellow 
+#### yellow
+#### yellow
+#### yellow
+#### yellow
+#### yellow
+#### yellow
+
+conda activate Signac2
+
+R
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+load("AML12_induce_counts")
+
+colnames(AML12_induce_counts)
+
+AML12_induce_counts = round(AML12_induce_counts)
+###############
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shLinc',3),rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_minus',3),rep('shCtrl_Dox_plus',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts))
+colData$condition = as.factor(colData$condition)
+
+
+####
+#### subset AML12 samples #######
+####
+
+AML12_induce_counts_subset1 = AML12_induce_counts[,c(4:6,10:12,16:18)]
+
+colData <- data.frame(condition = c(rep('shLinc',3),rep('shLinc_Dox_minus',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset1))
+colData$condition = as.factor(colData$condition)
+
+
+library('DESeq2')
+dds1 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset1,colData = colData,design = ~condition)
+dds1 <- dds1[rowSums(counts(dds1))>18,]
+dds1 <- DESeq(dds1)
+
+vsd1 <- vst(dds1, blind=FALSE)
+
+png_file = paste0('AML12_induce_counts1','.pca.png')
+png(png_file,height=7000,width=8000,res=72*12)
+print(plotPCA(vsd1, intgroup=c("condition")))
+dev.off()
+
+####
+#### Next expression of lincFoxa2 #####
+####
+png_file = paste0('AML12_induce_counts2','.pca.png')
+png(png_file,height=7000,width=8000,res=72*12)
+print(plotCounts(dds1, gene=c("9030622O22Rik"), intgroup="condition"))
+dev.off()
+
+
+####
+#### OK!!! Next control!!! ########
+####
+AML12_induce_counts_subset2 = AML12_induce_counts[,c(1:3,7:9,13:15)]
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shCtrl_Dox_minus',3),rep('shCtrl_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset2))
+colData$condition = as.factor(colData$condition)
+
+
+library('DESeq2')
+dds2 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset2,colData = colData,design = ~condition)
+dds2 <- dds2[rowSums(counts(dds2))>18,]
+dds2 <- DESeq(dds2)
+
+vsd2 <- vst(dds2, blind=FALSE)
+
+png_file = paste0('AML12_induce_counts1','.pca.png')
+png(png_file,height=7000,width=8000,res=72*12)
+print(plotPCA(vsd1, intgroup=c("condition")))
+dev.off()
+
+####
+#### Next expression of lincFoxa2 #####
+####
+png_file = paste0('AML12_induce_counts2','.pca.png')
+png(png_file,height=7000,width=8000,res=72*12)
+print(plotCounts(dds2, gene=c("Foxa2"), intgroup="condition"))
+dev.off()
+
+########
+#### Then we perform log2 fold change !!!! ########
+######## DEGs1 #######
+######## blue ########
+######## red #########
+######## green #######
+
+######## pink pink pink #######
+
+AML12_induce_counts_subset_DEG1 = AML12_induce_counts[,c(4:6,16:18)]
+
+colData <- data.frame(condition = c(rep('shLinc',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG1))
+colData$condition = as.factor(colData$condition)
+
+
+library('DESeq2')
+dds_DEG1 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG1,colData = colData,design = ~condition)
+dds_DEG1 <- dds_DEG1[rowSums(counts(dds_DEG1))>12,]
+dds_DEG1 <- DESeq(dds_DEG1)
+
+res <- results(dds_DEG1,contrast=c("condition","shLinc_Dox_plus","shLinc"))
+ 
+#### here !!!! ###### red red red ######################################
+DEG1_res = res
+
+
+
+####
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shLinc',3),rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_minus',3),rep('shCtrl_Dox_plus',3),rep('shLinc_Dox_plus',3)))
+
+AML12_induce_counts_subset_DEG3 = AML12_induce_counts[,c(1:3,13:15)]
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shCtrl_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG3))
+colData$condition = as.factor(colData$condition)
+
+
+library('DESeq2')
+dds_DEG3 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG3,colData = colData,design = ~condition)
+dds_DEG3 <- dds_DEG3[rowSums(counts(dds_DEG3))>12,]
+dds_DEG3 <- DESeq(dds_DEG3)
+
+res <- results(dds_DEG3,contrast=c("condition","shCtrl_Dox_plus","shCtrl"))
+ 
+#### here !!!! ###### red red red ######################################
+DEG3_res = res
+
+####
+overlap_genes = rownames(DEG1_res)[which(rownames(DEG1_res) %in% rownames(DEG3_res)==T)]
+
+####
+Merge_table = data.frame(Genes = overlap_genes,Fold_shLinc=0,Fold_shCtrl=0)
+
+k1 = which(DEG1_res$padj < 0.01)
+DEG1_res_cl = DEG1_res[k1,]
+
+k2 = which(DEG3_res$padj < 0.01)
+DEG3_res_cl = DEG3_res[k2,]
+
+####
+m1 = match(Merge_table$Genes,rownames(DEG1_res_cl))
+m2 = match(Merge_table$Genes,rownames(DEG3_res_cl))
+
+Merge_table$Fold_shLinc = DEG1_res_cl$log2FoldChange[m1]
+Merge_table$Fold_shCtrl = DEG3_res_cl$log2FoldChange[m2]
+
+k1 = which(is.na(Merge_table$Fold_shLinc) == T)
+k2 = which(is.na(Merge_table$Fold_shCtrl) == T)
+Merge_table$Fold_shLinc[k1] = 0
+Merge_table$Fold_shCtrl[k2] = 0
+
+k3 = which(Merge_table$Fold_shLinc == 0 & Merge_table$Fold_shCtrl == 0)
+
+Merge_table_cl = Merge_table[-k3,]
+
+library(ggplot2)
+
+ggplot(Merge_table_cl,aes(x=Fold_shLinc,y=Fold_shCtrl)) + geom_point(size=0.05)
+
+ggsave("test1.png")
+
+####
+#### OK!!! THEN WE Select genes ######
+####
+
+k4 = which(Merge_table_cl$Fold_shLinc > 0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.5)
+Merge_table_cl$class = 'Other'
+Merge_table_cl$class[k4] = 'Diff_up'
+
+upgenes = Merge_table_cl[k4,]
+write.table(upgenes,file='LincFoxa2_upgenes.txt',row.names=F,quote=F,sep='\t')
+
+
+library(ggplot2)
+
+ggplot(Merge_table_cl,aes(x=Fold_shLinc,y=Fold_shCtrl,color=class)) + geom_point(size=0.05) + geom_abline(slope=1)
+
+ggsave("test2.png")
+
+
+
+k5 = which(Merge_table_cl$Fold_shLinc < -0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.5)
+Merge_table_cl$class = 'Other'
+Merge_table_cl$class[k5] = 'Diff_down'
+
+downgenes = Merge_table_cl[k5,]
+
+k = which(downgenes$Genes %in% c("Apob","Apoc2","Apof") == T)
+
+downgenes[k,]
+
+write.table(downgenes,file='LincFoxa2_downgenes.txt',row.names=F,quote=F,sep='\t')
+
+
+
+"pink"
+"pink"
+"pink"
+"pink"
+"pink"
+"pink"
+
+
+library(ggplot2)
+
+ggplot(Merge_table_cl,aes(x=Fold_shLinc,y=Fold_shCtrl,color=class)) + geom_point(size=0.05) + geom_abline(slope=1)
+
+ggsave("test3.png")
+
+
+
+
+"pink"
+"pink"
+"pink"
+"pink"
+"pink"
+"pink"
+#### Nexted splicing #####
+#### server2  ############
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce")
+
+load(file='tx2knownGenevM31')
+
+tx2knownGenevM31$TXNAME = sapply(strsplit(tx2knownGenevM31$TXNAME,split='.',fixed=T),function(x) x[[1]])
+
+
+"pink"
+"pink"
+"pink"
+
+####
+
+index = c("TXNAME","GENEID")
+Gtf = rtracklayer::import('/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus.GRCm38.96.gtf')
+
+####
+TXNAME = Gtf$transcript_id
+GENEID = Gtf$gene_id
+
+####
+data = data.frame(TXNAME=TXNAME,GENEID=GENEID)
+k = which(is.na(data$TXNAME) == T)
+data = data[-k,]
+
+####
+####
+index = paste(data[,1],data[,2])
+data_cl = data[!duplicated(index),]
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce/")
+
+tx2knownGenevM31 = data_cl
+
+save(tx2knownGenevM31,file='tx2knownGenevM31')
+"pink"
+"pink"
+"pink"
+
+
+
+
+
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping")
+files = list.files()
+files = files[grep("splice.txt",files)]
+
+all_files = c()
+trans = c()
+
+
+for(i in 1:length(files)){
+	tmp = read.table(files[i],header=T)
+	m = match(tmp$transcript_ID,tx2knownGenevM31$TXNAME)
+
+	########	
+	print(summary(tmp$IER))
+	print(dim(tmp))
+	######## merge IER #############
+	all_files = c(all_files,list(tmp[,c(6,7,15)]))
+	genes = c(genes,tmp[,7])
+}
+
+names(all_files) <- files
+names(all_files) <- files
+
+####
+all_Genes = genes[!duplicated(genes)]
+
+#### ##################
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+####
+
+####
+all_files_merge = do.call('rbind',all_files)
+
+####
+####
+AML12_induce_counts_subset_DEG2 = AML12_induce_counts[,c(10:12,16:18)]
+colData <- data.frame(condition = c(rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG2))
+colData$condition = as.factor(colData$condition)
+
+
+library('DESeq2')
+dds_DEG2 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG2,colData = colData,design = ~condition)
+dds_DEG2 <- dds_DEG2[rowSums(counts(dds_DEG2))>12,]
+dds_DEG2 <- DESeq(dds_DEG2)
+
+res <- results(dds_DEG2,contrast=c("condition","shCtrl_Dox_minus","shLinc_Dox_plus"))
+DEG2_res = res
+
+####
+#### then we merge the plots !!!! #####
+####
+
+colnames(DEG1_res) <- paste('Dox_plus_VS_shLinc',colnames(DEG1_res),sep="::")
+colnames(DEG2_res) <- paste('Dox_minus_VS_Dox_plus',colnames(DEG2_res),sep="::")
+
+#########
+overlap_genes = rownames(DEG1_res)[which(rownames(DEG1_res) %in% rownames(DEG2_res) == T)]
+
+m = match(overlap_genes,rownames(DEG1_res))
+
+DEG1_res_cl = DEG1_res[m,]
+
+
+m = match(overlap_genes,rownames(DEG2_res))
+
+DEG2_res_cl = DEG2_res[m,]
+
+DEGs_merge = cbind(DEG1_res_cl,DEG2_res_cl)
+
+save(DEGs_merge,file='DEGs_merge')
+
+library(ggplot2)
+
+DEGs_merge = data.frame(DEGs_merge)
+
+ggplot(DEGs_merge,aes(x=Dox_minus_VS_Dox_plus..log2FoldChange,y=Dox_plus_VS_shLinc..log2FoldChange)) + geom_point(size=0.1) + scale_y_continuous(limits=c(-10,10)) + scale_x_continuous(limits=c(-10,10))
+ggsave('test1.png')
+
+####
+####
+
+DEGs_merge$condition = 'not rescued'
+
+k1 = which(DEGs_merge$"Dox_plus_VS_shLinc..log2FoldChange" > 0.5 & DEGs_merge$"Dox_minus_VS_Dox_plus..log2FoldChange" < -0.5 & DEGs_merge$"Dox_plus_VS_shLinc..padj" < 0.1 & DEGs_merge$"Dox_minus_VS_Dox_plus..padj" < 0.1)
+k2 = which(DEGs_merge$"Dox_plus_VS_shLinc..log2FoldChange" < -0.5 & DEGs_merge$"Dox_minus_VS_Dox_plus..log2FoldChange" > 0.5 & DEGs_merge$"Dox_plus_VS_shLinc..padj" < 0.1 & DEGs_merge$"Dox_minus_VS_Dox_plus..padj" < 0.1)
+
+length(k1)
+length(k2)
+
+
+DEGs_merge$condition[k1] = 'rescued'
+DEGs_merge$condition[k2] = 'rescued'
+
+
+ggplot(DEGs_merge,aes(x=Dox_minus_VS_Dox_plus..log2FoldChange,y=Dox_plus_VS_shLinc..log2FoldChange,color=condition)) + geom_point(size=0.1) + scale_y_continuous(limits=c(-10,10)) + scale_x_continuous(limits=c(-10,10))
+ggsave('test2.png')
+
+DEGs_merge$Gene = rownames(DEGs_merge)
+DEGs_merge = DEGs_merge[,c(14,1:13)]
+write.table(DEGs_merge,file='Aml12_inducible_results.txt',sep='\t',quote=F,row.names=F)
+
+
+ condition
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+
+
+
+
+
+
+############
+##### Next we will perform GO analysis using DAVID #######
+############
+############
+############ we output genes ########
+############
+
+##### up-regulated gene names ####
+#####
+
+
+k1 = which(DEGs_merge$"Dox_plus_VS_shLinc..log2FoldChange" > 0.5 & DEGs_merge$"Dox_minus_VS_Dox_plus..log2FoldChange" < -0.5 & DEGs_merge$"Dox_plus_VS_shLinc..padj" < 0.1 & DEGs_merge$"Dox_minus_VS_Dox_plus..padj" < 0.1)
+k2 = which(DEGs_merge$"Dox_plus_VS_shLinc..log2FoldChange" < -0.5 & DEGs_merge$"Dox_minus_VS_Dox_plus..log2FoldChange" > 0.5 & DEGs_merge$"Dox_plus_VS_shLinc..padj" < 0.1 & DEGs_merge$"Dox_minus_VS_Dox_plus..padj" < 0.1)
+
+#####
+#####
+
+write.table(DEGs_merge[k1,1],file='Aml12_inducible_upgenes.txt',sep='\t',quote=F,row.names=F,col.names=F)
+write.table(DEGs_merge[k2,1],file='Aml12_inducible_downgenes.txt',sep='\t',quote=F,row.names=F,col.names=F)
+
+
+
+FOXA1, NCOA5, WFS1, GCGR, ASPSCR1, MUP16, SIRT6, HNF1A, BHLHA15, MUP11, CACNA1E, MUP1, NCOR2, STK11, CSRP3, MUP9, SPOP, AKT1
+
+png_file = paste0('AML12_induce_counts2','.genes.png')
+png(png_file,height=7000,width=8000,res=72*12)
+print(plotCounts(dds1, gene=c("Hnf1a"), intgroup="condition"))
+dev.off()
+
+
+FOXA1, NCOA5, WFS1, GCGR, ASPSCR1, MUP16, SIRT6, HNF1A, BHLHA15, MUP11, CACNA1E, MUP1, NCOR2, STK11, CSRP3, MUP9, SPOP, AKT1
+
+
+genes1 = c("FOXA1", "NCOA5", "WFS1", "GCGR", "ASPSCR1", "MUP16", "SIRT6", "HNF1A", "BHLHA15", "MUP11", "CACNA1E", "MUP1", "NCOR2", "STK11", "CSRP3", "MUP9", "SPOP", "AKT1")
+
+genes2 = c("PID1", "MUP9", "OPA3", "MYH14", "MUP16", "MUP11", "MUP1", "PLEC")
+
+
+genes3 = c("SLC45A3", "MUP9", "AKT1", "MUP16", "MUP11", "MUP1")
+
+genes4 = c("ASAH2", "HPGD", "ABHD2", "MGST2", "HSD17B6", "SGMS2", "CYP46A1", "LIPA", "CYP2C38", "INPP5B", "ADH4", "AGMO", "B3GALT1", "THEM4", "LRAT", "KDSR", "UGT1A9", "APOB", "IP6K2", "ARSA", "GSTM2", "CPT1A", "GSTM1", "GGPS1", "ELOVL2", "MBOAT1", "ACOT12", "ACOT13", "NR1D2", "NR1H5", "TTC39B", "CYP2C23", "NPC1", "AADAC", "LPCAT3", "ALMS1", "ACOT2", "ANGPTL3", "PI4KA", "ACOT1", "DEGS1", "CYP2E1", "PPARA", "PLCB1", "LPIN2", "PNPLA1", "ACOT4", "ACOT3")
+
+
+for(i in 48:48){
+	print(i)
+	#print(genes1[i])
+	tmp = genes4[i]
+	tmp = tolower(tmp)
+	tmp = capitalize(tmp)
+	print(tmp)
+	###
+	png_file = paste0('AML12_induce_',tmp,'.genes.png')
+	print(png_file)
+	png(png_file,height=7000,width=8000,res=72*12)
+	print(plotCounts(dds1, gene=tmp, intgroup="condition"))
+	dev.off()
+}
+
+
+
+
+####
+#### sample1 #####
+####
+
+Counts_all_1 = Counts_all[,c(1:17)]
+colData <- data.frame(condition = c(rep('Ctrl',9),rep('KO',8)))
+rownames(colData) <- as.factor(colnames(Counts_all_1))
+colData$condition = as.factor(colData$condition)
+
+
+Counts_all_2 = Counts_all[,c(18:27)]
+colData <- data.frame(condition = c(rep('Ctrl',5),rep('KO',5)))
+rownames(colData) <- as.factor(colnames(Counts_all_2))
+colData$condition = as.factor(colData$condition)
+
+
+Counts_all_3 = Counts_all[,c(19,20,21,23,24,26,27)]
+colData <- data.frame(condition = c(rep('Ctrl',3),rep('KO',4)))
+rownames(colData) <- as.factor(colnames(Counts_all_3))
+colData$condition = as.factor(colData$condition)
+
+
+
+
+library('DESeq2')
+dds <- DESeqDataSetFromMatrix(countData = Counts_all_3,colData = colData,design = ~condition)
+dds <- dds[rowSums(counts(dds))>21,]
+dds <- DESeq(dds)
+
+############## GO term ###################
+############## 
+
+
+
+
+vsd <- vst(dds, blind=FALSE)
+rld <- rlog(dds, blind=FALSE)
+
+sampleDists <- dist(t(assay(vsd)))
+
+library("RColorBrewer")
+sampleDistMatrix <- as.matrix(sampleDists)
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+
+
+png_file = paste0('subset_1023','.clusters.png')
+
+png(png_file,height=4000,width=5000,res=72*12)
+print(pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors))
+
+dev.off()
+
+
+
+
+
+
+conda activate kallisto
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-1 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-1
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-1  Ctrl-1_R1.fq.gz Ctrl-1_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-2 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-2
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-2  Ctrl-2_R1.fq.gz Ctrl-2_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-3 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-3
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-3  Ctrl-3_R1.fq.gz Ctrl-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-4 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-4
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-4  Ctrl-4_R1.fq.gz Ctrl-4_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-5 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-5
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-5  Ctrl-5_R1.fq.gz Ctrl-5_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-6 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-6
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-6  Ctrl-6_R1.fq.gz Ctrl-6_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-7 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-7
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-7 Ctrl-7_R1.fq.gz Ctrl-7_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-8 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-8
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-8 Ctrl-8_R1.fq.gz Ctrl-8_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'Ctrl-9 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-9
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/Ctrl-9 Ctrl-9_R1.fq.gz Ctrl-9_R2.fq.gz
+
+###############
+############### Next !!! ###########################
+###############
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-1 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-1
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-1 KO-1_R1.fq.gz KO-1_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-2 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-2
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-2 KO-2_R1.fq.gz KO-2_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-3 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-3
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-3 KO-3_R1.fq.gz KO-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-4 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-4
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-4 KO-4_R1.fq.gz KO-4_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-5 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-5
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-5 KO-5_R1.fq.gz KO-5_R2.fq.gz
+
+
+##################
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-6 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-6
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-6 KO-6_R1.fq.gz KO-6_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-7 (md5-1)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-7
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-7 KO-7_R1.fq.gz KO-7_R2.fq.gz
+
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20210428 LIVER NCD l30 RNA-Seq'
+cd 'KO-8 (md5-2)'
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-8
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/KO-8 KO-8_R1.fq.gz KO-8_R2.fq.gz
+
+
+##################
+################## OK!!! Next folder !!! ############
+##################
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd Ctrl-1
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-1
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-1 Ctrl-1_R1.fq.gz Ctrl-1_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd Ctrl-2
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-2
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-2 Ctrl-2_R1.fq.gz Ctrl-2_R2.fq.gz
+
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd Ctrl-3
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-3
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-3 Ctrl-3_R1.fq.gz Ctrl-3_R2.fq.gz
+
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd Ctrl-4
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-4
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-4 Ctrl-4_R1.fq.gz Ctrl-4_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd Ctrl-5
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-5
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/Ctrl-5 Ctrl-5_R1.fq.gz Ctrl-5_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd KO-1
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-1
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-1 KO-1_R1.fq.gz KO-1_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd KO-2
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-2
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-2 KO-2_R1.fq.gz KO-2_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd KO-3
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-3
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-3 KO-3_R1.fq.gz KO-3_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd KO-4
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-4
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-4 KO-4_R1.fq.gz KO-4_R2.fq.gz
+
+
+cd /zp1/data/plyu3/QF_RNAseq/'20211023 LIVER NCD l30 RNA-Seq'
+cd KO-5
+mkdir /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-5
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcriptome.idx -o /zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/KO-5 KO-5_R1.fq.gz KO-5_R2.fq.gz
+
+
+
+#############
+kallisto to DESeq2 results:
+
+tximport Bioconductor package
+
+##############
+### OK! Next we read these files !! #####
+##############
+conda activate seurat4
+
+library(tximport)
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto")
+
+files = list.files()
+
+aboundance_files = c()
+
+for(i in 1:length(files)){
+	print(files[i])
+	########
+	files_long = paste0("/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428_kallisto/",files[i],"/abundance.tsv")
+	########
+	aboundance_files = c(aboundance_files,files_long)
+}
+
+names(aboundance_files) = paste0(files,"_0428")
+
+
+############# OK!!! ################
+############# another files for counts ###########
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto")
+
+files = list.files()
+
+aboundance_files2 = c()
+
+for(i in 1:length(files)){
+	print(files[i])
+	########
+	files_long = paste0("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023_kallisto/",files[i],"/abundance.tsv")
+	########
+	aboundance_files2 = c(aboundance_files2,files_long)
+}
+
+names(aboundance_files2) = paste0(files,"_1023")
+
+aboundance_files_all = c(aboundance_files,aboundance_files2)
+
+#############
+#############
+library(readr)
+tx2knownGene <- read_tsv("/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/transcripts_to_genes.txt",col_names = FALSE)
+
+
+tx2knownGene = tx2knownGene[,c(1,3)]
+
+colnames(tx2knownGene) <- c("TXNAME","GENEID")
+
+save(tx2knownGene,file='tx2knownGene')
+
+txi.kallisto.all.tsv <- tximport(aboundance_files_all, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+head(txi.kallisto.all.tsv$counts)
+
+
+txi.kallisto.1.tsv <- tximport(aboundance_files, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+head(txi.kallisto.1.tsv$counts)
+
+
+txi.kallisto.2.tsv <- tximport(aboundance_files2, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+head(txi.kallisto.2.tsv$counts)
+
+counts1 = txi.kallisto.1.tsv$counts
+counts2 = txi.kallisto.2.tsv$counts
+
+all.equal(rownames(counts1),rownames(counts2))
+
+Counts_all = cbind(counts1,counts2)
+
+save(Counts_all,file='Counts_all')
+
+##############
+############## 聚类，差异表达 #####################################
+##############
+
+在服务器1上面！
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+load("Counts_all")
+
+colnames(Counts_all)
+
+Counts_all = round(Counts_all)
+###############
+
+colData <- data.frame(condition = c(rep('Ctrl',9),rep('KO',8),rep('Ctrl',5),rep('KO',5)))
+rownames(colData) <- as.factor(colnames(Counts_all))
+colData$condition = as.factor(colData$condition)
+
+#### sample1 #####
+####
+
+Counts_all_1 = Counts_all[,c(1:17)]
+colData <- data.frame(condition = c(rep('Ctrl',9),rep('KO',8)))
+rownames(colData) <- as.factor(colnames(Counts_all_1))
+colData$condition = as.factor(colData$condition)
+
+
+Counts_all_2 = Counts_all[,c(18:27)]
+colData <- data.frame(condition = c(rep('Ctrl',5),rep('KO',5)))
+rownames(colData) <- as.factor(colnames(Counts_all_2))
+colData$condition = as.factor(colData$condition)
+
+
+Counts_all_3 = Counts_all[,c(19,20,21,23,24,26,27)]
+colData <- data.frame(condition = c(rep('Ctrl',3),rep('KO',4)))
+rownames(colData) <- as.factor(colnames(Counts_all_3))
+colData$condition = as.factor(colData$condition)
+
+
+
+
+library('DESeq2')
+dds <- DESeqDataSetFromMatrix(countData = Counts_all_3,colData = colData,design = ~condition)
+dds <- dds[rowSums(counts(dds))>21,]
+dds <- DESeq(dds)
+
+############## GO term ###################
+############## 
+
+
+
+
+vsd <- vst(dds, blind=FALSE)
+rld <- rlog(dds, blind=FALSE)
+
+sampleDists <- dist(t(assay(vsd)))
+
+library("RColorBrewer")
+sampleDistMatrix <- as.matrix(sampleDists)
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+
+
+png_file = paste0('subset_1023','.clusters.png')
+
+png(png_file,height=4000,width=5000,res=72*12)
+print(pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors))
+
+dev.off()
+
+
+############# 
+#############
+#############
+
+
+
+res <- results(dds,contrast=c("condition","KO","Ctrl"))
+DEseq_tab <- data.frame(res)
+###########
+k = which(DEseq_tab$padj < 0.05)
+DEseq_tab_cl = DEseq_tab[k,]
+k1 = which(is.na(DEseq_tab_cl$padj) == T)
+if(length(k1) > 0){
+		DEseq_tab_cl = DEseq_tab_cl[k1,]
+}
+###########
+print(dim(DEseq_tab_cl))
+###########
+########### filter genes ######
+DEseq_tab_cl$Gene = rownames(DEseq_tab_cl)
+dim2 = dim(DEseq_tab_cl)[2]
+DEseq_tab_cl = DEseq_tab_cl[,c(dim2,1:(dim2-1))]
+###########
+DEseq_tab_cl = DEseq_tab_cl[order(DEseq_tab_cl[,3],decreasing=T),]
+###########
+file_out = paste('sub1023_subset_sample_DEGs.txt',sep='')
+
+write.table(DEseq_tab_cl,file=file_out,sep='\t',row.names=F,quote=F)
+
+k = which(abs(DEseq_tab_cl$log2FoldChange) > 1)
+
+t <- read.table("total_sample_DEGs.txt",header=T)
+
+
+########
+####### Next plot PCAs ############
+########
+
+library(Seurat)
+
+
+Counts_seurat = CreateSeuratObject(counts = Counts_all)
+
+Counts_seurat <- NormalizeData(Counts_seurat)
+Counts_seurat <- ScaleData(Counts_seurat, verbose = FALSE)
+Counts_seurat <- FindVariableFeatures(Counts_seurat)
+Counts_seurat <- RunPCA(Counts_seurat, npcs = 10, verbose = FALSE)
+Counts_seurat <- RunUMAP(Counts_seurat, reduction = "pca", dims = 1:30)
+
+
+Counts_seurat$seurat_clusters = colnames(Counts_seurat)
+
+png_file = paste0('Total','.clusters.png')
+png(png_file,height=10000,width=12000,res=72*12)
+print(DimPlot(Counts_seurat, reduction = "pca",group.by='seurat_clusters',label = TRUE, label.size = 2.5, repel = TRUE))
+dev.off()
+
+
+########## we use 1023 as new datasets ########
+
+"9030622O22Rik"
+
+########## 
+
+k = which(rownames(Counts_all) == "9030622O22Rik")
+
+ENSMUSG00000086141
+
+########
+
+
+
+######## splicing files ###########
+########
+
+conda activate RNAseq
+
+conda install python=3.8
+pip install SPLICE-q 
+
+conda activate seurat4
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023")
+
+files = list.files()
+
+files = files[grep('.bam',files)]
+
+files = files[-grep('R',files)]
+
+#### samtools view -bh -f 64 %(folder)s/%(filename)s > %(folder)s/%(fileindex)s_R1.bam
+
+for(i in 1:length(files)){
+	index = files[i]
+	######
+	tag_2 = gsub('_mm10.bam','_mm10_s.bam',index)
+	######
+	command1 = paste0("samtools sort ",index," -o ",tag_2)
+	######
+	print(command1)
+	system(command1,wait=F)	
+}
+
+###
+for(i in 1:length(files)){
+	index = files[i]
+	tag_2 = gsub('_mm10.bam','_mm10_s.bam',index)
+	######
+	command1 = paste0("samtools index ",tag_2)
+	######
+	print(command1)
+	system(command1,wait=F)	
+}
+
+######## Next folder: ########
+########
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping")
+
+files = list.files()
+
+files = files[grep('accepted_hits.bam$',files)]
+
+for(i in 1:length(files)){
+	index = files[i]
+	######
+	tag_2 = gsub('accepted_hits.bam','accepted_hits_s.bam',index)
+	######
+	command1 = paste0("samtools sort ",index," -o ",tag_2)
+	######
+	print(command1)
+	system(command1,wait=F)	
+}
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping")
+
+files = list.files()
+
+files = files[grep('accepted_hits_s.bam$',files)]
+
+for(i in 1:length(files)){
+	index = files[i]
+	######
+	######
+	command1 = paste0("samtools index ",index)
+	######
+	print(command1)
+	system(command1,wait=F)	
+}
+
+
+
+files = list.files()
+
+files = files[grep('accepted_hits_s.bam$',files)]
+
+for(i in 1:length(files)){
+	index = files[i]
+	######
+	index2 = gsub('accepted_hits_s.bam','splice.txt',index)
+	######
+	command1 = paste0("nohup SPLICE-q.py --IERatio -b ",index," -g /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus.GRCm38.96.gtf ","-o ",index2, " &")
+	######
+	print(command1)
+	#system(command1,wait=F)	
+}
+
+
+
+########
+cd #####
+########
+
+
+
+nohup SPLICE-q.py --IERatio -b WT_1_s.bam -g Homo_sapiens.GRCh38.108.gtf -o WT_1outfile.tsv &
+nohup SPLICE-q.py --IERatio -b WT_2_s.bam -g Homo_sapiens.GRCh38.108.gtf -o WT_2outfile.tsv &
+nohup SPLICE-q.py --IERatio -b WT_3_s.bam -g Homo_sapiens.GRCh38.108.gtf -o WT_3outfile.tsv &
+nohup SPLICE-q.py --IERatio -b S2KO_1_s.bam -g Homo_sapiens.GRCh38.108.gtf -o S2KO_1outfile.tsv &
+nohup SPLICE-q.py --IERatio -b S2KO_2_s.bam -g Homo_sapiens.GRCh38.108.gtf -o S2KO_2outfile.tsv &
+nohup SPLICE-q.py --IERatio -b S2KO_3_s.bam -g Homo_sapiens.GRCh38.108.gtf -o S2KO_3outfile.tsv &
+
+
+
+
+
+
+
+
+
+
+
+
+

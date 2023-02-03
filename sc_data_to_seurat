@@ -891,7 +891,7 @@ seurat_obj_DEGs_list <- Prepare_the_Seurat_objects_Step2_DEGs_Fast(seurat_obj)
 
 saveRDS(seurat_obj_DEGs_list,file='pmid32386599_deg_list')
 
-############
+############ KNN ##############################
 ############ KNN presudo-replicates ###########
 ############ KNN based on the UMAP ############
 ############ same cluster #####################
@@ -922,24 +922,19 @@ Prepare_the_Seurat_objects_Step2 <- function(seurat_obj){
 	}
 	return(DEGs_list)
 }
-
+######## ########### ##########
 ######## ########### ##########
 
 seurat_obj_DEGs_list = Prepare_the_Seurat_objects_Step2(seurat_obj)
-
 FN = paste(tag,'_DEG_list',sep='')
-
 saveRDS(seurat_obj_DEGs_list,FN)
-
 
 ####### ########### ##########
 ####### how many KNN replicates #######
 ####### ###########
 
 setwd('/zp1/data/plyu3/CellAlignment_database/32386599')
-
 seurat_obj = readRDS('pmid32386599_seurat_obj')
-
 get_smooth_gene_exp <- function(x,mat){
 	#####
 	mat_cl = mat[,x]
@@ -980,6 +975,7 @@ get_NonOverlap <- function(knnIdx,Sample_Numbers,non_overlapping_cutoff = 0.9){
 
 ####### Not overlapping KNN list #########
 ####### Not Non-overlapping KNN list #########
+####### only time point ###################
 
 
 Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN = 20, non_overlapping_cutoff = 0.9){
@@ -1679,8 +1675,9 @@ Prepare_the_Seurat_objects_Step3 <- function(seurat_obj,matrix_tag = 'data',KNN 
 		sample_index_mat = knnIdx[Sample_index,]
 		rownames(sample_index_mat) = paste(celltype[i],1:dim(sample_index_mat)[1],sep='@psedobulk')
 		#############
-		for(j in 1:dim(Sample_index)[1]){
-			tmp_k = 
+		for(j in 1:dim(sample_index_mat)[1]){
+			tmp_k = sample_index_mat[j,]
+			seurat_obj$pesudo_index[tmp_k] = rownames(sample_index_mat)[j]
 		}
 		#############
 		sample_index_mat_res = apply(sample_index_mat,1,get_smooth_gene_exp,mat=tmp_mat)
