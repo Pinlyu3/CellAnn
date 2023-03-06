@@ -2114,17 +2114,18 @@ for(i in 1:length(index)){
 
 
 
-
-########
-
+#########
+######### In this step we want to prepare the CellAnn input files: #######
 #########
 ######### Next is output the input file maps 
 #########
 
 
 #########
-######### Output dim file and Output avg exp tables ##########
-######### 
+######### Output dim file and Output avg exp tables: ##########
+#########
+
+
 
 tag = index[1]
 file = paste('Tabula_Muris_mouse_',tag,sep='')
@@ -2251,7 +2252,7 @@ Process_output_the_dim_png <- function(tag){
 	#####
 }
 
-
+#####
 for(i in 1:length(index)){
 	Process_output_the_dim_png(index[i])
 }

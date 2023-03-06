@@ -1,0 +1,142 @@
+#####
+##### cellann example files prepare #####
+#####
+
+
+ssh plyu3@10.112.40.197
+
+conda activate Signac2
+
+R
+
+library(Seurat)
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_data_prepare')
+
+files = list.files()
+
+k = grep('png',files)
+
+files = files[-k]
+
+index = gsub('Tabula_Muris_mouse_','',files)
+
+#####
+#####
+#####
+
+k = gsub('_test_input','',index)
+
+index2 = index[k]
+
+######
+
+M_table = read.table("Mouse_download_table.txt",header=T)
+
+######
+
+M_table$File_Index = gsub("Tabula_Muris_mouse_","",M_table$File_Tag)
+
+All_files = list.files()
+
+for(i in 1:length(M_table$File_Tag)){
+	tmp_file = M_table$File_Tag[i]
+	k = which(All_files == tmp_file)
+	if(length(k) == 1){
+		print(paste("Find!",tmp_file))
+	} 
+}
+######
+###### then we copy these file to another folder !!!! #######
+######
+for(i in 1:length(M_table$File_Tag)){
+	tmp_file = M_table$File_Tag[i]
+	k = which(All_files == tmp_file)
+	if(length(k) == 1){
+		command = paste0("cp ",tmp_file," ","/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_input/",tmp_file)
+		print(command)
+		system(command,wait=F)
+	} 
+}
+
+###### OK!!! then we change to the new folder #####
+######
+
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_input")
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+Process_output_the_dim_png <- function(tag){
+	#file = paste('Tabula_Muris_mouse_',tag,sep='')
+	#### load file into a #####
+	x = loadRData(tag)
+	####
+	####
+	x$celltype <- stringr::str_wrap(x$celltype, width = 15)
+	####
+	png_file = paste(tag,'_author_annotation','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='celltype',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+	png_file = paste(tag,'_clusters','.png',sep='')
+	library(ggplot2)
+	png(png_file,height=4000,width=5000,res=72*12)
+	print(DimPlot(x, reduction = "umap",group.by='seurat_clusters',label = FALSE, label.size = 2.5, repel = TRUE))
+	dev.off()
+	#####
+	#####
+}
+
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_input")
+for(i in 1:length(M_table$File_Tag)){
+	print(i)
+	Process_output_the_dim_png(M_table$File_Tag[i])
+}
+
+#########
+######### Next prepare the input file for CellAnn ############
+#########
+
+devtools::source_url("https://raw.githubusercontent.com/Pinlyu3/CellAnn/main/prepare_CellAnn.R")
+
+folder = getwd()
+
+for(i in 1:length(M_table$File_Tag)){
+	print(i)
+	tag = M_table$File_Tag[i]
+	x = loadRData(tag)
+	print(tag)
+	#####
+	prepare_CellAnn(x,folder=folder,sample_name=tag,matrix_name='RNA',dims='umap',cluster='seurat_clusters')
+}
+
+#########
+######### Next !!!! #####
+#########
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
