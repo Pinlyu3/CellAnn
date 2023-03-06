@@ -1,0 +1,765 @@
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+cd /zp1/data/plyu3/QF_RNAseq
+
+conda activate RNAseq
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/1-1 --Genome=mm10 &
+
+#### now we need to test the wig file ####
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/1-1
+
+samtools sort 1-1_mm10_plus.bam -o 1-1_mm10_plus_s.bam
+samtools sort 1-1_mm10_minus.bam -o 1-1_mm10_minus_s.bam
+
+####
+####
+
+bedtools genomecov -ibam 1-1_mm10_plus_s.bam -bga -split -g /zp1/data/plyu3/QF_RNAseq/mapping_info/chrom_mm10.sizes > 1-1_mm10_plus.bam.wig
+bedtools genomecov -ibam 1-1_mm10_minus_s.bam -bga -split -g /zp1/data/plyu3/QF_RNAseq/mapping_info/chrom_mm10.sizes > 1-1_mm10_minus.bam.wig
+
+####
+#### next we will try the wig to bigwig #######
+####
+
+/zp1/data/plyu3/QF_RNAseq/mapping_info/wigToBigWig -clip 1-1_mm10_plus.bam.wig /zp1/data/plyu3/QF_RNAseq/mapping_info/chrom_mm10.sizes 1-1_mm10_plus.bam.bw
+
+
+cd /zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata
+
+
+conda activate RNAseq
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/1-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/1-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/1-3 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-3 --Genome=mm10 &
+
+
+#### red ######
+#### red ######
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/17-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/17-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/17-3 --Genome=mm10 &
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/19-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/19-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/19-3 --Genome=mm10 &
+
+
+#### red ######
+#### red ######
+
+
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/6-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/6-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/6-3 --Genome=mm10 &
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/7-1 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/7-2 --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/7-3 --Genome=mm10 &
+
+####
+#### OK!!! this one is on the test !!!! #######
+####
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq --Genome=mm10 &
+
+####
+#### OK!!! let run the remaining datasets #####
+####
+
+#### red ####
+#### red ####
+#### blue ####
+#### yellow ####
+#### green ####
+#### yellow ####
+
+/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq
+
+AML12_shL30_RNAseq
+
+
+/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata
+
+AML12_RNA_seq
+
+conda activate htseq
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30/ASO-NC --Genome=mm10 &
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30/ASO-L30 --Genome=mm10 &
+
+
+######
+###### we will run it parallel ！！！ ########
+######
+open 10 windows 
+######
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+
+files = list.files()
+files = files[1:18]
+
+for(i in files){
+	file = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/",i,"/",i,"_mm10.bam")
+	print(file)
+	file_new = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/",i,"_mm10.bam")
+	print(file_new)
+	#####
+	command = paste("cp",file,file_new)
+	system(command,wait=F)
+}
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+files = list.files()
+files = files[grep("_mm10.bam",files)]
+
+for(i in files){
+	file = i
+	#print(file)
+	file_new = gsub("_mm10","_mm10_s",file)
+	#print(file_new)
+	#####
+	command = paste("samtools sort -@ 1 -o",file_new,file)
+	print(command)
+	system(command,wait=F)
+}
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq")
+files = list.files()
+files = files[grep("_mm10.bam",files)]
+
+for(i in files){
+	file = i
+	#print(file)
+	file_new = gsub("_mm10","_mm10_s",file)
+	#print(file_new)
+	#####
+	command = paste("samtools sort -@ 1 -o",file_new,file)
+	print(command)
+	system(command,wait=F)
+}
+
+
+#############
+############# 先不管，先用HTseq-count找差异基因 ################
+#############
+
+
+
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
+ 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
+ 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
+ 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
+htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
+ 
+
+############### 先做基因表达差异 ###############
+###############
+
+############### 最快的方法 ####################
+###############
+
+############### 剪切效率总表 ########
+###############
+
+/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus_GRCm38
+
+
+
+
+
+
+
+
+
+
+
+
+
+conda activate seurat4
+R
+
+
+##### here is the new code of QF RNAseq datasets #####
+
+setwd("/zp1/data/plyu3/QF_RNAseq/SRR")
+
+library(readxl)
+
+SRR_DEGs_table <- read_excel("13072_2019_289_MOESM7_ESM.xlsx")
+SRR_DEGs_table <- data.frame(SRR_DEGs_table)
+SRR_DEGs_table_new = SRR_DEGs_table[3:846,]
+colnames(SRR_DEGs_table_new) <- SRR_DEGs_table[2,]
+
+save(SRR_DEGs_table_new,file="SRR_DEGs_table_new")
+
+
+##### here is the #### of the mm9 genome ###########
+
+HiC_table <- read_excel("13072_2019_289_MOESM10_ESM.xlsx")
+HiC_table <- data.frame(HiC_table)
+HiC_table_new = HiC_table[2:4939,]
+colnames(HiC_table_new) <- HiC_table[1,]
+
+save(HiC_table_new,file="HiC_table_new")
+
+write.table(HiC_table_new,file='mm9_compartment.bed',sep="\t",quote=F,col.names=F,row.names=F)
+###### Next we will liftOver the compartments ########
+library(rtracklayer)
+
+chainObject <- import.chain("mm9ToMm10.over.chain")
+
+Compart_mm9 = GRanges(seqnames=HiC_table_new$chr,IRanges(start=as.numeric(HiC_table_new$start),end=as.numeric(HiC_table_new$end)))
+
+Compart_mm9$class = HiC_table_new$class
+######
+
+Compart_mm10 <- as.data.frame(liftOver(Compart_mm9, chainObject))
+
+Compart_mm10_GR <- GRanges(seqnames=Compart_mm10$seqnames,IRanges(start=as.numeric(Compart_mm10$start),end=as.numeric(Compart_mm10$end)))
+
+Compart_mm10_GR$class = Compart_mm10$class
+
+
+####### 
+save(Compart_mm10_GR,file='Compart_mm10_GR')
+Compart_mm10_GR = data.frame(Compart_mm10_GR)
+
+write.table(Compart_mm10_GR[,c(1,2,3,6)],file='Compart_mm10_GR.bed',quote=F,sep='\t',col.names=F,row.names=F)
+#######
+####### next is the gene location in the mm10 genome #######
+#######
+
+####### 按照TSS的location来算 ################################
+#######
+
+
+
+Gtfs = rtracklayer::import('gencode.vM18.basic.annotation.gtf')
+
+Gtfs_gene = Gtfs[which(Gtfs$type == 'gene')]
+#######
+####### then we align each gene with their body center to compartments ############
+#######
+
+#k = which(Gtfs_gene$gene_type == 'protein_coding')
+
+Gtfs_gene_cl = Gtfs_gene
+
+k2 = which(seqnames(Gtfs_gene_cl) %in% c("chrY","chrM") == T)
+
+Gtfs_gene_cl = Gtfs_gene_cl[-k2]
+
+save(Gtfs_gene_cl,file="Gtfs_gene_cl")
+
+#######
+####### covert region to mid center ##########
+#######
+
+mid = (start(Gtfs_gene_cl) + end(Gtfs_gene_cl))/2
+
+start(Gtfs_gene_cl) = mid
+end(Gtfs_gene_cl) = mid
+
+Gtfs_gene_cl_mid = Gtfs_gene_cl
+
+save(Gtfs_gene_cl_mid,file='Gtfs_gene_cl_mid')
+
+#######
+####### add compartments #####################
+#######
+
+results = nearest(Gtfs_gene_cl_mid,Compart_mm10_GR)
+
+##overlaps = findOverlaps(Gtfs_gene_cl_mid,Compart_mm10_GR)
+
+
+Gtfs_gene_cl_mid$class = Compart_mm10_GR$class[results]
+
+###Gtfs_gene_cl_mid$class[queryHits(overlaps)] = Compart_mm10_GR$class[subjectHits(overlaps)]
+
+###table(Gtfs_gene_cl_mid$class)
+
+Gtfs_gene_cl_mid[which(Gtfs_gene_cl_mid$gene_name == '9030622O22Rik')]
+
+######
+######
+
+save(Gtfs_gene_cl_mid,file='Gtfs_gene_cl_mid')
+
+Gtfs_gene_cl_mid[which(Gtfs_gene_cl_mid$gene_name=='Foxa2')]
+
+#######
+###### OK!!! finished ####
+#######
+
+
+####### Next we will find overlap genes ##########
+####### between SRR and KD samples ###############
+#######
+
+####### Overlap DEGs !!! #########################
+#######
+
+genes_list = sample(Gtfs_gene_cl_mid$gene_name,2000)
+
+
+plot_genes_maps <- function(genes_list,Gtfs_gene_cl_mid,tag){
+	###########
+	dat = data.frame(Genes = genes_list,Class="unknown")
+	###########
+	m = match(genes_list,Gtfs_gene_cl_mid$gene_name)
+	##########
+	dat$Class = Gtfs_gene_cl_mid$class[m]
+	########## mapping name #################
+	k = which(is.na(dat$Class) == T)
+	##########
+	if(length(k) > 0){
+		dat = dat[-k,]
+	}
+	##########
+	res = table(dat$Class)
+	###########
+	plot_res = data.frame(tag=names(res),num=as.numeric(res))
+	###########
+	library(ggplot2)
+	###########
+    FN = paste0(tag,'.png')
+	###########
+	df = plot_res
+	label_value <- paste('(', round(df$num/sum(df$num) * 100, 1), '%)', sep = '')
+	ggplot(df, aes(x = "", y = num, fill = tag)) + geom_bar(stat = 'identity', width=100) + coord_polar(theta = 'y') + labs(x = '', y = '', title = '') + theme(axis.text = element_blank()) + theme(axis.ticks = element_blank())  + geom_text(aes(y = rev(df$num/2) + c(0, cumsum(rev(df$num))[-length(df$num)]), x = sum(df$num)/150, label = rev(label_value))) 
+	ggsave(FN)
+}
+
+
+#######
+####### OK!!! ########
+#######
+
+plot_genes_maps(upGenes$Genes,Gtfs_gene_cl_mid)
+
+plot_genes_maps(downGenes$Genes,Gtfs_gene_cl_mid)
+
+
+######## here !!! we are here !!!!!
+
+######## red #######
+######## red #######
+######## red #######
+#### ##################
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+
+conda activate Signac2
+
+R
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+load("AML12_induce_counts")
+
+colnames(AML12_induce_counts)
+
+AML12_induce_counts = round(AML12_induce_counts)
+
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shLinc',3),rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_minus',3),rep('shCtrl_Dox_plus',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts))
+colData$condition = as.factor(colData$condition)
+
+####### next is the log2 fold change !!! #######
+#######
+
+####### red shLinc VS shLinc_Dox_plus ##### ######
+
+AML12_induce_counts_subset_DEG1 = AML12_induce_counts[,c(4:6,16:18)]
+
+colData <- data.frame(condition = c(rep('shLinc',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG1))
+colData$condition = as.factor(colData$condition)
+
+library('DESeq2')
+dds_DEG1 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG1,colData = colData,design = ~condition)
+dds_DEG1 <- dds_DEG1[rowSums(counts(dds_DEG1))>12,]
+dds_DEG1 <- DESeq(dds_DEG1)
+
+res <- results(dds_DEG1,contrast=c("condition","shLinc_Dox_plus","shLinc"))
+
+DEG1_res = res
+
+###### red shCtrl VS shCtrl_Dox_plus
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shLinc',3),rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_minus',3),rep('shCtrl_Dox_plus',3),rep('shLinc_Dox_plus',3)))
+
+AML12_induce_counts_subset_DEG3 = AML12_induce_counts[,c(1:3,13:15)]
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shCtrl_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG3))
+colData$condition = as.factor(colData$condition)
+
+library('DESeq2')
+dds_DEG3 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG3,colData = colData,design = ~condition)
+dds_DEG3 <- dds_DEG3[rowSums(counts(dds_DEG3))>12,]
+dds_DEG3 <- DESeq(dds_DEG3)
+
+res <- results(dds_DEG3,contrast=c("condition","shCtrl_Dox_plus","shCtrl"))
+
+DEG3_res = res
+
+
+#####red shLinc_Dox_plus VS shLinc_Dox_minus
+
+colData <- data.frame(condition = c(rep('shCtrl',3),rep('shLinc',3),rep('shCtrl_Dox_minus',3),rep('shLinc_Dox_minus',3),rep('shCtrl_Dox_plus',3),rep('shLinc_Dox_plus',3)))
+
+AML12_induce_counts_subset_DEG5 = AML12_induce_counts[,c(10:12,16:18)]
+
+colData <- data.frame(condition = c(rep('shLinc_Dox_minus',3),rep('shLinc_Dox_plus',3)))
+rownames(colData) <- as.factor(colnames(AML12_induce_counts_subset_DEG5))
+colData$condition = as.factor(colData$condition)
+
+library('DESeq2')
+dds_DEG5 <- DESeqDataSetFromMatrix(countData = AML12_induce_counts_subset_DEG5,colData = colData,design = ~condition)
+dds_DEG5 <- dds_DEG5[rowSums(counts(dds_DEG5))>12,]
+dds_DEG5 <- DESeq(dds_DEG5)
+
+res <- results(dds_DEG5,contrast=c("condition","shLinc_Dox_plus","shLinc_Dox_minus"))
+
+DEG5_res = res
+
+DEG1_res[which(rownames(DEG1_res) == "9030622O22Rik"),]
+
+DEG3_res[which(rownames(DEG3_res) == "9030622O22Rik"),]
+
+DEG5_res[which(rownames(DEG5_res) == "9030622O22Rik"),]
+
+
+
+####### merge the results ##########
+
+overlap_genes = rownames(DEG1_res)[which(rownames(DEG1_res) %in% rownames(DEG3_res)==T)]
+
+overlap_genes = overlap_genes[which(overlap_genes %in% rownames(DEG5_res) == T)]
+
+Merge_table = data.frame(Genes = overlap_genes,Fold_shLinc=0,Fold_shCtrl=0)
+
+k1 = which(DEG1_res$padj < 0.01)
+DEG1_res_cl = DEG1_res[k1,]
+
+k2 = which(DEG3_res$padj < 0.01)
+DEG3_res_cl = DEG3_res[k2,]
+
+k3 = which(DEG5_res$padj < 0.01)
+DEG5_res_cl = DEG5_res[k3,]
+
+####
+m1 = match(Merge_table$Genes,rownames(DEG1_res_cl))
+m2 = match(Merge_table$Genes,rownames(DEG3_res_cl))
+m3 = match(Merge_table$Genes,rownames(DEG5_res_cl))
+
+Merge_table$Fold_shLinc = DEG1_res_cl$log2FoldChange[m1]
+Merge_table$Fold_shCtrl = DEG3_res_cl$log2FoldChange[m2]
+Merge_table$Fold_Resue= DEG5_res_cl$log2FoldChange[m3]
+
+Merge_table$P_shLinc = DEG1_res_cl$padj[m1]
+Merge_table$P_shCtrl = DEG3_res_cl$padj[m2]
+Merge_table$P_Rescue = DEG5_res_cl$padj[m3]
+
+
+k1 = which(is.na(Merge_table$Fold_shLinc) == T)
+k2 = which(is.na(Merge_table$Fold_shCtrl) == T)
+k3 = which(is.na(Merge_table$Fold_Resue) == T)
+
+Merge_table$Fold_shLinc[k1] = 0
+Merge_table$Fold_shCtrl[k2] = 0
+Merge_table$Fold_Resue[k3] = 0
+
+k3 = which(is.na(Merge_table$P_shLinc) == T)
+k4 = which(is.na(Merge_table$P_shCtrl) == T)
+k5 = which(is.na(Merge_table$P_Rescue) == T)
+Merge_table$P_shLinc[k3] = 1
+Merge_table$P_shCtrl[k4] = 1
+Merge_table$P_Rescue[k5] = 1
+
+head(Merge_table)
+
+#"/zp1/data/plyu3/QF_RNAseq" ##
+
+save(Merge_table,file="Merge_table")
+
+k3 = which(Merge_table$Fold_shLinc == 0 & Merge_table$Fold_shCtrl == 0)
+
+Merge_table_cl = Merge_table[-k3,]
+
+#### shLincFoxa2 #####
+k_1 = which(Merge_table_cl$Fold_shCtrl > 0.5 & Merge_table_cl$P_shCtrl < 0.01)
+Ctrl_gene_up = Merge_table_cl$Genes[k_1]
+
+plot_genes_maps(Ctrl_gene_down,Gtfs_gene_cl_mid,'Ctrl_up')
+
+
+k_2 = which(Merge_table_cl$Fold_shCtrl < -0.5 & Merge_table_cl$P_shCtrl < 0.01)
+Ctrl_gene_down = Merge_table_cl$Genes[k_2]
+
+plot_genes_maps(Ctrl_gene_down,Gtfs_gene_cl_mid,'Ctrl_down')
+
+
+write.table(data.frame(genes =  Ctrl_gene_down),file='Ctrl_gene_down.txt',quote=F,sep='\t',row.names=F)
+
+
+
+
+k_3 = which(Merge_table_cl$Fold_shLinc > 0.5 & Merge_table_cl$P_shLinc < 0.01)
+Ctrl_gene_up = Merge_table_cl$Genes[k_3]
+
+plot_genes_maps(Ctrl_gene_up,Gtfs_gene_cl_mid,'Linc_up')
+
+k_4 = which(Merge_table_cl$Fold_shLinc < -0.5 & Merge_table_cl$P_shLinc < 0.01)
+Ctrl_gene_down = Merge_table_cl$Genes[k_4]
+
+plot_genes_maps(Ctrl_gene_down,Gtfs_gene_cl_mid,'Linc_down')
+
+
+
+
+#### red ######
+#### OK!!! THEN WE Select genes ######
+#### red ######
+
+
+k_5 = which(Merge_table_cl$Fold_shLinc > 0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.25  & Merge_table_cl$P_shLinc < 0.01)
+Merge_table_cl[k_5,]
+linc_gene_up = Merge_table_cl$Genes[k_5]
+
+plot_genes_maps(linc_gene_up,Gtfs_gene_cl_mid,'linc_gene_up')
+
+
+
+
+k_6 = which(Merge_table_cl$Fold_shLinc < -0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.25 & Merge_table_cl$P_shLinc < 0.01)
+
+Merge_table_cl[k_6,]
+linc_gene_down = Merge_table_cl$Genes[k_6]
+
+plot_genes_maps(linc_gene_down,Gtfs_gene_cl_mid,'linc_gene_down')
+
+
+write.table(data.frame(genes =  linc_gene_down),file='linc_down.txt',quote=F,sep='\t',row.names=F)
+
+
+###### OK!!!
+Merge_table_cl[which(Merge_table_cl[,1] == "9030622O22Rik"),]
+
+k_7 = which(Merge_table_cl$Fold_shLinc > 0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.25  & Merge_table_cl$P_shLinc < 0.01 & Merge_table_cl$P_Rescue < 0.01 & Merge_table_cl$Fold_Resue > 0.5)
+
+Merge_table_cl[k_7,]
+
+linc_gene_up_res = Merge_table_cl$Genes[k_7]
+
+plot_genes_maps(linc_gene_up_res,Gtfs_gene_cl_mid,'linc_gene_up_res')
+
+
+
+k_8 = which(Merge_table_cl$Fold_shLinc < -0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.25  & Merge_table_cl$P_shLinc < 0.01 & Merge_table_cl$P_Rescue < 0.01 & Merge_table_cl$Fold_Resue < -0.5)
+
+Merge_table_cl[k_8,]
+
+linc_gene_down_res = Merge_table_cl$Genes[k_8]
+
+linc_gene_down_res[which(linc_gene_down_res == '9030622O22Rik')]
+
+plot_genes_maps(linc_gene_down_res,Gtfs_gene_cl_mid,'linc_gene_down_res')
+
+write.table(data.frame(genes =  linc_gene_down_res),file='down_gene.txt',quote=F,sep='\t',row.names=F)
+
+
+length(k_7)
+length(k_8)
+
+
+#############
+############# SRR ##################
+############# copy 完成 负荷 ########
+
+load("SRR_DEGs_table_new")
+
+##############
+##############
+
+summary(abs(as.numeric(SRR_DEGs_table_new$log2FoldChange)))
+
+SRR_sh1 = read.table("GSE130805_DESeq_results_sh1vsCtrl.txt",sep="\t",header=T)
+SRR_sh2 = read.table("GSE130805_DESeq_results_sh2vsCtrl.txt",sep="\t",header=T)
+
+all.equal(rownames(SRR_sh1),rownames(SRR_sh2))
+
+##############
+############## add gene names and filter DEGs genes ######
+##############
+gtf = rtracklayer::import("gencode.vM1.annotation.gtf")
+
+dat = data.frame(Gene_id = gtf$gene_id,gene_name=gtf$gene_name)
+dat = dat[!duplicated(dat$Gene_id),]
+
+saveRDS(dat,file='vM1_genes')
+
+###############
+##### add gene names to sh1 and sh2 ########
+###############
+
+k1 = match(SRR_sh1$Gene_ID,dat$Gene_id)
+k2 = match(SRR_sh2$Gene_ID,dat$Gene_id)
+
+SRR_sh1$Gene = dat$gene_name[k1]
+SRR_sh2$Gene = dat$gene_name[k2]
+
+SRR_up1 = SRR_sh1$Gene[which(SRR_sh1$log2FoldChange > 0.25 & SRR_sh1$padj < 0.01)]
+SRR_up2 = SRR_sh2$Gene[which(SRR_sh2$log2FoldChange > 0.25 & SRR_sh2$padj < 0.01)]
+
+SRR_up = SRR_up1[which(SRR_up1 %in% SRR_up2 == T)]
+##########
+
+plot_genes_maps(SRR_up,Gtfs_gene_cl_mid,'SRR_up')
+
+SRR_down1 = SRR_sh1$Gene[which(SRR_sh1$log2FoldChange < -0.25 & SRR_sh1$padj < 0.01)]
+SRR_down2 = SRR_sh2$Gene[which(SRR_sh2$log2FoldChange < -0.25 & SRR_sh2$padj < 0.01)]
+
+SRR_down = SRR_down1[which(SRR_down1 %in% SRR_down2 == T)]
+plot_genes_maps(SRR_down,Gtfs_gene_cl_mid,'SRR_down')
+
+
+write.table(data.frame(genes =  SRR_down),file='SRR_down.txt',quote=F,sep='\t',row.names=F)
+
+
+
+#### overlap SRR down with lincFoxa2 down ########
+####
+
+linc_gene_down_res 
+SRR_down
+
+k = which(linc_gene_down_res %in% SRR_down == T)
+
+overlap_genes = linc_gene_down_res[k]
+
+write.table(data.frame(genes =  overlap_genes),file='Overlap_down.txt',quote=F,sep='\t',row.names=F)
+
+plot_genes_maps(overlap_genes,Gtfs_gene_cl_mid,'overlap_genes')
+
+
+###########
+
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+#############
+############# on the new server #######
+#############
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+conda activate seurat4
+R
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_induce_mapping")
+
+
+files = list.files()
+files = files[grep("_splice.txt",files)]
+
+list_files = list()
+for(i in 1:length(files)){
+	tmp = read.table(files[i],header=T)
+	tmp_sub = tmp[,c(6,15)]
+	tmp_sub$tag = files[i]
+	colnames(tmp_sub) <- c("gene_id","IER","sample")
+	list_files <- c(list_files,list(tmp_sub))
+}
+
+list_files_merge = do.call('rbind',list_files)
+
+save(list_files_merge,file="list_files_merge")
+############
+############
+############
+
+load("list_files_merge")
+
+############ extract genes ###########
+############
+
+dat$Gene_id_short = sapply(strsplit(dat$Gene_id,split='.',fixed=T),function(x) x[[1]])
+
+m = match(list_files_merge$gene_id,dat$Gene_id_short)
+
+list_files_merge$Gene_id_short =dat$gene_name[m] 
+
+k = which(is.na(list_files_merge$Gene_id_short) == T)
+
+list_files_merge = list_files_merge[-k,]
+
+k2 = which(list_files_merge$Gene_id_short %in% overlap_genes == T)
+
+list_files_merge = list_files_merge[k2,]
+
+k3 = which(list_files_merge$sample %in% c("14-1_splice.txt","14-2_splice.txt","14-3_splice.txt","7-1_splice.txt","7-2_splice.txt","7-3_splice.txt","19-1_splice.txt","19-2_splice.txt","19-3_splice.txt"))
+
+library(ggplot2)
+
+ggplot(list_files_merge[k3,],aes(x=sample,y=IER)) + geom_violin()
+
+ggsave("test3.png",height=4,width=12)
