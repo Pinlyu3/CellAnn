@@ -586,6 +586,7 @@ dev.off()
 ####
 #### Next expression of lincFoxa2 #####
 ####
+
 png_file = paste0('AML12_induce_counts2','.pca.png')
 png(png_file,height=7000,width=8000,res=72*12)
 print(plotCounts(dds1, gene=c("9030622O22Rik"), intgroup="condition"))
@@ -689,6 +690,12 @@ m2 = match(Merge_table$Genes,rownames(DEG3_res_cl))
 Merge_table$Fold_shLinc = DEG1_res_cl$log2FoldChange[m1]
 Merge_table$Fold_shCtrl = DEG3_res_cl$log2FoldChange[m2]
 
+Merge_table$P_shLinc = DEG1_res_cl$padj[m1]
+Merge_table$P_shCtrl = DEG3_res_cl$padj[m2]
+
+
+
+
 k1 = which(is.na(Merge_table$Fold_shLinc) == T)
 k2 = which(is.na(Merge_table$Fold_shCtrl) == T)
 Merge_table$Fold_shLinc[k1] = 0
@@ -711,15 +718,15 @@ ggsave("test1.png")
 k4 = which(Merge_table_cl$Fold_shLinc > 0.5 & ((Merge_table_cl$Fold_shCtrl+0.01) / (Merge_table_cl$Fold_shLinc+0.01)) < 0.5)
 Merge_table_cl$class = 'Other'
 Merge_table_cl$class[k4] = 'Diff_up'
-
 upgenes = Merge_table_cl[k4,]
 write.table(upgenes,file='LincFoxa2_upgenes.txt',row.names=F,quote=F,sep='\t')
 
+upGenes = read.table("LincFoxa2_upgenes.txt",sep='\t',header=T)
+
+
 
 library(ggplot2)
-
 ggplot(Merge_table_cl,aes(x=Fold_shLinc,y=Fold_shCtrl,color=class)) + geom_point(size=0.05) + geom_abline(slope=1)
-
 ggsave("test2.png")
 
 
@@ -735,6 +742,13 @@ k = which(downgenes$Genes %in% c("Apob","Apoc2","Apof") == T)
 downgenes[k,]
 
 write.table(downgenes,file='LincFoxa2_downgenes.txt',row.names=F,quote=F,sep='\t')
+
+downGenes = read.table("LincFoxa2_downgenes.txt",sep='\t',header=T)
+
+
+###### filter with rescue !!!#########
+######
+
 
 
 

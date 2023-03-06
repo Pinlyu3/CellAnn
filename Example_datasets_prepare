@@ -374,6 +374,8 @@ m = match(colnames(Enge_pancreas_seurat_human),colnames(Enge_pancreas_seurat))
 
 Enge_pancreas_seurat_human$celltype = Enge_pancreas_seurat$cell_type[m]
 
+
+##########
 setwd('/zp1/data/plyu3/CellAnn_test_AUC/Human_pancreas_prepare')
 saveRDS(Enge_pancreas_seurat_human,file='Enge_pancreas_seurat_human')
 

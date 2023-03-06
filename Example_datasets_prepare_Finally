@@ -1769,7 +1769,11 @@ for(i in 1:dim(Mouse_compare_list_1)[1]){
 	save(dat,file=new_File)
 }
 
+###
 ### Next !!!! ###
+###
+
+
 Mouse_compare_list_2 = Mouse_compare_list_tab[[2]]
 setwd(output_folder2)
 for(i in 1:dim(Mouse_compare_list_2)[1]){
@@ -2915,7 +2919,10 @@ plyu3 U[9C20&&
 
 #########
 #########
+######### OK!!!! #############
 #########
+#########
+
 
 ssh plyu3@10.112.40.197
 
@@ -2930,6 +2937,19 @@ library(Seurat)
 setwd("/zp1/data/plyu3/MCL_V3")
 
 ##### setwd("C:/Users/plyu3/Desktop/CellAnn_methods_test/Speed_test")
+##### test memories
+
+bnch <- bench::mark(
+  data.frame(x = runif(4000, 1, 1000), y=runif(4000, 1, 1000))
+)
+print(max(bnch$mem_alloc))
+print(max(bnch$total_time))
+
+#####
+
+##### great !!!! ######
+##### let us rewrite the function for memory ######
+##### 
 
 ##### 
 
@@ -2939,7 +2959,9 @@ Ref_new[10] = "Ref_speed_test_100000"
 compare_df = data.frame(Query_new="Tabula_Muris_mouse_droplet_Limb_Muscle_Query",Ref_new=Ref_new)
 folder = "/zp1/data/plyu3/MCL_V3"
 
-#####
+##### OK!!!! ######
+##### OK!!!! ######
+##### OK!!!! ######
 
 loadRData <- function(fileName){
 #loads an RData file, and returns it
@@ -4564,7 +4586,10 @@ for(i in 1:length(files)){
 	print(dim(tmp_dat))
 	########
 	k = match(colnames(tmp_dat),c('Cell_id',''))
-
+cell_cluster_FN = paste0("Rod_p_subset",'_cellcluster.png')
+png(cell_cluster_FN,height=4000,width=5000,res=72*12)
+print(DimPlot(Rod_p_subset,group.by='seurat_clusters',reduction = "umap",label = TRUE, label.size = 5, repel = TRUE, raster=FALSE))
+dev.off()
 	########
 	Anno_tab = c(Anno_tab,list(tmp_dat))
 }
@@ -4624,8 +4649,6 @@ for(i in 1:length(files)){
 ### we will build a new ###
 ### and run thescript in python using scvi script !!! ######
 ### we will build a new text named prepare background datasets !!!! ########
-###
-
 
 
 
