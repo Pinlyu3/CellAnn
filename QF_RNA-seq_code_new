@@ -1,6 +1,11 @@
 ssh plyu3@omb2.onc.jhmi.edu
 U[9C20&&
 
+
+#####
+#####
+
+
 cd /zp1/data/plyu3/QF_RNAseq
 
 conda activate RNAseq
@@ -40,6 +45,53 @@ nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-1 --Genome=mm10 &
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-2 --Genome=mm10 &
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-3 --Genome=mm10 &
+
+
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428 --Genome=mm10 &
+
+####
+R
+####
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428 --Genome=mm10 &
+
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+files = list.files()
+
+for(i in 1:length(files)){
+	temp_files = files[i]
+	print(temp_files)
+	temp_folder = paste0("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/",temp_files)
+	print(temp_folder)
+	setwd(temp_folder)
+	temp_files_temp = list.files()
+	temp_files_temp = temp_files_temp[grep("fq.gz",temp_files_temp)]
+	command = paste("cp",temp_files_temp[1],"../")
+	system(command,wait=F)
+	command = paste("cp",temp_files_temp[2],"../")
+	system(command,wait=F)
+}
+
+#####
+#####
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30 --Genome=mm10 &
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/Mouse_liver_virus_L30 --Genome=mm10 &
+
+#####
+#####
+#####
+
+
+
+
+
+
+
+
+
 
 
 #### red ######
@@ -96,6 +148,13 @@ conda activate htseq
 
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30/ASO-NC --Genome=mm10 &
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30/ASO-L30 --Genome=mm10 &
+
+
+######
+
+
+
+
 
 
 ######
@@ -156,35 +215,399 @@ for(i in files){
 ############# 先不管，先用HTseq-count找差异基因 ################
 #############
 
+############# see the gtf ? ######
+#############
+conda activate htseq 
+R
+gtf = "/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM30.basic.annotation.gtf"
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq")
+files = list.files()
+files = files[grep("_mm10_s.bam",files)]
 
 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
- 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
- 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
- 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_1_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_1_s.htseq
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_2_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_2_s.htseq 
-htseq-count -f bam -r pos -s reverse -t exon --nonunique all WT_3_s.bam /zp1/data/plyu3/Human_scATACseq_new/scATAC/Human_annotation/gencode.v38.basic.annotation.nochr.clean.gff > WT_3_s.htseq 
- 
+for(i in files){
+	file = i
+	#print(file)
+	file_tag = gsub("_mm10_s.bam","",file)
+	print(file_tag)
+	#####
+	command = paste0("htseq-count -f bam -r pos -s reverse -t exon --nonunique all ",file," ",gtf," > ",file_tag,".htseq")
+	print(command)
+	system(command,wait=F)
+}
 
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30")
+files = list.files()
+files = files[grep("_mm10.bam",files)]
+
+for(i in files){
+	file = i
+	#print(file)
+	file_new = gsub("_mm10","_mm10_s",file)
+	#print(file_new)
+	#####
+	command = paste("samtools sort -@ 1 -o",file_new,file)
+	print(command)
+	system(command,wait=F)
+}
+
+files = list.files()
+files = files[grep("_mm10_s.bam",files)]
+
+
+
+
+
+
+##############
+############## 
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428")
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_virus_L30")
+
+files = list.files()
+files = files[grep("_mm10.bam",files)]
+
+for(i in files){
+	file = i
+	#print(file)
+	file_new = gsub("_mm10","_mm10_s",file)
+	#print(file_new)
+	#####
+	command = paste("samtools sort -@ 1 -o",file_new,file)
+	print(command)
+	system(command,wait=F)
+}
+
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+files = list.files()
+files = files[grep("_mm10_s.bam",files)]
+
+
+for(i in files){
+	file = i
+	#print(file)
+	file_tag = gsub("_mm10_s.bam","",file)
+	print(file_tag)
+	#####
+	command = paste0("htseq-count -f bam -r pos -s reverse -t exon --nonunique all ",file," ",gtf," > ",file_tag,".htseq")
+	print(command)
+	system(command,wait=F)
+}
+
+
+
+############### 然后是pipline ################
+
+nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023 --Genome=mm10 &
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_ASO-L30")
+
+
+files = list.files()
+files = files[grep("_mm10_s.bam",files)]
+
+gtf = "/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM30.basic.annotation.gtf"
+
+
+for(i in files){
+	file = i
+	#print(file)
+	file_tag = gsub("_mm10_s.bam","",file)
+	print(file_tag)
+	#####
+	command = paste0("htseq-count -f bam -r pos -s reverse -t exon --nonunique all ",file," ",gtf," > ",file_tag,".htseq")
+	print(command)
+	system(command,wait=F)
+}
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+
+
+###############
 ############### 先做基因表达差异 ###############
 ###############
+############### 先看看能不能对得上基因 ID to Gene ################
+###############
+gtf = "/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM30.basic.annotation.gtf"
 
+gtf_file <- rtracklayer::import(gtf)
+
+gtf_file_tab <- data.frame(class=gtf_file$type,ID=gtf_file$gene_id,gene_name=gtf_file$gene_name)
+
+k = which(gtf_file_tab$class == 'gene')
+
+gtf_file_tab = gtf_file_tab[k,]
+
+setwd("/zp1/data/plyu3/QF_RNAseq/")
+
+save(gtf_file_tab,file="gtf_file_tab")
+
+###############
+###############
+
+###############
 ############### 最快的方法 ####################
 ###############
 
+###############
+############### load the counts data ########
+###############
+folder = "/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata"
+
+load_counts <- function(folder){
+	all_files = list()
+	setwd(folder)
+	files = list.files(folder)
+	files = files[grep("htseq",files)]
+	for(i in 1:length(files)){
+		tmp_files = read.table(files[i],sep='\t')
+		k = which(tmp_files[,1] == "__no_feature")
+		k2 = dim(tmp_files)[1]
+		tmp_files = tmp_files[-(k:k2),]
+		all_files = c(all_files,list(tmp_files))
+	}
+	######
+	all_files = do.call('cbind',all_files)
+	######
+	dims = dim(all_files)[2]
+	length = dims/2
+	cols = seq(2,length=length,by=2)
+	rownames = all_files[,1]
+	######
+	out = all_files[,cols]
+	rownames(out) = rownames
+	######
+	files_names = gsub(".htseq","",files)
+	colnames(out) = files_names
+	######
+	return(out)
+}	
+
+##############
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+
+Aml12_induce_counts = load_counts("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+
+save(Aml12_induce_counts,file="Aml12_induce_counts")
+
+##############
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq")
+
+Aml12_shL30_counts = load_counts("/zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq")
+
+save(Aml12_shL30_counts,file="Aml12_shL30_counts")
+
+##############
+##############
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+##############
+#### Not ready !!!! ######
+##############
+
+Mouse_liver_KO_L30_counts = load_counts("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+save(Mouse_liver_KO_L30_counts,file="Mouse_liver_KO_L30_counts")
+
+
+###############
 ############### 剪切效率总表 ########
 ###############
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
 
 /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/Mus_musculus_GRCm38
+
+
+###############
+############### Next is the DEGseq2 !!! #########################
+###############
+
+#### on the old server #####
+cd /zp1/data/plyu3/QF_RNAseq
+
+####
+scp /zp1/data/plyu3/QF_RNAseq/gtf_file_tab plyu3@10.112.40.197:/zp1/data/plyu3/QF_RNAseq/
+scp /zp1/data/plyu3/QF_RNAseq/AML12_shL30_RNAseq/Aml12_shL30_counts plyu3@10.112.40.197:/zp1/data/plyu3/QF_RNAseq/
+scp /zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/Aml12_induce_counts plyu3@10.112.40.197:/zp1/data/plyu3/QF_RNAseq/
+scp /zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/Mouse_liver_KO_L30_counts plyu3@10.112.40.197:/zp1/data/plyu3/QF_RNAseq/
+
+
+#####
+ssh plyu3@10.112.40.197
+
+njd$rft1
+
+conda activate Signac2
+
+######
+###### first we see the AML12_shL30_RNAseq ########
+######
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+load("Aml12_induce_counts")
+Aml12_induce_counts[which(rownames(Aml12_induce_counts) == "ENSMUSG00000086141.9"),]
+
+Aml12_induce_counts_cl = Aml12_induce_counts[,c()]
+
+condition = c("")
+
+
+
+
+load("Aml12_shL30_counts")
+
+condition = rep(c("shCtrl","shlincfoxa2"),each=2)
+counts = Aml12_shL30_counts
+tag = "Aml12_shL30"
+
+DEGseq2_PCA <- function(counts,condition,tag){
+	######
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	png_file = paste0(tag,'.pca.png')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(plotPCA(vsd, intgroup=c("condition")))
+	dev.off()
+}
+
+DEGseq2_PCA(Aml12_shL30_counts,condition,"Aml12_shL30")
+
+contrast = c("condition","shlincfoxa2","shCtrl")
+
+DEGseq2_DEG <- function(counts,condition,contrast){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	#######
+	res <- results(dds,contrast=contrast)
+	#######
+	load("/zp1/data/plyu3/QF_RNAseq/gtf_file_tab")
+	#######
+	res_tab = data.frame(res)
+	#######
+	m = match(rownames(res_tab),gtf_file_tab$ID)
+	#######
+	res_tab$Genes = gtf_file_tab$gene_name[m]
+	k = which(colnames(res_tab) == 'Genes')
+	res_tab = res_tab[,c(k,1:(k-1))]
+	#######
+	return(res_tab)
+}
+
+Aml12_shL30_DEGs = DEGseq2_DEG(Aml12_shL30_counts,condition,c("condition","shlincfoxa2","shCtrl"))
+
+
+
+
+
+
+
+
+
+DEGseq2_AVG <- function(counts,condition){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	exp = vsd@assays@data[[1]]
+	######
+	return(exp)
+}
+
+Aml12_shL30_AVG = DEGseq2_AVG(Aml12_shL30_counts,condition)
+
+
+avg = Aml12_shL30_AVG
+deg = Aml12_shL30_DEGs
+
+DEGseq2_merge_AVG_and_DEG <- function(avg,deg){
+	#####
+	deg = cbind(deg,avg)
+	#####
+	k = which(deg$Genes == "9030622O22Rik")
+	#####
+	print(deg[k,])
+	#####
+	return(deg)
+}
+
+
+gtf_file_tab[which(gtf_file_tab$gene_name == "9030622O22Rik"),]
+
+Aml12_shL30_counts[which(rownames(Aml12_shL30_counts) == "ENSMUSG00000086141.9"),]
+
+
+
+
+###############
+############### heatmap of gene exprssion matrix ################
+###############
+
+
+###############
+############### table for all genes compared ####################
+###############
+
+
+###############
+############### the test datasets ##########
+###############
+
+
+###############
+############### 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

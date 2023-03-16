@@ -2,7 +2,6 @@
 ##### cellann example files prepare #####
 #####
 
-
 ssh plyu3@10.112.40.197
 
 conda activate Signac2
@@ -117,8 +116,15 @@ for(i in 1:length(M_table$File_Tag)){
 	prepare_CellAnn(x,folder=folder,sample_name=tag,matrix_name='RNA',dims='umap',cluster='seurat_clusters')
 }
 
+cd /zp1/data/plyu3/CellAnn_test_AUC/Tabula_Muris_mouse_input
+
+tar zcvf Tabula_Muris_mouse_example_input.tar.gz Tabula_Muris_mouse_example_input
+
 #########
-######### Next !!!! #####
+######### OK!! Next !!!! #####
+#########
+
+######### Next is the Human PBMC samples ##########
 #########
 
 
@@ -127,11 +133,161 @@ for(i in 1:length(M_table$File_Tag)){
 
 
 
+######### Next is the Human pancreas samples ##########
+#########
+
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare/CellAnn_input")
+
+files = list.files()
+
+for(i in 1:length(files)){
+	x = loadRData(files[i])
+	print(head(rownames(x)))
+}
+
+######## OK!!! 2,3,6 need to convert ID to Gene names ######
+
+######## This step should be finish in the finall step !!! #######
 
 
 
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare/CellAnn_input")
+
+for(i in 1:length(files)){
+	print(i)
+	Process_output_the_dim_png(files[i])
+}
 
 
+folder = getwd()
+
+for(i in 1:length(files)){
+	print(i)
+	tag = files[i]
+	x = loadRData(tag)
+	print(tag)
+	#####
+	prepare_CellAnn(x,folder=folder,sample_name=tag,matrix_name='RNA',dims='umap',cluster='seurat_clusters')
+}
+
+########
+######## Next!!! we will convert rownames of the matrix if there rownames are gene id #######
+########
+
+for(i in 1:length(files)){
+	if(i %in% c(2,3,6) == T){
+		tag = files[i]
+		####
+		tag2 = paste0(tag,"_CellAnn_Step1_input.txt")
+		####
+		tag2_file = read.table(tag2,sep="\t",header=T)
+		####
+		print(dim(tag2_file))
+		####
+		tag2_file_cl = Clean_ID_matrix_to_Gene(tag2_file,dat)
+		####
+		print(dim(tag2_file_cl))
+		write.table(tag2_file_cl,file=tag2,sep='\t',quote=F,row.names=F)
+	}
+}
+
+
+########
+########
+
+########
+######## load the GENE annotation files ########
+########
+
+########
+library("rtracklayer")
+Human_gtf = rtracklayer::import("gencode.v43.basic.annotation.gtf")
+
+head(Human_gtf)
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/Pancreas_prepare/CellAnn_input")
+
+########
+########
+
+gene_id = Human_gtf$gene_id
+name = Human_gtf$gene_name
+type = Human_gtf$type
+
+dat = data.frame(gene_id=gene_id,name=name,type=type)
+k = which(dat$type == "gene")
+dat = dat[k,]
+head(dat)
+dat$gene_id_short = sapply(strsplit(dat$gene_id,split=".",fixed=T),function(x) x[[1]])
+
+saveRDS(dat,file="Human_gene_id_name")
+########
+########
+########
+########
+saveRDS(dat,file="Human_gene_id_name")
+########
+########
+
+x = tag2_file
+
+Clean_ID_matrix_to_Gene <- function(x,dat){
+	#######
+	k = which(x$GENE %in% dat$gene_id_short == T)
+	xcl = x[k,]
+	#######
+	m = match(xcl$GENE,dat$gene_id_short)
+	#######
+	xcl$GENE = dat$name[m]
+	#######
+	dup_index = which(duplicated(xcl$GENE) == F)
+	#######
+	xclcl = xcl[dup_index,]
+	#######
+	return(xclcl)
+}
+
+tar zcvf Human_Pancreas_example_input.tar.gz Human_Pancreas_example_input
+
+########
+########
+
+setwd('/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare')
+setwd("/zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare/Human_PBMC_example_input")
+
+########
+########
+########
+
+files = list.files()
+
+index = files
+
+files_cl = files[grep("_Step1_",files)]
+
+for(i in 1:length(files_cl)){
+	print(i)
+	######
+	dat_tab = read.table(files_cl[i],header=T)
+	dat_tab_cl = dat_tab
+	dat_tab_cl$GENE = sapply(strsplit(dat_tab_cl$GENE,split="-",fixed=T),function(x) x[[2]])
+	######
+	######
+	write.table(dat_tab_cl,file=files_cl[i],quote=F,sep="\t",row.names=F)
+}
+
+########
+########
+########
+########
+
+
+cd /zp1/data/plyu3/CellAnn_test_AUC/PMBC_prepare
+
+tar zcvf Human_PBMC_example_input.tar.gz Human_PBMC_example_input
+
+
+########
+########
 
 
 
