@@ -692,8 +692,11 @@ ggplot(scmap_cluster_res0.5_Mouse_batch_p,aes(x=sample2,y=counts,fill=class)) + 
 ggsave("scmap_cluster_res0.5_Mouse_Batch_Hard.png",width=8,height=4)
 
 
-############ Then we start easy mode!!!! ###########
 ############
+############ OK!!! we will check the easy mode !!!! ########
+############ Then we start easy mode!!!! ###################
+############
+
 chetah_Mouse_batch = Main_compare_process_OtherTools(mouse_df_batch,method='chetah',folder=folder,mode='easy')
 chetah_Mouse_batch_p = Visualize_res_plot(chetah_Mouse_batch,'mouse')
 ggplot(chetah_Mouse_batch_p,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="stack", stat="identity") + coord_flip() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Number of clusters') + xlab('')
