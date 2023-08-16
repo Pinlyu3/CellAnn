@@ -348,7 +348,8 @@ kallisto index gencode.vM31.transcripts.fa --index=gencode.vM31.transcripts
 ##### red #######
 #####
 conda activate kallisto
-
+#####
+#####
 
 cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1
 mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-1_out
@@ -361,7 +362,6 @@ kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15
 cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3
 mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3_out
 kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/AML12_induce/1-3_out  1-3_R1.fq.gz 1-3_R2.fq.gz
-
 
 cd /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-1
 mkdir /zp1/data/plyu3/QF_RNAseq/AML12_induce/6-1_out

@@ -1,7 +1,13 @@
+#####
+#####
+
 ssh plyu3@omb2.onc.jhmi.edu
 U[9C20&&
 
 
+#####
+#####
+#####
 #####
 #####
 
@@ -47,12 +53,14 @@ nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/14-3 --Genome=mm10 &
 
 
-
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428 --Genome=mm10 &
 
 ####
+####
 R
 ####
+####
+
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/LiverNCD_0428 --Genome=mm10 &
 
 setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
@@ -77,22 +85,11 @@ for(i in 1:length(files)){
 #####
 
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30 --Genome=mm10 &
-
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/Mouse_liver_virus_L30 --Genome=mm10 &
 
 #####
 #####
 #####
-
-
-
-
-
-
-
-
-
-
 
 #### red ######
 #### red ######
@@ -108,7 +105,6 @@ nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py
 
 #### red ######
 #### red ######
-
 
 
 nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py --folder=/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/6-1 --Genome=mm10 &
@@ -151,12 +147,6 @@ nohup python /zp1/data/plyu3/QF_RNAseq/Paired_RNA_Seq_script_clean_server_New.py
 
 
 ######
-
-
-
-
-
-
 ######
 ###### we will run it parallel ！！！ ########
 ######
@@ -165,10 +155,137 @@ open 10 windows
 ssh plyu3@omb2.onc.jhmi.edu
 U[9C20&&
 
+
+conda activate kallisto
+
+R
+
 setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
 
 files = list.files()
-files = files[1:18]
+length = nchar(files)
+
+k1 = which(length == 3)
+k2 = which(length == 4)
+
+files = files[c(k1,k2)]
+#######
+#######
+####### re quant the RNAseqs ！！！##########
+#######
+
+gtf = "/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts"
+
+for(i in 1:length(files)){
+	folder = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/",files[i])
+	#print(folder)
+	file1 = paste0(folder,'/',files[i],"_R1.fq.gz")
+	file2 = paste0(folder,'/',files[i],"_R2.fq.gz")
+	#print(file1)
+	#print(file2)
+	#####
+	new_folder = paste0(folder,"_kallisto")
+	#print(new_folder)
+	command = paste("mkdir",new_folder)
+	print(command)
+	#####
+	command = paste("kallisto quant --rf-stranded -i",gtf,"-o",new_folder,file1,file2)
+	print(command)
+	system(command,wait=F)
+}
+
+####### red #######
+####### red #######
+####### red #######
+####### red #######
+####### red #######
+
+
+####### blue #######
+####### blue #######
+
+####### yellow #######
+####### yellow #######
+####### yellow #######
+
+
+####### Mouse_liver_KO_L30 ###########
+#######
+
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+
+files = list.files()
+length = nchar(files)
+
+k1 = which(length == 4)
+k2 = which(length == 6)
+
+files = files[c(k1,k2)]
+files = files[1:12]
+
+########
+########
+########
+
+for(i in 1:1){
+	#######
+	folder = paste0("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+	#print(folder)
+	file1 = paste0(folder,'/',files[i],"_R1.fq.gz")
+	file2 = paste0(folder,'/',files[i],"_R2.fq.gz")
+	#
+	print(file1)
+	print(file2)
+	##
+	new_folder = paste0(folder,"/",files[i],"_kallisto")
+	print(new_folder)
+	command = paste("mkdir",new_folder)
+	print(command)
+	system(command,wait=F)
+	command = paste("kallisto quant --rf-stranded -i",gtf,"-o",new_folder,file1,file2)
+	print(command)
+	system(command,wait=F)
+}
+
+
+
+####### Next !!! ######
+#######
+
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023")
+files = list.files()
+length = nchar(files)
+
+k1 = which(length == 4)
+k2 = which(length == 6)
+
+files = files[c(k1,k2)]
+
+for(i in 1:length(files)){
+	#######
+	folder = paste0("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023")
+	#print(folder)
+	file1 = paste0(folder,'/',files[i],"_R1.fq.gz")
+	file2 = paste0(folder,'/',files[i],"_R2.fq.gz")
+	#
+	print(file1)
+	print(file2)
+	##
+	new_folder = paste0(folder,"/",files[i],"_kallisto")
+	print(new_folder)
+	command = paste("mkdir",new_folder)
+	print(command)
+	system(command,wait=F)
+	command = paste("kallisto quant --rf-stranded -i",gtf,"-o",new_folder,file1,file2)
+	print(command)
+	system(command,wait=F)
+}
+
+
+
+
+
+
 
 for(i in files){
 	file = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/",i,"/",i,"_mm10.bam")
@@ -529,13 +646,6 @@ DEGseq2_DEG <- function(counts,condition,contrast){
 Aml12_shL30_DEGs = DEGseq2_DEG(Aml12_shL30_counts,condition,c("condition","shlincfoxa2","shCtrl"))
 
 
-
-
-
-
-
-
-
 DEGseq2_AVG <- function(counts,condition){
 	colData <- data.frame(condition = condition)
 	rownames(colData) <- as.factor(colnames(counts))
@@ -583,19 +693,697 @@ Aml12_shL30_counts[which(rownames(Aml12_shL30_counts) == "ENSMUSG00000086141.9")
 ############### heatmap of gene exprssion matrix ################
 ###############
 
-
 ###############
 ############### table for all genes compared ####################
 ###############
-
 
 ###############
 ############### the test datasets ##########
 ###############
 
-
 ###############
-############### 
+############### first we will read the counts from kallisto outputs #########
+###############
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+conda activate seurat4
+R
+
+gtf = "/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM30.basic.annotation.gtf"
+
+covert_to_known_gene <- function(gtf){
+	######
+	gtfs = rtracklayer::import(gtf)
+	######
+	gtfs = data.frame(gtfs)
+	######
+	k = match(c("transcript_id","gene_id","gene_name"),colnames(gtfs))
+	######
+	out = gtfs[,k]
+	######
+	k = which(is.na(out$transcript_id) == T)
+	######
+	out = out[-k,]
+	######
+	index = paste0(out[,1],out[,2])
+	index_filter = which(duplicated(index) == T)
+	out = out[-index_filter,]
+	######
+	return(out)
+}
+
+library(readr)
+tx2knownGene <- covert_to_known_gene(gtf)
+tx2knownGene = tx2knownGene[,c(1,3)]
+colnames(tx2knownGene) <- c("TXNAME","GENEID")
+
+#########
+#########
+#########
+
+save(tx2knownGene,file='/zp1/data/plyu3/QF_RNAseq/tx2knownGene_vM30')
+
+#########
+#########
+#########
+
+setwd("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata")
+
+files = list.files()
+
+files = files[grep("_kallisto",files)]
+
+txt_list <- list()
+
+for(i in 1:length(files)){
+	print(i)
+	####
+	tmp_files = files[i]
+	####
+	print(tmp_files)
+	####
+	tag = gsub("_kallisto","",tmp_files)
+	####
+	new_file = paste0("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/",tmp_files,"/abundance.tsv")
+	####
+	print(new_file)
+	####
+	txi.kallisto.tsv <- tximport::tximport(new_file, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+	####
+	print(head(txi.kallisto.tsv[[1]],n=3))
+	####
+	####
+	txt_list <- c(txt_list,list(txi.kallisto.tsv[[1]]))
+	####
+}
+names = gsub("_kallisto","",files)
+names(txt_list) <- names
+
+######
+######
+######
+
+genes = rownames(txt_list[[1]])
+
+for(i in 1:length(txt_list)){
+	print(dim(txt_list[[i]]))
+	print(all.equal(genes,rownames(txt_list[[i]])))
+}
+
+######
+txt_list_all = do.call('cbind',txt_list)
+
+colnames(txt_list_all) <- names(txt_list)
+
+###### 
+
+k = which(rownames(txt_list_all) == "9030622O22Rik")
+txt_list_all[k,]
+###### OK!! good !!! ####
+######
+
+saveRDS(txt_list_all,file="/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/AML12_RNA_seq_induce_kallisto")
+
+######
+######
+######
+setwd("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023")
+
+files = list.files()
+files = files[grep("_kallisto",files)]
+txt_list <- list()
+
+for(i in 1:length(files)){
+	print(i)
+	####
+	tmp_files = files[i]
+	####
+	print(tmp_files)
+	####
+	tag = gsub("_kallisto","",tmp_files)
+	####
+	new_file = paste0("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023/",tmp_files,"/abundance.tsv")
+	####
+	print(new_file)
+	####
+	txi.kallisto.tsv <- tximport::tximport(new_file, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+	####
+	print(head(txi.kallisto.tsv[[1]],n=3))
+	####
+	####
+	txt_list <- c(txt_list,list(txi.kallisto.tsv[[1]]))
+	####
+}
+
+########
+
+names = gsub("_kallisto","",files)
+names(txt_list) <- names
+
+########
+########
+########
+########
+
+txt_list_all = do.call('cbind',txt_list)
+
+colnames(txt_list_all) <- names(txt_list)
+
+k = which(rownames(txt_list_all) == "9030622O22Rik")
+txt_list_all[k,]
+
+#########
+#########
+#########
+
+saveRDS(txt_list_all,file="/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023/LiverNCD_kallisto")
+
+##########
+##########
+setwd("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30")
+##########
+##########
+
+files = list.files()
+files = files[grep("_kallisto",files)]
+txt_list <- list()
+
+
+for(i in 1:length(files)){
+	print(i)
+	####
+	tmp_files = files[i]
+	####
+	print(tmp_files)
+	####
+	tag = gsub("_kallisto","",tmp_files)
+	####
+	new_file = paste0("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/",tmp_files,"/abundance.tsv")
+	####
+	print(new_file)
+	####
+	txi.kallisto.tsv <- tximport::tximport(new_file, type = "kallisto", tx2gene = tx2knownGene, ignoreAfterBar = TRUE)
+	####
+	print(head(txi.kallisto.tsv[[1]],n=3))
+	####
+	####
+	txt_list <- c(txt_list,list(txi.kallisto.tsv[[1]]))
+	####
+}
+
+names = gsub("_kallisto","",files)
+names(txt_list) <- names
+####### red ######
+####### red ######
+
+txt_list_all = do.call('cbind',txt_list)
+
+colnames(txt_list_all) <- names(txt_list)
+
+k = which(rownames(txt_list_all) == "9030622O22Rik")
+txt_list_all[k,]
+
+#########
+#########
+#########
+
+saveRDS(txt_list_all,file="/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/Mouse_liver_KO_kallisto")
+
+#########
+######### OK!!! let us read the 3 differenct DEG files ##########
+#########
+
+
+LiverNCD_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023/LiverNCD_kallisto")
+
+LiverKO_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/Mouse_liver_KO_kallisto")
+
+LiverInduce_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/AML12_RNA_seq_induce_kallisto")
+
+##################
+######### replace the tags for LiverInduce_counts ######
+##################
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+v1 = c("1-1","1-2","1-3","14-1","14-2","14-3","17-1","17-2","17-3","19-1","19-2","19-3","6-1","6-2","6-3","7-1","7-2","7-3")
+v2 = c("shCtrl","shLinc","shCtrl_Dox_minus","shLinc_Dox_minus","shCtrl_Dox_plus","shLinc_Dox_plus")
+v2 = rep(v2,each=3)
+v2 = paste0(v2,c("_Rep1","_Rep2","_Rep3"))
+################## see the PCA plots ##########
+################## see the PCA plots ##########
+
+m = match(colnames(LiverInduce_counts),v1)
+
+colnames(LiverInduce_counts) = v2[m]
+
+k = which(rownames(LiverInduce_counts) == "9030622O22Rik")
+LiverInduce_counts[k,]
+
+###################
+
+saveRDS(LiverInduce_counts,file="/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/AML12_RNA_seq_induce_kallisto")
+
+################### OK!!!! next is PCA functions #######
+###################
+###################
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+###################
+###################
+
+LiverNCD_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/LiverNCD_1023/LiverNCD_kallisto")
+
+LiverKO_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/Mouse_liver_KO_L30/Mouse_liver_KO_kallisto")
+
+LiverInduce_counts <- readRDS("/zp1/data/plyu3/QF_RNAseq/AML12_RNA_seq_induce/Cleandata/AML12_RNA_seq_induce_kallisto")
+
+
+save(LiverNCD_counts,file="LiverNCD_counts")
+
+save(LiverKO_counts,file="LiverKO_counts")
+
+save(LiverInduce_counts,file="LiverInduce_counts")
+
+scp *_counts plyu3@10.112.40.197:/zp1/data/plyu3/QF_RNAseq/
+
+#########################
+
+LiverNCD_counts_tab = cbind(data.frame(Genes=rownames(LiverNCD_counts)),LiverNCD_counts)
+LiverKO_counts_tab = cbind(data.frame(Genes=rownames(LiverKO_counts)),LiverKO_counts)
+
+write.table(LiverNCD_counts_tab,file='LiverNCD_gene_exprsssion.txt',row.names=F,quote=F,sep='\t')
+write.table(LiverKO_counts_tab,file='LiverKO_gene_exprsssion.txt',row.names=F,quote=F,sep='\t')
+
+#########################
+
+conda activate Signac2
+
+R
+
+library(DESeq2)
+
+#########################
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+load("LiverNCD_counts")
+load("LiverKO_counts")
+
+
+
+
+load("LiverInduce_counts")
+
+#########################
+
+counts = round(LiverNCD_counts)
+condition = rep(c("Ctrl","KO"),each=5)
+tag = "LiverNCD_counts"
+
+
+DEGseq2_PCA <- function(counts,condition,tag){
+	######
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	vsd$sample = rownames(colData)
+	######
+	png_file = paste0(tag,'.pca1.png')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(plotPCA(vsd, intgroup=c("sample")))
+	dev.off()
+	png_file = paste0(tag,'.pca2.png')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(plotPCA(vsd, intgroup=c("condition")))
+	dev.off()
+}
+
+
+#### rm ctrl1 #####
+####
+counts = round(LiverNCD_counts[,-1])
+condition = rep(c("Ctrl","KO"),each=5)
+condition = condition[-1]
+tag = "LiverNCD_counts"
+DEGseq2_PCA(counts,condition,tag)
+
+
+#### red ####
+#### red ####
+#### red ####
+
+
+contrast = c("condition","KO","Ctrl")
+
+DEGseq2_DEG <- function(counts,condition,contrast){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds,minReplicatesForReplace=Inf)
+	#######
+	res <- results(dds,contrast=contrast,cooksCutoff=FALSE, independentFiltering=FALSE)
+	#######
+	res_tab = res
+	res_tab$Genes = rownames(res)
+	k = which(colnames(res_tab) == 'Genes')
+	res_tab = res_tab[,c(k,1:(k-1))]
+	#######
+	return(res_tab)
+}
+
+#######
+DEGseq2_AVG <- function(counts,condition){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	exp = vsd@assays@data[[1]]
+	######
+	return(exp)
+}
+
+
+
+options(scipen=3)
+
+LiverNCD_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+write.table(LiverNCD_DEGs,file="LiverNCD_DEGs.txt",sep='\t',quote=F,row.names=F)
+
+####### 
+
+
+DEGseq2_AVG <- function(counts,condition){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	exp = vsd@assays@data[[1]]
+	######
+	return(exp)
+}
+
+counts = round(LiverNCD_counts[,-1])
+condition = rep(c("Ctrl","KO"),each=5)
+condition = condition[-1]
+tag = "LiverNCD_counts"
+
+DEGseq2_DEGs_heatmaps_goterm()
+
+
+LiverNCD_AVG = DEGseq2_AVG(counts,condition)
+
+
+DEGs = LiverNCD_DEGs
+AVGs = LiverNCD_AVG
+
+DEGseq2_DEGs_heatmaps_goterm <- function(DEGs,logfc = 0.25,pvalue=0.05,AVGs,tag,condition){
+	#######
+	k1 = which(DEGs$log2FoldChange > logfc &  DEGs$pvalue < pvalue)
+	k2 = which(DEGs$log2FoldChange < -logfc &  DEGs$pvalue < pvalue)
+	#######
+	print(length(k1))
+	print(length(k2))
+	#######
+	AVGs_up = AVGs[which(rownames(AVGs) %in% rownames(DEGs)[k1] == T),]
+	AVGs_down = AVGs[which(rownames(AVGs) %in% rownames(DEGs)[k2] == T),]
+	#######
+	up_genes = data.frame(Genes = rownames(AVGs_up))
+	down_genes = data.frame(Genes = rownames(AVGs_down))
+	#######
+	file1 = paste0(tag,"up_genes.txt")
+	write.table(up_genes,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+	file2 = paste0(tag,"down_genes.txt")
+	write.table(down_genes,file=file2,sep='\t',quote=F,col.names=F,row.names=F)
+	#######
+	Norm_matrix_up = t(apply(AVGs_up,1,scale))
+	Norm_matrix_down = t(apply(AVGs_down,1,scale))
+	#######
+	print(dim(Norm_matrix_up))
+	print(dim(Norm_matrix_down))
+	#######
+	library('ComplexHeatmap')
+	library('circlize')
+	col_fun = colorRamp2(c(-1,-0.5,0,0.5,1), c('#026AB1','lightblue','white','#EF9000','#D11536'))
+	#######
+	row_sp = rep(c("up","down"),c(dim(up_genes)[1],dim(down_genes)[1]))
+	col_sp = condition
+	#######
+	file3 = paste0(tag,"DEGs.png")
+	print(file3)
+	#######
+	png(file3,height=5000,width=4000,res=72*12)
+	print(Heatmap(rbind(Norm_matrix_up,Norm_matrix_down), name = "X", border = T,use_raster=FALSE,show_row_names=F,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 0),cluster_rows = F,cluster_columns = F,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='black',at=c(-1,-0.5,0,0.5,1)),row_split=row_sp,column_split=col_sp))
+	dev.off()
+	#######
+}
+
+
+#############
+DEGseq2_DEGs_heatmaps_goterm(DEGs=LiverNCD_DEGs,logfc = 0.25,pvalue=0.05,LiverNCD_AVG,"LiverNCD",condition)
+#############
+
+Mus musculus
+Mus musculus
+Mus musculus
+Mus musculus
+Mus musculus
+
+######
+
+LiverNCD_countsup_genes.txt
+LiverNCD_countsdown_genes.txt
+
+
+#######
+####### Plot_GO_terms ########
+#######
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+DAVID_file <- "Aml12_induce_upGO.txt"
+#ratio = dim(down_genes)[1]
+tag = "Aml12_induce_upGO"
+
+DEGseq2_Plot_GO_terms <- function(DAVID_file,tag){
+	#########
+	#########
+	temp_file = read.table(DAVID_file,header=T,sep="\t")
+	#########
+	######### filter terms ######
+	temp_file$Term = sapply(strsplit(temp_file$Term,split="~"),function(x) x[[2]])
+	#########
+	k = which(temp_file$FDR < 0.05)
+	temp_file_cl = temp_file[k,]
+	#########
+	######### temp_file_cl$Count = temp_file_cl$Count
+	#########
+	temp_file_cl = temp_file_cl[order(temp_file_cl$Fold.Enrichment,decreasing=T),]
+	#########
+	k = which(temp_file_cl$Count < 5)
+	if(length(k > 0)){
+		temp_file_cl = temp_file_cl[-k,]
+	}
+	if(dim(temp_file_cl)[1] > 10){
+		temp_file_cl = temp_file_cl[1:10,]
+	}
+	#########
+	library(ggplot2)
+	#########
+	ggplot(data = temp_file_cl, aes(x=Fold.Enrichment,y = reorder(Term,Fold.Enrichment))) + 
+  		geom_point(aes(size = Count, color = -log10(FDR))) + scale_size(range = c(4,8),breaks=c(5,10,15,20)) +
+  		scale_color_gradient(low = "#026AB1", high = "#D11536") +
+  		theme_bw() + 
+  		xlab("Fold Enrichment") + 
+  		ylab("") + 
+  		ggtitle("GOterm BP")+
+  		theme(axis.text.x = element_text(angle = 15,vjust = 0.75)) 
+  	##########
+  	file_png = paste0(tag,".png")
+  	##########
+	ggsave(file_png,width = 9,height = 6,units = "in", dpi = 300)
+
+}
+#######
+ggsave(file_png,width = 6,height = 4,units = "in", dpi = 300)
+ggsave(file_png,width = 5,height = 4,units = "in", dpi = 300)
+#######
+####### OK!!! Next !!!! #####
+#######
+
+
+
+counts = round(LiverKO_counts[,-3])
+condition = rep(c("Ctrl","KO"),each=6)
+condition = condition[-3]
+tag = "LiverKO_counts"
+DEGseq2_PCA(counts,condition,tag)
+
+contrast = c("condition","KO","Ctrl")
+
+LiverKO_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+write.table(LiverKO_DEGs,file="LiverKO_DEGs.txt",sep='\t',quote=F,row.names=F)
+
+LiverKO_AVG = DEGseq2_AVG(counts,condition)
+
+DEGseq2_DEGs_heatmaps_goterm(DEGs=LiverKO_DEGs,logfc = 0.25,pvalue=0.05,LiverKO_AVG,"LiverKO",condition)
+###########################################
+###########################################
+
+
+###########################################
+###########################################
+
+red
+red
+red
+red
+red
+red
+
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+load("LiverInduce_counts")
+
+
+##### 不做PCA 先做差异表达 #####
+##### shCtrl + Dox ##########
+counts = round(LiverInduce_counts[,c(1:3,13:15)])
+condition = rep(c("Ctrl","Ctrl_dox_plus"),each=3)
+contrast = c("condition","Ctrl_dox_plus","Ctrl")
+
+LiverNCD_Ctrl_plus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+
+###
+counts = round(LiverInduce_counts[,c(7:9,13:15)])
+condition = rep(c("Ctrl_dox_minus","Ctrl_dox_plus"),each=3)
+contrast = c("condition","Ctrl_dox_minus","Ctrl_dox_plus")
+
+LiverNCD_Ctrl_minus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+
+##### next do the shLInc ########
+counts = round(LiverInduce_counts[,c(4:6,16:18)])
+condition = rep(c("shLinc","shLinc_dox_plus"),each=3)
+contrast = c("condition","shLinc_dox_plus","shLinc")
+LiverNCD_shLinc_plus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+counts = round(LiverInduce_counts[,c(10:12,16:18)])
+condition = rep(c("shLinc_dox_minus","shLinc_dox_plus"),each=3)
+contrast = c("condition","shLinc_dox_minus","shLinc_dox_plus")
+LiverNCD_shLinc_minus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+
+##### Next merge 2 tables and filter ########
+#####
+
+tab1 = LiverNCD_Ctrl_plus_DEGs
+tab2 = LiverNCD_Ctrl_minus_DEGs
+logfc1 = 0.5
+logfc2 = 0.25
+
+
+
+Merge1_tab <- function(tab1,tab2,logfc1,logfc2){
+	print(logfc1)
+	print(logfc2)
+	#########
+	k1 = which(tab1$log2FoldChange > logfc1 & tab1$pvalue < 0.05)
+	print(length(k1))
+	k2 = which(tab2$log2FoldChange < -logfc2 & tab2$pvalue < 0.05)
+	print(length(k2))
+	#########
+	k3 = which(tab1$log2FoldChange < -logfc1 & tab1$pvalue < 0.05)
+	print(length(k3))
+	k4 = which(tab2$log2FoldChange > logfc2 & tab2$pvalue < 0.05)
+	print(length(k4))
+	#########
+	#########
+	index = "9030622O22Rik"
+	index_k = which(rownames(tab1) == index)
+	print(tab1[index_k,])
+	index_k = which(rownames(tab2) == index)
+	print(tab2[index_k,])
+	######### up genes #########
+	#########
+	k1_genes = rownames(tab1)[k1]
+	k2_genes = rownames(tab2)[k2]
+	upgenes = k1_genes[which(k1_genes %in% k2_genes == T)]
+	#########
+	k3_genes = rownames(tab1)[k3]
+	k4_genes = rownames(tab2)[k4]
+	downgenes = k3_genes[which(k3_genes %in% k4_genes == T)]
+	#########
+	print(length(upgenes))
+	print(length(downgenes))
+	#########
+	return(list(upgenes=upgenes,downgenes=downgenes))
+}
+
+Dox_target <- Merge1_tab(LiverNCD_Ctrl_plus_DEGs,LiverNCD_Ctrl_minus_DEGs,logfc1 = 0.5,logfc2 = 0.3)
+
+shL30_target <- Merge1_tab(LiverNCD_shLinc_plus_DEGs,LiverNCD_shLinc_minus_DEGs,logfc1 = 0.5,logfc2 = 0.3)
+
+######### here !!!! ##########
+######### here !!!! ##########
+######### here !!!! ##########
+######### here !!!! ##########
+
+
+
+k = which(shL30_target[[2]] == '9030622O22Rik')
 
 
 
@@ -603,18 +1391,271 @@ Aml12_shL30_counts[which(rownames(Aml12_shL30_counts) == "ENSMUSG00000086141.9")
 
 
 
+red
+red
+red
+red
+red
+red
+
+
+red
+red
+red
+red
+red
+red
+
+
+red
+red
+red
+red
+red
+red
 
 
 
 
+############
+############ OK !!! ##########
+############
+
+k1 = which(shL30_target[[1]] %in% Dox_target[[1]] == T)
+k2 = which(shL30_target[[2]] %in% Dox_target[[2]] == T)
+
+shL30_target_cl = shL30_target
+
+shL30_target_cl[[1]] = shL30_target[[1]][-k1]
+shL30_target_cl[[2]] = shL30_target[[2]][-k1]
+
+############
+save(Dox_target,file="Dox_target")
+save(shL30_target_cl,file="shL30_target_cl")
+
+
+############
+head(LiverNCD_Ctrl_plus_DEGs)
+
+head(LiverNCD_shLinc_plus_DEGs)
+
+
+
+############ Next we will load SRR DEGs table !!! #######################
+############
+
+
+load(file="SRR_DEGs_table_new")
+
+SRR_DEGs_sh1 = read.table("GSE130805_DESeq_results_sh1vsCtrl_2.txt",header=T)
+SRR_DEGs_sh2 = read.table("GSE130805_DESeq_results_sh2vsCtrl_2.txt",header=T)
+
+#############
+vM1_genes <- readRDS("vM1_genes")
+
+SRR_DEGs_sh1$Gene_Name = vM1_genes$gene_name[match(SRR_DEGs_sh1$Gene_ID,vM1_genes$Gene_id)]
+SRR_DEGs_sh2$Gene_Name = vM1_genes$gene_name[match(SRR_DEGs_sh2$Gene_ID,vM1_genes$Gene_id)]
+
+
+
+#############
+SRR_table = SRR_DEGs_sh1
+x_table = LiverNCD_Ctrl_plus_DEGs
+x_genes = Dox_target
+
+Merge_2_DESeq_tables <- function(SRR_table,x_table,x_genes){
+	k = which(SRR_table$pvalue < 0.05)
+	SRR_table = SRR_table[k,]
+	#####################
+	x_genes = unlist(x_genes)
+	k1 = which(x_table$Genes %in% x_genes == T)
+	k2 = which(SRR_table$Gene_Name %in% x_genes == T)
+	#####################
+	x_table_cl = x_table[k1,]
+	SRR_table_cl = SRR_table[k2,]
+	#####################
+	#####################
+	x_table_cl_merge = data.frame(x_table_cl[,c("Genes","log2FoldChange")])
+	SRR_table_cl_merge = SRR_table_cl[,c("Gene_Name","log2FoldChange")]
+	SRR_table_cl_merge$log2FoldChange = as.numeric(SRR_table_cl_merge$log2FoldChange)
+	#####################
+	colnames(x_table_cl_merge) <- c("Gene_Name","x_log2FoldChange")
+	####################
+	###################
+	print(dim(x_table_cl_merge))
+	###################
+	merge_total = merge(x_table_cl_merge,SRR_table_cl_merge)
+	###################
+	print(cor(merge_total[,2],merge_total[,3]))
+	###################
+	return(merge_total)
+}
+
+
+Compare_2_DESeq_tables <- function(SRR_table,x_genes){
+	k = which(SRR_table$pvalue < 0.05)
+	SRR_table = SRR_table[k,]
+	#####################
+	SRR_table_up = SRR_table$Gene_Name[which(SRR_table$log2FoldChange > 0.5)]
+	SRR_table_down = SRR_table$Gene_Name[which(SRR_table$log2FoldChange < -0.5)]
+	###################
+	###################
+	k1 = which(x_genes[[1]] %in% SRR_table_up == T)
+	k2 = which(x_genes[[2]] %in% SRR_table_down == T)
+	###################
+	print(paste("up:",length(k1)))
+	print(paste("down:",length(k2)))
+	##################
+	#return(merge_total)
+}
+
+
+Compare_2_DESeq_tables(SRR_table,shL30_target_cl)
+
+
+Dox_SRRsh1 <- Merge_2_DESeq_tables(SRR_DEGs_sh1,LiverNCD_Ctrl_plus_DEGs,Dox_target)
+Dox_SRRsh2 <- Merge_2_DESeq_tables(SRR_DEGs_sh2,LiverNCD_Ctrl_plus_DEGs,Dox_target)
+
+Linc_SRRsh1 <- Merge_2_DESeq_tables(SRR_DEGs_sh1,LiverNCD_shLinc_plus_DEGs,shL30_target_cl)
+Linc_SRRsh2 <- Merge_2_DESeq_tables(SRR_DEGs_sh2,LiverNCD_shLinc_plus_DEGs,shL30_target_cl)
+
+
+library(ggplot2)
+
+ggplot(Dox_SRRsh1,aes(x=x_log2FoldChange,y=log2FoldChange)) + geom_point(alpha=0.5,size=1) + theme_bw()
+
+ggsave("Dox_SRRsh1.png")
+
+
+library(ggplot2)
+
+ggplot(Dox_SRRsh2,aes(x=x_log2FoldChange,y=log2FoldChange)) + geom_point(alpha=0.5,size=1) + theme_bw()
+
+ggsave("Dox_SRRsh2.png")
+
+
+library(ggplot2)
+
+ggplot(Linc_SRRsh1,aes(x=x_log2FoldChange,y=log2FoldChange)) + geom_point(alpha=0.5,size=1) + theme_bw()
+
+ggsave("Linc_SRRsh1.png")
+
+
+library(ggplot2)
+
+ggplot(Linc_SRRsh2,aes(x=x_log2FoldChange,y=log2FoldChange)) + geom_point(alpha=0.5,size=1) + theme_bw()
+
+ggsave("Linc_SRRsh2.png")
 
 
 
 
+############ Next to A1 A2 B1 B2 B3 ##########
+
+genes_list = Dox_target[[1]]
+
+plot_genes_maps <- function(genes_list,Gtfs_gene_cl_mid,tag){
+	###########
+	dat = data.frame(Genes = genes_list,Class="unknown")
+	###########
+	m = match(genes_list,Gtfs_gene_cl_mid$gene_name)
+	##########
+	dat$Class = Gtfs_gene_cl_mid$class[m]
+	########## mapping name #################
+	k = which(is.na(dat$Class) == T)
+	##########
+	if(length(k) > 0){
+		dat = dat[-k,]
+	}
+	##########
+	res = table(dat$Class)
+	###########
+	plot_res = data.frame(tag=names(res),num=as.numeric(res))
+	###########
+	library(ggplot2)
+	###########
+    FN = paste0(tag,'.png')
+	###########
+	df = plot_res
+	label_value <- paste('(', round(df$num/sum(df$num) * 100, 1), '%)', sep = '')
+	ggplot(df, aes(x = "", y = num, fill = tag)) + geom_bar(stat = 'identity', width=100) + coord_polar(theta = 'y') + labs(x = '', y = '', title = '') + theme(axis.text = element_blank()) + theme(axis.ticks = element_blank())  + geom_text(aes(y = rev(df$num/2) + c(0, cumsum(rev(df$num))[-length(df$num)]), x = sum(df$num)/150, label = rev(label_value))) 
+	ggsave(FN)
+}
+
+
+plot_genes_maps(shL30_target_cl[[1]],Gtfs_gene_cl_mid,"L30_up")
+plot_genes_maps(shL30_target_cl[[2]],Gtfs_gene_cl_mid,"L30_down")
+
+
+plot_genes_maps(SRR_table_up,Gtfs_gene_cl_mid,"SRR_up")
+plot_genes_maps(SRR_table_down,Gtfs_gene_cl_mid,"SRR_down")
+
+
+
+############ Heatmaps ##############
+############
+
+counts = round(LiverInduce_counts[,c(4:6,16:18,10:12)])
+condition = rep(c("shL30","shL30_dox_plus","shL30_dox_minus"),each=3)
+
+shL30_avgs = DEGseq2_AVG(counts,condition)
+
+AVGs = shL30_avgs
+
+tag = 'Aml12_induce'
+
+AVGs_up = AVGs[which(rownames(AVGs) %in% shL30_target_cl[[1]] == T),]
+AVGs_down = AVGs[which(rownames(AVGs) %in% shL30_target_cl[[2]] == T),]
+#######
+up_genes = data.frame(Genes = rownames(AVGs_up))
+down_genes = data.frame(Genes = rownames(AVGs_down))
+#######
+file1 = paste0(tag,"up_genes.txt")
+write.table(up_genes,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+file2 = paste0(tag,"down_genes.txt")
+write.table(down_genes,file=file2,sep='\t',quote=F,col.names=F,row.names=F)
+#######
+Norm_matrix_up = t(apply(AVGs_up,1,scale))
+Norm_matrix_down = t(apply(AVGs_down,1,scale))
+#######
+print(dim(Norm_matrix_up))
+print(dim(Norm_matrix_down))
+#######
+library('ComplexHeatmap')
+library('circlize')
+col_fun = colorRamp2(c(-2,-1,0,1,2), c('#026AB1','lightblue','white','#EF9000','#D11536'))
+#######
+row_sp = rep(c("up","down"),c(dim(up_genes)[1],dim(down_genes)[1]))
+col_sp = condition
+#######
+row_sp = factor(row_sp,levels=c('down','up'))
+col_sp = factor(col_sp,levels=c("shL30","shL30_dox_plus","shL30_dox_minus"))
+#######
+file3 = paste0(tag,"DEGs.png")
+print(file3)
+#######
+png(file3,height=5000,width=4000,res=72*12)
+print(Heatmap(rbind(Norm_matrix_up,Norm_matrix_down), name = "X", border = T,use_raster=FALSE,show_row_names=F,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 0),cluster_rows = F,cluster_columns = F,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='black',at=c(-2,-1,0,1,2)),row_split=row_sp,column_split=col_sp))
+dev.off()
+
+######## Next is the GO term ##############
+
+DAVID_file <- "Aml12_induce_upGO.txt"
+ratio = length(shL30_target_cl[[1]])
+
+DEGseq2_Plot_GO_terms(DAVID_file,ratio,tag="induce_up")
+
+
+DAVID_file <- "Aml12_induce_downGO.txt"
+ratio = length(shL30_target_cl[[2]])
+
+DEGseq2_Plot_GO_terms(DAVID_file,ratio,tag="induce_down")
 
 
 
 
+###########################################
+###########################################
 
 
 
@@ -1186,3 +2227,627 @@ library(ggplot2)
 ggplot(list_files_merge[k3,],aes(x=sample,y=IER)) + geom_violin()
 
 ggsave("test3.png",height=4,width=12)
+
+
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+######### red #############
+
+
+
+ssh plyu3@omb2.onc.jhmi.edu
+
+U[9C20&&
+
+conda env list
+
+conda activate RNAseq
+R
+
+cd /zp1/data/plyu3/QF_RNAseq/eCLIP
+
+scp -r /zp1/data/plyu3/SoftWare/mm10_datasets/mm10_vM15_index_bt2 plyu3@omb2.onc.jhmi.edu:/zp1/data/plyu3/QF_RNAseq/eCLIP/mm10_vM15_index_bt2
+scp /zp1/data/plyu3/SoftWare/mm10_datasets/picard.jar  plyu3@omb2.onc.jhmi.edu:/zp1/data/plyu3/QF_RNAseq/eCLIP/picard.jar
+scp /zp1/data/plyu3/SoftWare/mm10_datasets/chrom_mm10.sizes plyu3@omb2.onc.jhmi.edu:/zp1/data/plyu3/QF_RNAseq/eCLIP/chrom_mm10.sizes
+
+cd /zp1/data/plyu3/QF_RNAseq/eCLIP/INPUT
+
+bowtie2 -p 40 --local --no-discordant --no-mixed  --trim5 15 --trim3 70 -x /zp1/data/plyu3/QF_RNAseq/eCLIP/mm10_vM15_index_bt2/Mus_musculus_GRCm38_all_chr -1 INPUT_R1.fq.gz -2 INPUT_R2.fq.gz -S INPUT.sam
+
+samtools view -bS INPUT.sam >INPUT.bam
+samtools sort -@ 1 INPUT.bam  -o INPUT_s.bam
+samtools view -bh -q 10 INPUT_s.bam >INPUT_sq.bam
+
+java -jar /zp1/data/plyu3/QF_RNAseq/eCLIP/picard.jar MarkDuplicates REMOVE_DUPLICATES=true INPUT=INPUT_sq.bam OUTPUT=INPUT_sqr.bam METRICS_FILE=INPUT_sq_picard
+
+bedtools genomecov -ibam INPUT_sqr.bam -bg > INPUT_sqr.bedgraph
+
+awk -v factor=$(samtools view -c -F 4 INPUT_sqr.bam) '{print $1, $2, $3, $4/factor*100000}' INPUT_sqr.bedgraph > INPUT_sqrN.bedgraph
+
+cd /zp1/data/plyu3/QF_RNAseq/eCLIP/IP1
+
+bowtie2 -p 40 --local --no-discordant --no-mixed  --trim5 15 --trim3 70 -x /zp1/data/plyu3/QF_RNAseq/eCLIP/mm10_vM15_index_bt2/Mus_musculus_GRCm38_all_chr -1 IP1_R1.fq.gz -2 IP1_R2.fq.gz -S IP1.sam
+
+samtools view -bS IP1.sam >IP1.bam
+samtools sort -@ 1 IP1.bam  -o IP1_s.bam
+samtools view -bh -q 10 IP1_s.bam >IP1_sq.bam
+
+java -jar /zp1/data/plyu3/QF_RNAseq/eCLIP/picard.jar MarkDuplicates REMOVE_DUPLICATES=true INPUT=IP1_sq.bam OUTPUT=IP1_sqr.bam METRICS_FILE=IP1_sq_picard
+
+bedtools genomecov -ibam IP1_sqr.bam -bg > IP1_sqr.bedgraph
+
+awk -v factor=$(samtools view -c -F 4 IP1_sqr.bam) '{print $1, $2, $3, $4/factor*100000}' IP1_sqr.bedgraph > IP1_sqrN.bedgraph
+
+
+cd /zp1/data/plyu3/QF_RNAseq/eCLIP/IP2
+
+bowtie2 -p 40 --local --no-discordant --no-mixed  --trim5 15 --trim3 70 -x /zp1/data/plyu3/QF_RNAseq/eCLIP/mm10_vM15_index_bt2/Mus_musculus_GRCm38_all_chr -1 IP2_R1.fq.gz -2 IP2_R2.fq.gz -S IP2.sam
+
+samtools view -bS IP2.sam >IP2.bam
+samtools sort -@ 1 IP2.bam  -o IP2_s.bam
+samtools view -bh -q 10 IP2_s.bam >IP2_sq.bam
+
+java -jar /zp1/data/plyu3/QF_RNAseq/eCLIP/picard.jar MarkDuplicates REMOVE_DUPLICATES=true INPUT=IP2_sq.bam OUTPUT=IP2_sqr.bam METRICS_FILE=IP2_sq_picard
+
+bedtools genomecov -ibam IP2_sqr.bam -bg > IP2_sqr.bedgraph
+
+awk -v factor=$(samtools view -c -F 4 IP2_sqr.bam) '{print $1, $2, $3, $4/factor*100000}' IP2_sqr.bedgraph > IP2_sqrN.bedgraph
+
+#########
+#########
+#########
+
+
+
+#########
+######### Next is to the bw files ##########
+#########
+
+
+
+
+
+
+
+######### red ################
+######### red ################
+######### red ################
+
+######### 接下来的数据是 scRNAseq ########
+######### 把 kalisituo 跑上 #############
+
+######### RNAseq 标准流程 ###############
+######### copy RNAseq file to QF's folder !!! #########
+#########
+#########
+ssh plyu3@omb2.onc.jhmi.edu
+
+U[9C20&&
+
+conda activate kallisto
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-1
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-1 Ctrl-1_R1.fq.gz Ctrl-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-2
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-2 Ctrl-2_R1.fq.gz Ctrl-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-3
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/Ctrl-3 Ctrl-3_R1.fq.gz Ctrl-3_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/L30-1
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/L30-1 L30-1_R1.fq.gz L30-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/L30-2
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/L30-2 L30-2_R1.fq.gz L30-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/L30-3
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/L30-3 L30-3_R1.fq.gz L30-3_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-1
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts  -o /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-1 Zc-1_R1.fq.gz Zc-1_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-2
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts -o /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-2 Zc-2_R1.fq.gz Zc-2_R2.fq.gz
+
+cd /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-3
+
+kallisto quant --rf-stranded -i /zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.transcripts  -o /zp1/data/plyu3/QF_RNAseq/KO_new/Zc-3 Zc-3_R1.fq.gz Zc-3_R2.fq.gz
+
+############################
+############################
+############ Next: kallisto to DEGs #########
+############################
+
+conda activate seurat4
+R
+library(tximport)
+load("/zp1/data/plyu3/QF_RNAseq/AML12_induce/tx2knownGenevM31")
+
+Gtf = rtracklayer::import('/zp1/data/plyu3/QF_RNAseq/mapping_info/mm10_vM15_index_bt2/gencode.vM31.basic.annotation.gtf.gz')
+
+TXNAME = Gtf$transcript_id
+GENEID = Gtf$gene_name
+
+data = data.frame(TXNAME=TXNAME,GENEID=GENEID)
+k = which(is.na(data$TXNAME) == T)
+data = data[-k,]
+
+index = paste(data[,1],data[,2])
+data_cl = data[!duplicated(index),]
+
+
+####
+#### Get the aboundance_files path ########
+####
+
+setwd("/zp1/data/plyu3/QF_RNAseq/KO_new")
+
+files = list.files()
+
+aboundance_files_all <- c()
+
+for(i in 1:length(files)){
+	######
+	tmp_file = files[i]
+	######
+	folder = paste0("/zp1/data/plyu3/QF_RNAseq/KO_new/",tmp_file)
+	#####
+	tmp_file = paste0(folder,"/","abundance.tsv")
+	#####
+	aboundance_files_all = c(aboundance_files_all,tmp_file)
+}
+
+names(aboundance_files_all) <- files
+
+txi.kallisto.all.tsv <- tximport(aboundance_files_all, type = "kallisto", tx2gene = data_cl, ignoreAfterBar = TRUE)
+
+counts1 = txi.kallisto.all.tsv$counts
+
+setwd("/zp1/data/plyu3/QF_RNAseq/KO_new")
+
+L30Zc_counts = counts1
+
+setwd("/zp1/data/plyu3/QF_RNAseq/KO_new")
+
+save("L30Zc_counts",file="L30Zc_counts")
+
+###########
+
+k = which(rownames(L30Zc_counts) == "9030622O22Rik")
+L30Zc_counts[k,]
+
+k = which(rownames(L30Zc_counts) == "Zc3h11a")
+L30Zc_counts[k,]
+
+
+grep("9030622",rownames(L30Zc_counts))
+rownames(L30Zc_counts)[grep("Zc",rownames(L30Zc_counts))]
+
+
+
+
+
+
+###########
+########### Next we will count Overlaps between L30 and Zc #######
+########### 
+###########
+
+conda activate Signac2
+
+R
+
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+load("L30Zc_counts")
+
+
+###########
+########### first PCA
+
+counts = round(L30Zc_counts)
+condition = rep(c("Ctrl","L30","Zc"),each=3)
+tag = "L30Zc_counts"
+
+DEGseq2_PCA <- function(counts,condition,tag){
+	######
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	vsd$sample = rownames(colData)
+	######
+	png_file = paste0(tag,'.pca1.png')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(plotPCA(vsd, intgroup=c("sample")))
+	dev.off()
+	png_file = paste0(tag,'.pca2.png')
+	png(png_file,height=5000,width=6000,res=72*12)
+	print(plotPCA(vsd, intgroup=c("condition")))
+	dev.off()
+}
+
+DEGseq2_PCA(counts,condition,tag)
+
+
+
+
+
+
+########### next DEGs 
+
+contrast = c("condition","KO","Ctrl")
+
+DEGseq2_DEG <- function(counts,condition,contrast){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds,minReplicatesForReplace=Inf)
+	#######
+	res <- results(dds,contrast=contrast,cooksCutoff=FALSE, independentFiltering=FALSE)
+	#######
+	res_tab = res
+	res_tab$Genes = rownames(res)
+	k = which(colnames(res_tab) == 'Genes')
+	res_tab = res_tab[,c(k,1:(k-1))]
+	#######
+	return(res_tab)
+}
+
+#######
+DEGseq2_AVG <- function(counts,condition){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds)
+	######
+	vsd <- vst(dds, blind=FALSE)
+	######
+	exp = vsd@assays@data[[1]]
+	######
+	return(exp)
+}
+
+
+
+options(scipen=3)
+
+L30Zc_counts = round(L30Zc_counts)
+
+colnames(L30Zc_counts)
+
+counts =L30Zc_counts[,c(1:6)]
+condition = condition = rep(c("Ctrl","L30"),each=3)
+contrast = c("condition","L30","Ctrl")
+
+L30_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+write.table(L30_DEGs,file="L30_DEGs_shL30.txt",sep='\t',quote=F,row.names=F)
+
+
+L30_DEGs[which(L30_DEGs$Genes == "9030622O22Rik"),]
+L30_DEGs[which(L30_DEGs$Genes == "Zc3h11a"),]
+
+#####
+
+counts = L30Zc_counts[,c(1:3,7:9)]
+condition = condition = rep(c("Ctrl","Zc"),each=3)
+contrast = c("condition","Zc","Ctrl")
+
+Zc_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+write.table(Zc_DEGs,file="Zc_DEGs_shL30.txt",sep='\t',quote=F,row.names=F)
+
+
+Zc_DEGs[which(Zc_DEGs$Genes == "9030622O22Rik"),]
+Zc_DEGs[which(Zc_DEGs$Genes == "Zc3h11a"),]
+
+
+#####
+
+counts =L30Zc_counts[,c(1:6)]
+condition = condition = rep(c("Ctrl","L30"),each=3)
+contrast = c("condition","L30","Ctrl")
+
+colSums(counts)
+counts_cl = sweep(counts,2,colSums(counts),FUN="/")
+counts_cl = counts_cl*1e6
+
+L30_AVG <- log2(counts_cl+1)
+L30_AVG[which(rownames(L30_AVG) == "9030622O22Rik"),]
+
+
+
+counts =L30Zc_counts[,c(1:3,7:9)]
+condition = condition = rep(c("Ctrl","Zc"),each=3)
+contrast = c("condition","Ctrl","Zc")
+
+colSums(counts)
+counts_cl = sweep(counts,2,colSums(counts),FUN="/")
+counts_cl = counts_cl*1e6
+
+Zc_AVG <- log2(counts_cl+1)
+Zc_AVG[which(rownames(Zc_AVG) == "Zc3h11a"),]
+
+
+
+########### next Heatmaps 
+
+k = which(rownames(L30_Zc_AVG) == "9030622O22Rik")
+L30_Zc_AVG[k,]
+
+k = which(rownames(L30_Zc_AVG) == "Zc3h11a")
+L30_Zc_AVG[k,]
+
+
+
+
+##########
+DEGs = L30_DEGs
+logfc = 0.5
+pvalue = 0.01
+AVGs = L30_AVG
+tag = "L30_DEGs_sh"
+condition = condition = rep(c("Ctrl","L30"),each=3)
+
+L30_DEGs_list <- DEGseq2_DEGs_heatmaps_goterm(DEGs,logfc,pvalue,AVGs,tag,condition)
+
+
+
+DEGseq2_DEGs_heatmaps_goterm <- function(DEGs,logfc = 0.5,pvalue=0.05,AVGs,tag,condition){
+	#######
+	k1 = which(DEGs$log2FoldChange > logfc &  DEGs$pvalue < pvalue)
+	k2 = which(DEGs$log2FoldChange < -logfc &  DEGs$pvalue < pvalue)
+	#######
+	print(length(k1))
+	print(length(k2))
+	#######
+	AVGs_up = AVGs[which(rownames(AVGs) %in% rownames(DEGs)[k1] == T),]
+	AVGs_down = AVGs[which(rownames(AVGs) %in% rownames(DEGs)[k2] == T),]
+	#######
+	up_genes = data.frame(Genes = rownames(AVGs_up))
+	down_genes = data.frame(Genes = rownames(AVGs_down))
+	#######
+	file1 = paste0(tag,"up_genes.txt")
+	write.table(up_genes,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+	file2 = paste0(tag,"down_genes.txt")
+	write.table(down_genes,file=file2,sep='\t',quote=F,col.names=F,row.names=F)
+	#######
+	Norm_matrix_up = t(apply(AVGs_up,1,scale))
+	Norm_matrix_down = t(apply(AVGs_down,1,scale))
+	#######
+	print(dim(Norm_matrix_up))
+	print(dim(Norm_matrix_down))
+	#######
+	library('ComplexHeatmap')
+	library('circlize')
+	col_fun = colorRamp2(c(-1,-0.5,0,0.5,1), c('#026AB1','lightblue','white','#EF9000','#D11536'))
+	#######
+	row_sp = rep(c("up","down"),c(dim(up_genes)[1],dim(down_genes)[1]))
+	col_sp = condition
+	#######
+	file3 = paste0(tag,"DEGs.png")
+	print(file3)
+	#######
+	png(file3,height=5000,width=4000,res=72*12)
+	print(Heatmap(rbind(Norm_matrix_up,Norm_matrix_down), name = "X", border = T,use_raster=FALSE,show_row_names=F,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 0),cluster_rows = F,cluster_columns = F,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='black',at=c(-1,-0.5,0,0.5,1)),row_split=row_sp,column_split=col_sp))
+	dev.off()
+	#######
+	#######
+	return(list(DEGs[k1,],DEGs[k2,]))
+}
+
+DEGs = Zc_DEGs
+logfc = 0.5
+pvalue = 0.01
+AVGs = Zc_AVG
+tag = "Zc_DEGs_sh"
+condition = condition = rep(c("Ctrl","Zc"),each=3)
+
+#DEGseq2_DEGs_heatmaps_goterm(DEGs,logfc,pvalue,AVGs,tag,condition)
+
+Zc_DEGs_list <- DEGseq2_DEGs_heatmaps_goterm(DEGs,logfc,pvalue,AVGs,tag,condition)
+
+
+Overlap1 = which(Zc_DEGs_list[[1]]$Genes %in% L30_DEGs_list[[1]]$Genes == T)
+Overlap2 = which(Zc_DEGs_list[[2]]$Genes %in% L30_DEGs_list[[2]]$Genes == T)
+
+Overlap1_up = Zc_DEGs_list[[1]]$Genes[Overlap1]
+
+file1 = paste0('overlap',"up_genes.txt")
+write.table(Overlap1_up,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+
+Overlap2_down = Zc_DEGs_list[[2]]$Genes[Overlap2]
+
+file1 = paste0('overlap',"down_genes.txt")
+write.table(Overlap2_down,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+
+###########
+########### next GO DAVID #########
+###########
+
+
+
+setwd('/zp1/data/plyu3/QF_RNAseq')
+
+DAVID_file <- "shL30_down_DAVID.txt"
+DAVID_file <- "shL30_up_DAVID.txt"
+
+tag = "shL30_up_DAVID"
+
+DEGseq2_Plot_GO_terms("shL30_down_DAVID.txt","shL30_down_DAVID")
+DEGseq2_Plot_GO_terms("shL30_up_DAVID.txt","shL30_up_DAVID")
+
+DEGseq2_Plot_GO_terms <- function(DAVID_file,tag){
+	#########
+	#########
+	temp_file = read.table(DAVID_file,header=F,sep="\t")
+	#########
+	######### filter terms ######
+	temp_file$Term = sapply(strsplit(temp_file$Term,split="~"),function(x) x[[2]])
+	#########
+	k = which(temp_file$FDR < 0.05)
+	temp_file_cl = temp_file[k,]
+	#########
+	######### temp_file_cl$Count = temp_file_cl$Count
+	#########
+	temp_file_cl = temp_file_cl[order(temp_file_cl$FDR,decreasing=F),]
+	#########
+	k = which(temp_file_cl$Count < 1)
+	if(length(k > 0)){
+		temp_file_cl = temp_file_cl[-k,]
+	}
+	if(dim(temp_file_cl)[1] > 20){
+		temp_file_cl = temp_file_cl[1:20,]
+	}
+	#########
+	temp_file_cl$logPValue = -log10(temp_file_cl$PValue)
+	########
+	library(ggplot2)
+	#########
+	ggplot(data = temp_file_cl, aes(x=logPValue,y=reorder(Term,logPValue))) + 
+  		geom_point(aes(size = Count, color = logPValue)) + scale_size(range = c(4,8),breaks=c(5,10,15,20)) +
+  		scale_color_gradient(low = "#026AB1", high = "#D11536") +
+  		theme_bw() + 
+  		xlab("-log10 Pvalue") + 
+  		ylab("") + 
+  		ggtitle("GOterm BP")+
+  		theme(axis.text.x = element_text(angle = 15,vjust = 0.75)) 
+  	##########
+  	file_png = paste0(tag,".png")
+  	##########
+	ggsave(file_png,width = 9,height = 6,units = "in", dpi = 300)
+
+}
+
+write.table(L30_DEGs,file='shL30_DEGs_Aml12.txt',sep="\t",quote=F,row.names=F)
+write.table(Zc_DEGs,file='shZc_DEGs_Aml12.txt',sep="\t",quote=F,row.names=F)
+
+
+
+
+
+
+
+########### next overlaps 
+
+
+head(Zc_DEGs)
+head(L30_DEGs)
+
+############
+Get_overlap_genes_and_fold_change <- function(L30_DEGs,Zc_DEGs){
+	all_genes = c(L30_DEGs$Genes,Zc_DEGs$Genes)
+	all_genes = all_genes[!duplicated(all_genes)]
+	####
+	all_genes_tab = data.frame(Genes = all_genes,L30_logfc=0,L30_P=1,Zc_L30_logfc=0,Zc_P=1)
+	###
+	for(i in 1:length(all_genes_tab$Genes)){
+		tmp_G = all_genes_tab$Genes[i]
+		####
+		k1 = which(L30_DEGs$Genes == tmp_G)
+		k2 = which(Zc_DEGs$Genes == tmp_G)
+		####
+		if(length(k1) > 0){
+			all_genes_tab$L30_logfc[i] = L30_DEGs$log2FoldChange[k1]
+			all_genes_tab$L30_P[i] = L30_DEGs$pvalue[k1]
+		}
+		if(length(k2) > 0){
+			all_genes_tab$Zc_L30_logfc[i] = Zc_DEGs$log2FoldChange[k2]
+			all_genes_tab$Zc_P[i] = Zc_DEGs$pvalue[k2]
+		}
+		if(i %% 1000 == 0){
+			print(i)
+		}
+	}
+	return(all_genes_tab)
+}
+
+
+Veen_Plot <- function(all_genes_tab,logfc=1,pvalue=0.05){
+	###########
+	set1_pos = which(all_genes_tab$L30_logfc > logfc & all_genes_tab$L30_P < pvalue)
+	set2_pos = which(all_genes_tab$Zc_L30_logfc > logfc & all_genes_tab$Zc_P < pvalue)
+	set1_neg = which(all_genes_tab$L30_logfc < -logfc & all_genes_tab$L30_P < pvalue)
+	set2_neg = which(all_genes_tab$Zc_L30_logfc < -logfc & all_genes_tab$Zc_P < pvalue)
+	###########
+	print(paste("total:",length(set1_pos) + length(set1_neg)))
+	print(paste("total:",length(set2_pos) + length(set2_neg)))
+	#########
+	overlap1 = length(which(set1_pos %in% set2_pos == T))
+	overlap2 = length(which(set1_neg %in% set2_neg == T))
+	#########
+	print(paste("overlap:",overlap1 + overlap2))
+
+}
+
+
+Veen_Plot(all_genes_tab,logfc=0.5,pvalue=0.05)
+
+
+
+
+
+
+
+
+
+
+
+
+
+############ next compartment 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
