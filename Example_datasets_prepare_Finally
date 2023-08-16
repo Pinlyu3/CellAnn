@@ -2226,10 +2226,10 @@ for(i in 1:dim(Mouse_compare_list_4)[1]){
 ###### Then we changed the functions with CellAnn !!!!! ###########
 ######
 
-Ori_folder <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_compared_datasets/"
-output_folder1 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_equal_datasets/"
-output_folder2 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
-output_folder3 <- "C:/Users/plyu3/Desktop/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+Ori_folder <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
 
 setwd(Ori_folder)
 load('Mouse_compare_list_tab')
@@ -2595,6 +2595,12 @@ cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,level
 library(ggplot2)
 ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
 ggsave("cellAnn_res_plot.png",width=8,height=8)
+
+
+####
+#### 这个是final code for the figures ！！！ ########
+####
+
 
 
 ####
