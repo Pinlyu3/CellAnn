@@ -1,6 +1,260 @@
+
+Visualize_res <- function(out_table_list,ref_label_list,query_label_list){
+	plot_res = list()
+	for(i in 1:length(out_table_list)){
+		######
+		names = names(out_table_list)[i]
+		library(stringr)
+		query_names = str_extract(names,"(?<=query:)(.+)(?=-->)")
+		ref_names = str_extract(names,"(?<=ref:)(.+)")
+		print(paste(query_names,ref_names))
+		###### load the query ground truth ######
+		###### see the results ######
+		query_res = out_table_list[[i]]
+		###### merge the table ######
+		query_merge = query_res
+		###### 
+		query_label_list_tmp = query_label_list[[i]]
+		######
+		if(class(query_label_list_tmp) == "data.frame"){
+			query_merge$ground.truth = query_label_list_tmp$"ground-truth"
+			#####
+			query_merge$number = query_label_list_tmp$"number"
+		}else{
+			query_merge$ground.truth = query_label_list[[i]]
+		}
+		######
+		######
+		###### Then calculate the accuracy ############
+		plot_res_sub = Class_results(query_merge,ref_label_list[[i]],NDtag='Unassigned')
+		plot_res = c(plot_res,list(plot_res_sub))
+	}
+	names(plot_res) = names(out_table_list)
+	return(plot_res)
+}
+
+Class_results <- function(query_merge,ref_ct,NDtag='Unassigned'){
+	####
+	res_table = query_merge
+	res_table$class1 = 'ND'
+	res_table$class2 = 'ND'
+	res_table_cl = res_table
+	####
+	query_res = query_merge$result
+	query_truth = query_merge$ground.truth
+	####
+	for(j in 1:dim(res_table_cl)[1]){
+		query_truth_tmp = query_truth[j]
+		query_res_tmp = query_res[j]
+		if(query_truth_tmp %in% ref_ct == T){
+			if(length(grep(" & ",query_res_tmp))==0){
+				if(query_res_tmp == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+					res_table_cl$class1[j] = 'Failed_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+				if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))==1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				if(query_res_tmp[1] == query_truth_tmp | query_res_tmp[2] == query_truth_tmp){
+					res_table_cl$class1[j] = 'Correct_Classify_Half'
+	 				res_table_cl$class2[j] = 'Correct'
+				}
+				if((query_res_tmp[1] != query_truth_tmp) & (query_res_tmp[2] != query_truth_tmp)){
+					res_table_cl$class1[j] = 'Wrong_Classify'
+	 				res_table_cl$class2[j] = 'Wrong'
+
+				}
+			}
+			if(length(grep(" & ",query_res_tmp))>1){
+				query_res_tmp = unlist(strsplit(query_res_tmp,split=' & '))
+				res_table_cl$class1[j] = 'Wrong_Classify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+		}
+		if(query_truth_tmp %in% ref_ct == F){
+			if(query_res_tmp != query_truth_tmp & query_res_tmp == NDtag){
+				res_table_cl$class1[j] = 'Correct_unClassify'
+	 			res_table_cl$class2[j] = 'Correct'
+			}
+			if(query_res_tmp != query_truth_tmp & query_res_tmp != NDtag){
+				res_table_cl$class1[j] = 'Wrong_unClassify'
+	 			res_table_cl$class2[j] = 'Wrong'
+			}
+
+		}
+	}
+	return(res_table_cl)
+}
+
+
+
+Compare3_corr <- function(ct_list,tmp_index){
+	######
+	empty_matrix = matrix(0,nrow=length(ct_list),ncol=length(ct_list))
+	######
+	for(i in 1:length(ct_list)){
+		for(j in 1:length(ct_list)){
+			v_i = ct_list[[i]]
+			v_j = ct_list[[j]]
+			#### i vs j #########
+			res1 = wilcox.test(v_i, v_j, alternative = "greater")
+			res2 = wilcox.test(v_i, v_j, alternative = "less")
+			if(res1$p.value < 0.05 & res2$p.value > 0.05){
+				empty_matrix[i,j] = 1
+			}
+			if(res1$p.value > 0.05 & res2$p.value < 0.05){
+				empty_matrix[i,j] = -1
+			}
+		}
+	}
+	matrix_row_max = apply(empty_matrix,1,sum)
+	k = which(matrix_row_max == max(matrix_row_max))
+	if(length(k) > 1){
+		tmp_index1 = tmp_index[k]
+		tmp_index1 = tmp_index1[!duplicated(tmp_index1)]
+		tmp_index1 = paste(tmp_index1,collapse=' & ')
+	}else{
+		tmp_index1 = tmp_index
+	}
+	######
+	return(tmp_index1)
+}
+
+############
+compared_stat <- function(candidate_align,ref_marker_sub,query_mat_1){
+	######
+	res_tab = as.character(sapply(candidate_align,function(x) x[[1]]))
+	res_tab = gsub('@(.+)','',res_tab)
+			for(j in 1:length(candidate_align)){
+				#print(j)
+				tmp = candidate_align[[j]]
+				tmp_index = sapply(strsplit(tmp,split='@'),function(x) x[[1]])
+				if(length(levels(as.factor(tmp_index))) == 1){
+					next
+				}else{
+					print('compare!')
+					ct_list = list()
+					for(ii in 1:length(tmp)){
+						#print(paste0("ii=",ii))
+						sub_ct = tmp[ii]
+						subDEGs = ref_marker_sub
+						sub_ct_DEGs_index = which(colnames(subDEGs) == sub_ct)
+						#####
+						sub_ct_DEGs = subDEGs[,sub_ct_DEGs_index]
+						#####
+						index_1 = which(colnames(query_mat_1) == names(candidate_align)[j])
+						#####
+						sub_query_mat_input = query_mat_1[,index_1]
+						query_sub_ct = sub_query_mat_input[which(names(sub_query_mat_input) %in% sub_ct_DEGs == T)]
+						ct_list = c(ct_list,list(query_sub_ct))
+					}
+					#### then get DEGs #####
+					indexJ = Compare3_corr(ct_list,tmp_index)
+					res_tab[j] = indexJ
+				}
+			}
+	return(res_tab)
+}
+
+
+################
+
+##### 这个是找个最高correlation的celltype ！！！ #########
+
+Res_mat_highest_celltype <- function(res_mat,cutoff){
+	res_list = list()
+	for(i in 1:dim(res_mat)[1]){
+		res_mat_tmp = res_mat[i,]
+		k = which(res_mat_tmp == max(res_mat_tmp))
+		max_cor = res_mat_tmp[k]
+		##### #######
+		k2 = which(res_mat_tmp <= max_cor & res_mat_tmp >= cutoff)
+		if(length(k2) == 0){
+			res_mat_tmp_k2 = "Unassigned"
+			res_list = c(res_list,list("Unassigned"))
+		}
+		if(length(k2) > 0){
+		##### #######
+			res_mat_tmp_k2 = res_mat_tmp[k2]
+			res_mat_tmp_k2 = sort(res_mat_tmp_k2,decreasing=T)
+			#####
+			if(length(res_mat_tmp_k2) >3){
+				res_mat_tmp_k2 = res_mat_tmp_k2[1:3]
+			}
+			res_list = c(res_list,list(names(res_mat_tmp_k2)))
+		}
+		######
+		######
+	}
+	names(res_list) = rownames(res_mat)
+	return(res_list)
+}
+
+####
 #####
 #### Example datasets prepare Finally check !!!!
 #####
+
+calculate_Cor <- function(query_mat_input,ref_mat_input,DEGs_overlap){
+	k1 = which(DEGs_overlap %in% rownames(query_mat_input) == T)
+	k2 = which(DEGs_overlap %in% rownames(ref_mat_input) == T)
+	k3 = k1[which(k1 %in% k2 == T)]
+	DEGs_overlap = DEGs_overlap[k3]
+	######
+	query_mat_input_cl = query_mat_input[which(rownames(query_mat_input) %in% DEGs_overlap == T),]
+	ref_mat_input_cl = ref_mat_input[which(rownames(ref_mat_input) %in% DEGs_overlap == T),]
+	######
+	######
+	m1 = match(DEGs_overlap,rownames(query_mat_input_cl))
+	m2 = match(DEGs_overlap,rownames(ref_mat_input_cl))
+	query_mat_input_cl= query_mat_input_cl[m1,]
+	ref_mat_input_cl= ref_mat_input_cl[m2,]
+	######
+	merge_mat = cbind(query_mat_input_cl,ref_mat_input_cl)
+	Cor_res <- pcaPP::cor.fk(merge_mat)
+	###### split the Cor_res #######
+	query_dim = dim(query_mat_input_cl)[2]
+	ref_dim = dim(ref_mat_input_cl)[2]
+	######
+	Cor_res = Cor_res[,-c(1:query_dim)]
+	Cor_res = Cor_res[c(1:query_dim),]
+	###### Then we output the most largest clusters ########
+	return(Cor_res)
+}
+
+
+
+
+##### some unchanged fucntions ######
+
+selection_DEGs <- function(all_used_genes,ref_marker,Top=50){
+	#### class(ref_marker) ######
+	res = apply(ref_marker,2,function(x) length(which(x %in% all_used_genes == T)))
+	num = min(res)
+	####
+	num_new = min(num,Top)
+	#### OK!! Then see the Top genes !!!! #######
+	ref_marker_cl = ref_marker[1:num_new,]
+	####
+	ref_marker_cl = reshape2::melt(as.matrix(ref_marker_cl))
+	####
+	all_markers = ref_marker_cl$value
+	all_markers = all_markers[!duplicated(all_markers)]
+	####
+	return(all_markers)
+}
+
+
 
 
 
@@ -236,11 +490,227 @@ load('scmap_cluster_mouse_res_list')
 #####
 
 
+
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot_V1.png",width=8,height=8)
+
+
 #####
-####
 #####
 
-Analysis_cor <- function(cor_res,lower_cutoff = 0.4){
+
+
+
+
+#####
+##### 运行 Main_compare_process_CellAnn 这个 function ######
+#####
+##### 我们来试运行一下 ######
+#####
+
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
+
+######
+
+Ori_folder <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_compared_datasets/"
+
+output_folder1 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+
+compare_df = Mouse_compare_list_tab[[1]]
+folder = output_folder1
+
+Main_compare_process_CellAnn <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### query's tag #####
+		query = compare_df$Query_new[i]
+		####### ref's tag #####
+		ref = compare_df$Ref_new[i]
+		####### load from these folder !!!! #############################
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#### this is the groundtruth table !!!! ###
+		query_label_tab = loadRData(query_label_index)
+		####
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#### filter the groundtruth table !!!! #####
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		####### load the marker genes in the reference datasets !!! ####
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		####### load the submarker genes for the reference datasets !!! #####
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		####### ref_label is the major cell labels of the sub-cluster cells ######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		####### make the 2 matrix equal !!! ############################
+		Mat_list = equal_matrix(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		####### level2 DEGs ########
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		####### level3 DEGs ########
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=25)
+		########## Don't know these DEGs !!! ######
+		all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.3,high_cutoff=0.5)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		##### 看这些基因是否在里面富集 ###################
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+
+##### this is the Ori equal_matrix ########
+equal_matrix <- function(query_mat,ref_mat){
+	##########
+	genes_overlap = rownames(query_mat)[which(rownames(query_mat) %in% rownames(ref_mat) == T)]
+	########## head(rownames(query_mat2))
+	m = match(genes_overlap,rownames(query_mat))
+	query_mat2 = query_mat[m,]
+	########## head(rownames(ref_mat2))
+	m = match(genes_overlap,rownames(ref_mat))
+	ref_mat2 = ref_mat[m,]
+	########## OK !!!! Then normalize !!!! ########
+	##########
+	ref_mat_input3 = exp(ref_mat2)-1
+	#print(head(colSums(ref_mat_input3)))
+	query_mat_input3 = exp(query_mat2)-1
+	#print(colSums(query_mat_input3))
+	##########
+	combined_mat = cbind(query_mat_input3,ref_mat_input3)
+	#######
+	combined_mat_norm = limma::normalizeBetweenArrays(combined_mat,method="quantile")
+	combined_mat_norm = log(combined_mat_norm+1)
+	combined_mat_norm = round(combined_mat_norm,2)
+	#######
+	query_mat_input4 = combined_mat_norm[,1:dim(query_mat_input3)[2]]
+	ref_mat_input4 = combined_mat_norm[,-c(1:dim(query_mat_input3)[2])]
+	#######
+	outputlist = list(query_mat_input4,ref_mat_input4)
+	return(outputlist)
+}
+
+
+##### we will change the equal matrix !!! ########
+
+equal_matrix2 <- function(query_mat,ref_mat){
+	##########
+	genes_overlap = rownames(query_mat)[which(rownames(query_mat) %in% rownames(ref_mat) == T)]
+	########## head(rownames(query_mat2))
+	m = match(genes_overlap,rownames(query_mat))
+	query_mat2 = query_mat[m,]
+	########## head(rownames(ref_mat2))
+	m = match(genes_overlap,rownames(ref_mat))
+	ref_mat2 = ref_mat[m,]
+	########## OK !!!! Then normalize !!!! ########
+	outputlist = list(query_mat2,ref_mat2)
+	return(outputlist)
+}
+
+
+#####
+#### need higher cutoff ? ##########
+#####
+ 
+#### "red" "red" "red" require library(purrr) Not work !!!! #####
+
+#### OK!!! 先这样子 ########
+
+Analysis_cor <- function(cor_res,lower_cutoff = 0.3,high_cutoff=0.6){
 	####
 	# lower_cutoff = 0.35
 	###### print the max of cor_res ######
@@ -256,8 +726,10 @@ Analysis_cor <- function(cor_res,lower_cutoff = 0.4){
 	###### Then we get the parameters for each model !!!! ####
 	######
 	model_mean_total = model$parameters$mean
+	######
 	model_sd_total = model$parameters$variance$sigmasq
 	######
+	###### 有可能只有一个sd ！！！ ######
 	if(length(model_sd_total) == 1){
 		model_sd_total = rep(model_sd_total,number_model)
 	}
@@ -287,6 +759,9 @@ Analysis_cor <- function(cor_res,lower_cutoff = 0.4){
 	}
 	if(cutoff < lower_cutoff){
 		cutoff = lower_cutoff
+	}
+	if(cutoff > high_cutoff){
+		cutoff = high_cutoff
 	}
 	#####
 	return(cutoff)
@@ -355,80 +830,580 @@ res_list_to_plot <- function(res_list,name='Q=R',tag1="mouse"){
 ###
 #####
 
+
+
+
+
+
+Main_compare_process_CellAnn2 <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### query's tag #####
+		query = compare_df$Query_new[i]
+		####### ref's tag #####
+		ref = compare_df$Ref_new[i]
+		####### load from these folder !!!! #############################
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#### this is the groundtruth table !!!! ###
+		query_label_tab = loadRData(query_label_index)
+		####
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#### filter the groundtruth table !!!! #####
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		####### load the marker genes in the reference datasets !!! ####
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		####### load the submarker genes for the reference datasets !!! #####
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		####### ref_label is the major cell labels of the sub-cluster cells ######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		####### make the 2 matrix equal !!! ############################
+		Mat_list = equal_matrix2(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		####### level2 DEGs ########
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		####### level3 DEGs ########
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=25)
+		########## Don't know these DEGs !!! ######
+		all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.3,high_cutoff=0.5)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		##### 看这些基因是否在里面富集 ###################
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn2(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn2(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn2(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn2(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot_V2.png",width=8,height=8)
+
+
+
+
+
+Main_compare_process_CellAnn3 <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### query's tag #####
+		query = compare_df$Query_new[i]
+		####### ref's tag #####
+		ref = compare_df$Ref_new[i]
+		####### load from these folder !!!! #############################
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#### this is the groundtruth table !!!! ###
+		query_label_tab = loadRData(query_label_index)
+		####
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#### filter the groundtruth table !!!! #####
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		####### load the marker genes in the reference datasets !!! ####
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		####### load the submarker genes for the reference datasets !!! #####
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		####### ref_label is the major cell labels of the sub-cluster cells ######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		####### make the 2 matrix equal !!! ############################
+		Mat_list = equal_matrix2(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		####### level2 DEGs ########
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		####### level3 DEGs ########
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=25)
+		########## Don't know these DEGs !!! ######
+		all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4,high_cutoff=0.6)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		##### 看这些基因是否在里面富集 ###################
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn3(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn3(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn3(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn3(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot_V3.png",width=8,height=8)
+
+#########
+#########
+
+
+
+
+
+
+Main_compare_process_CellAnn5 <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### query's tag #####
+		query = compare_df$Query_new[i]
+		####### ref's tag #####
+		ref = compare_df$Ref_new[i]
+		####### load from these folder !!!! #############################
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#### this is the groundtruth table !!!! ###
+		query_label_tab = loadRData(query_label_index)
+		####
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#### filter the groundtruth table !!!! #####
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		####### load the marker genes in the reference datasets !!! ####
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		####### load the submarker genes for the reference datasets !!! #####
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		####### ref_label is the major cell labels of the sub-cluster cells ######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		####### make the 2 matrix equal !!! ############################
+		Mat_list = equal_matrix2(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		####### level2 DEGs ########
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		####### level3 DEGs ########
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=50)
+		########## Don't know these DEGs !!! ######
+		all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4,high_cutoff=0.6)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		##### 看这些基因是否在里面富集 ###################
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn5(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn5(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn5(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn5(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot_V5.png",width=8,height=8)
+
+######
+###### 咱们在V5的基础上面改吧 ！！！！ #########
+######
+
+###### 然后我们把 distribution range 改成 文章里面叙述的 ######
+######
+
+
+Analysis_cor2 <- function(cor_res,lower_cutoff = 0.3,high_cutoff=0.6){
+	####
+	# lower_cutoff = 0.35
+	###### print the max of cor_res ######
+	print(apply(cor_res,1,max))
+	######
+	cor_resv = as.vector(cor_res)
+	cor_resv = sort(cor_resv,decreasing=T)
+	######
+	model <- mclust::densityMclust(cor_resv,G=1:3)
+	###### First we need to know how many models !!!!#########
+	number_model = length(levels(as.factor(model$classification)))
+	######
+	###### Then we get the parameters for each model !!!! ####
+	######
+	model_mean_total = model$parameters$mean
+	######
+	model_sd_total = model$parameters$variance$sigmasq
+	######
+	###### 有可能只有一个sd ！！！ ######
+	if(length(model_sd_total) == 1){
+		model_sd_total = rep(model_sd_total,number_model)
+	}
+	###### OK!!! Next we find the cutoffs ########
+	if(number_model == 3){
+		#### we selected to 2!!! #####
+		#### we will find the sencond clusters ####
+		model_classification = as.numeric(model$classification)
+		k = which(model$classification %in% model$classification[1] == F)
+		index = max(cor_resv[k])
+		cutoff = index
+	}
+	#######
+	if(number_model == 2){
+		#### we selected to 2!!! #####
+		#### we use the cutoff between the 2 peaks !!!! ##########
+		model_classification = as.numeric(model$classification)
+		k = which(model$classification %in% model$classification[1] == F)
+		index = max(cor_resv[k])
+		cutoff = index
+	}
+	if(number_model == 1){
+		#### we selected to 2!!! #####
+		#### we use the cutoff between the 2 peaks !!!! ##########
+		tmp_mean = model_mean_total[1]
+		tmp_sd = model_sd_total[1]
+		cutoff = qnorm(0.75,mean=tmp_mean,sd=sqrt(tmp_sd))
+	}
+	if(cutoff < lower_cutoff){
+		cutoff = lower_cutoff
+	}
+	if(cutoff > high_cutoff){
+		cutoff = high_cutoff
+	}
+	#####
+	return(cutoff)
+}
+
+
+
+#########
+#########
+#########
+
+######## 
+
+
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+conda activate seurat4
+
+R
+
+compare_df
+
+### Tabula_Muris_mouse_facs_Thymus_Ref 34136993 ####
+### 
+
+setwd(Ori_folder)
+Ori_folder_seurat = loadRData("Tabula_Muris_mouse_facs_Thymus_Ref")
+
+setwd(output_folder1)
+output_folder1_seurat = loadRData("Tabula_Muris_mouse_facs_Thymus_Ref")
+
+
 Ori_folder <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_compared_datasets/"
+
 output_folder1 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_equal_datasets/"
 output_folder2 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
 output_folder3 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
 
 
 setwd(Ori_folder)
-load("cellAnn_mouse_res_list")
-cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+load('Mouse_compare_list_tab')
 
+Mouse_compare_list_tab_merge <- do.call('rbind',Mouse_compare_list_tab)
 
-setwd(Ori_folder)
-load('scmap_cluster_mouse_res_list')
-scmap_cluster_mouse_res_plot1 = res_list_to_plot(scmap_cluster_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-scmap_cluster_mouse_res_plot2 = res_list_to_plot(scmap_cluster_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-scmap_cluster_mouse_res_plot3 = res_list_to_plot(scmap_cluster_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-scmap_cluster_mouse_res_plot4 = res_list_to_plot(scmap_cluster_mouse_res_list[[4]],name='Q//R',tag1="mouse")
-
-#####
-setwd(Ori_folder)
-load('chetah_mouse_res_list')
-chetah_mouse_res_plot1 = res_list_to_plot(chetah_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-chetah_mouse_res_plot2 = res_list_to_plot(chetah_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-chetah_mouse_res_plot3 = res_list_to_plot(chetah_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-chetah_mouse_res_plot4 = res_list_to_plot(chetah_mouse_res_list[[4]],name='Q//R',tag1="mouse")
-
-
-##### OK!!!! Next is the seurat !!!! #######
-#####
-setwd(Ori_folder)
-load('Seurat_mouse_res_list')
-Seurat_mouse_res_plot1 = res_list_to_plot(Seurat_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-Seurat_mouse_res_plot2 = res_list_to_plot(Seurat_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-Seurat_mouse_res_plot3 = res_list_to_plot(Seurat_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-Seurat_mouse_res_plot4 = res_list_to_plot(Seurat_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+Mouse_compare_list_tab_merge_cl = Mouse_compare_list_tab_merge[!duplicated(Mouse_compare_list_tab_merge$Ref_new),]
 
 ######
+###### OK!!! copy these Ref to a new folder !!!! ########
 ######
-setwd(Ori_folder)
-load('scClassify_mouse_res_list')
-scClassify_mouse_res_plot1 = res_list_to_plot(scClassify_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-scClassify_mouse_res_plot2 = res_list_to_plot(scClassify_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-scClassify_mouse_res_plot3 = res_list_to_plot(scClassify_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-scClassify_mouse_res_plot4 = res_list_to_plot(scClassify_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+####
+target_folder = "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Background_dat"
 
-#####
-#####
-setwd(Ori_folder)
-load("scPred_mouse_res_list")
-scPred_mouse_res_plot1 = res_list_to_plot(scPred_mouse_res_list[[1]],name='Q=R',tag1="mouse")
-scPred_mouse_res_plot2 = res_list_to_plot(scPred_mouse_res_list[[2]],name='Q<R',tag1="mouse")
-scPred_mouse_res_plot3 = res_list_to_plot(scPred_mouse_res_list[[3]],name='Q>R',tag1="mouse")
-scPred_mouse_res_plot4 = res_list_to_plot(scPred_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+compare_df = Mouse_compare_list_tab_merge_cl
 
 
 
+loadRData <- function(fileName){
+#loads an RData file, and returns it
+    load(fileName)
+    get(ls()[ls() != "fileName"])
+}
 
 
-#############
+Copy_Ref <- function(compare_df){
+	##########
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### folder's tag #####
+		Folder_tag = compare_df$tags[i]
+		#######
+		if(Folder_tag == "A=B"){
+			folder = output_folder1
+		}
+		if(Folder_tag == "A<B"){
+			folder = output_folder2
+		}	
+		if(Folder_tag == "A>B"){
+			folder = output_folder3
+		}
+		####### 
+		####### ref's tag #####
+		setwd(folder)
+		ref = compare_df$Ref_new[i]
+		#######
+		####### load from these folder !!!! #############################
+		####### first load the query_Avg expression matrix !!!!! ########
+		### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_seurat = loadRData(ref)
+		#### we will use the threshold to 0.7 #####
+		setwd(target_folder)
+		save(query_seurat,file=ref)
+		#######
+		print(i)
+	}
+	#######
+	print("Done!")
+}
 
-scmap_cluster_mouse_res_plot_all = rbind(scmap_cluster_mouse_res_plot1,scmap_cluster_mouse_res_plot2,scmap_cluster_mouse_res_plot3,scmap_cluster_mouse_res_plot4)
-colnames(scmap_cluster_mouse_res_plot_all)
-levels_sample = scmap_cluster_mouse_res_plot_all$sample2
-levels_sample = levels_sample[!duplicated(levels_sample)]
-levels_sample = rev(levels_sample)
-scmap_cluster_mouse_res_plot_all$sample2 = factor(scmap_cluster_mouse_res_plot_all$sample2,levels=levels_sample)
-scmap_cluster_mouse_res_plot_all$class = factor(scmap_cluster_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+Copy_Ref(compare_df)
 
-library(ggplot2)
-ggplot(scmap_cluster_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
-ggsave("scmap-cluster_res_plot.png",width=8,height=8)
+
+#######
+####### prepare merged count matrix for python input !!!! ##########
+#######
+
+
+
+
+
+
+
+
 
 
 
