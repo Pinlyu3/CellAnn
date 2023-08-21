@@ -131,6 +131,8 @@ Compare3_corr <- function(ct_list,tmp_index){
 }
 
 ############
+############
+
 compared_stat <- function(candidate_align,ref_marker_sub,query_mat_1){
 	######
 	res_tab = as.character(sapply(candidate_align,function(x) x[[1]]))
@@ -1097,10 +1099,6 @@ ggsave("cellAnn_res_plot_V3.png",width=8,height=8)
 #########
 
 
-
-
-
-
 Main_compare_process_CellAnn5 <- function(compare_df,folder=folder){
 	##########
 	query_label_list = list()
@@ -1393,9 +1391,492 @@ Copy_Ref <- function(compare_df){
 Copy_Ref(compare_df)
 
 
+
 #######
 ####### prepare merged count matrix for python input !!!! ##########
 #######
+
+
+folder = "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Background_dat"
+
+
+Output_py_matrix_test <- function(x,y,batch_list,tag){
+	#########
+	mat_x = x[['RNA']]@counts
+	mat_y = y[['RNA']]@counts
+	#########
+	overlap_G = rownames(mat_x)[which(rownames(mat_x) %in% rownames(mat_y) == T)]
+	#########
+	mat_x_cl = mat_x[which(rownames(mat_x) %in% overlap_G == T),]
+	mat_y_cl = mat_y[which(rownames(mat_y) %in% overlap_G == T),]
+	########
+	match_x = match(overlap_G,rownames(mat_x_cl))
+	match_y = match(overlap_G,rownames(mat_y_cl))
+	#########
+	mat_x_cl_s = mat_x_cl[match_x,]
+	mat_y_cl_s = mat_y_cl[match_y,]
+	##########
+	all.equal(rownames(mat_x_cl_s),rownames(mat_y_cl_s))
+	########## Next we will add cell meta #####
+	cell_meta_x = x@meta.data[,c('tissue','celltype')]
+	cell_meta_x$cell_id = rownames(cell_meta_x)
+	##########
+	cell_meta_y = y@meta.data[,c('tissue','celltype')]
+	cell_meta_y$cell_id = rownames(cell_meta_y)
+	##########
+	cell_meta_x$batch = batch_list[1]
+	cell_meta_y$batch = batch_list[2]
+	##########
+	cell_meta_x$celltype = paste0('sample_',cell_meta_x$celltype)
+	cell_meta_y$celltype = paste0('back_',cell_meta_y$celltype)
+	##########
+	mat_combined = cbind(mat_x_cl_s,mat_y_cl_s)
+	cell_meta_combined = rbind(cell_meta_x,cell_meta_y)
+	##########
+	all.equal(colnames(mat_combined),cell_meta_combined$cell_id)
+	##########
+	mat_file_name = paste0(tag,"expression_matrix.mtx")
+	cell_file_name = paste0(tag,"cell_metadata.csv")
+	gene_file_name = paste0(tag,"gene_metadata.csv")
+	#########
+	library(Seurat)
+	library(Matrix)
+	writeMM(Matrix::t(mat_combined), file = mat_file_name, row.names = TRUE)
+	write.csv(cell_meta_combined, file = cell_file_name, row.names = TRUE)
+	write.csv(rownames(mat_combined), file = gene_file_name, row.names = TRUE)
+	#########
+}
+
+
+Merge_datasets <- function(folder){
+	##########
+	setwd(folder)
+	##########
+	files = list.files()
+	##########
+	for(file in files){
+		print(file)
+		ref_seurat_obj = loadRData(file)
+		##########
+		back_seurat = readRDS("/zp1/data/plyu3/CellAnn_final_check/Test_datasets/droplet_seurat_merge_cl")
+		#######
+		#######
+		tag2 = paste0(file,"__","BackMerge")
+		batch_list = c("batch_sub","batch_background")
+		setwd(folder)
+		Output_py_matrix_test(x=ref_seurat_obj,y=back_seurat,batch_list,tag=tag2)
+	}
+	######
+	return(tag)
+}
+
+Merge_datasets(folder)
+
+########
+######## Then we will run the python script to calculate !!! ####
+########
+
+
+ssh plyu3@omb2.onc.jhmi.edu
+U[9C20&&
+
+conda activate scvi-env
+
+cd /zp1/data/plyu3/CellAnn_final_check
+
+nohup python cellann_final_back_batch2.py &
+
+
+
+
+
+########
+######## 我们先计算一下 ref 的 Marker #######
+########
+
+########
+########
+########
+
+back_seurat = readRDS("/zp1/data/plyu3/CellAnn_final_check/Test_datasets/droplet_seurat_merge_cl")
+
+########
+######## 我们找一下 back_seurat 的 cluster ######
+########
+
+Meta_Dat = read.table("/zp1/data/plyu3/Altas_add_CellAnn/Tabula_Muris_Senis_10X/thymus10X/thymus__M_Tabula_Muris_backmergeCorrect_Cells.csv",sep=",",header=T)
+
+######## 加上一个 cluster ######################
+########
+
+m = match(colnames(back_seurat),Meta_Dat$cell_id)
+
+back_seurat$cluster = Meta_Dat$leiden[m]
+
+#######
+####### using COSG to Call markers #######
+#######
+
+
+runDEGs_Ref_sub <- function(Seurat_Obj,method='COSG',idents='celltype',num_of_genes = 50){
+	library(Seurat)
+	Idents(Seurat_Obj) = idents
+	#######
+	library(COSG)
+	#######
+	if(method == 'COSG'){
+		marker_cosg <- cosg(
+ 				Seurat_Obj,
+ 				groups=c('all'),
+ 				assay='RNA',
+ 				slot='data',
+ 				mu=1,
+ 				n_genes_user=num_of_genes)
+		res = marker_cosg$names
+		all_genes = res
+	}
+	#######
+	#######
+	return(all_genes)
+}
+
+
+back_seurat_markers = runDEGs_Ref_sub(back_seurat,method='COSG',idents='cluster',num_of_genes = 50)
+
+#######
+####### Next calculate the average expression of 
+#######
+
+data_mat = back_seurat[['RNA']]@counts
+data_cluster = as.character(back_seurat$cluster)
+
+back_seurat_Avg = CellAnn_Avg_Mat2(data_mat,data_cluster,log='log',scale_factor=10000)
+
+
+CellAnn_Avg_Mat2 <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	###### normalized back datasets ######
+	print(paste('Sums:',head(colSums(data_mat[,c(1:2)]))))
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		print(i)
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat[,index]
+		######
+		index_sum = Matrix::rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+##################
+#################
+setwd(folder)
+
+save(back_seurat_markers,file='back_seurat_markers')
+save(back_seurat_Avg,file='back_seurat_Avg')
+
+folder = "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Background_dat"
+
+
+###################
+##################
+
+Next we will modify the functions with CellAnn !!!! ###########
+
+###################
+###################
+###################
+## from CellAnn version 5 !!!! #######
+###################
+###################
+###################
+
+
+
+CellAnn_Avg_Mat2 <- function(data_mat,data_cluster,log='log',scale_factor=10000){
+	######
+	tag_cluster = unname(data_cluster)
+	tag_cluster_level = levels(as.factor(tag_cluster))
+	###### normalized back datasets ######
+	data_mat_exp = data_mat
+	###### data_mat_exp is 1e5 normalize #######
+	merge_mat = c()
+	for(i in 1:length(tag_cluster_level)){
+		index = which(data_cluster %in% tag_cluster_level[i] == T)
+		index_mat = data_mat_exp[,index]
+		print(dim(index_mat))
+		######
+		index_sum = Matrix::rowSums(index_mat)
+		######
+		merge_mat = c(merge_mat,index_sum)
+	}
+	###
+	merge_mat = matrix(merge_mat,nrow=dim(data_mat)[1])
+	###
+	rownames(merge_mat) = rownames(data_mat)
+	colnames(merge_mat) = tag_cluster_level
+	### colSums(merge_mat)
+	scale = colSums(merge_mat)/scale_factor
+	merge_mat = sweep(merge_mat,2,scale,FUN='/')
+	### default norm ####
+	merge_mat = round(log(merge_mat+1),5)
+	return(merge_mat)
+}
+
+#######
+#######
+#######
+
+
+Ori_folder <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_compared_datasets/"
+output_folder1 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(output_folder3)
+files = list.files()
+
+#files = files[grep("Ref$",files)]
+files = files[grep("_Ref_small$",files)]
+files = files[grep("^Tabula_Muris",files)]
+
+for(i in 1:length(files)){
+	print(i)
+	######## "seurat_clusters_new" ########
+	tmp_seurat = loadRData(files[i])
+	########
+	tmp_file_name_avg = paste0(files[i],'_CT_Avg')
+	########
+	tmp_seurat_mat = tmp_seurat[['RNA']]@counts
+	data_cluster = as.character(tmp_seurat$celltype)
+	ref_Avg_Mat <- CellAnn_Avg_Mat2(data_mat=tmp_seurat_mat,data_cluster)
+	########
+	save(ref_Avg_Mat,file=tmp_file_name_avg)
+	######## Next we need to call subCell markers for each sub Cts ###########
+}
+
+######
+###### OK!!! Next !!!! ####
+######
+
+folder = output_folder3
+compare_df= Mouse_compare_list_tab[[3]]
+
+i = 12
+
+Main_compare_process_CellAnn6 <- function(compare_df,folder=folder){
+	##########
+	query_label_list = list()
+	ref_label_list = list()
+	out_table_list = list()
+	##########
+	for(i in 1:dim(compare_df)[1]){
+		print(paste('NOOOOOOO',i))
+		print(paste('query:',compare_df$Query_new[i],'  ','ref:',compare_df$Ref_new[i],sep=''))
+		TAG = paste('query:',compare_df$Query_new[i],'-->','ref:',compare_df$Ref_new[i],sep='')
+		#######
+		####### query's tag #####
+		query = compare_df$Query_new[i]
+		####### ref's tag #####
+		ref = compare_df$Ref_new[i]
+		####### load from these folder !!!! #############################
+		setwd(folder)
+		####### first load the query_Avg expression matrix !!!!! ########
+		query_avg = paste0(query,'_Cluster_Avg') ### red ####
+		####### load the average expression matrix !!!!!! ###############
+		query_mat = loadRData(query_avg)
+		#### we will use the threshold to 0.7 #####
+		#### then we load the query labels !!!! ###
+		query_label_index = paste0(query,'_GroundTruth_Cluster')
+		#### this is the groundtruth table !!!! ###
+		query_label_tab = loadRData(query_label_index)
+		####
+		m1 = match(colnames(query_mat),query_label_tab$cluster)
+		#### filter the groundtruth table !!!! #####
+		query_label_tab = query_label_tab[m1,]
+		####### OK!!! Next !!!! ###################
+		####### then we load Refenece input matrix !!!! #####
+		ref_avg = paste0(ref,'_SubCluster_Avg')
+		ref_mat = loadRData(ref_avg)
+		####### load the marker genes in the reference datasets !!! ####
+		ref_marker_index = paste0(ref,'_CT_Marker')
+		ref_marker = loadRData(ref_marker_index)
+		#######
+		####### load the submarker genes for the reference datasets !!! #####
+		ref_marker_subindex = paste0(ref,'_SubCT_Marker')
+		ref_marker_sub = loadRData(ref_marker_subindex)
+		####### ref_label is the major cell labels of the sub-cluster cells ######
+		ref_label = colnames(ref_mat)
+		ref_label = sapply(strsplit(ref_label,split="@"),function(x) x[[1]])
+		####### OK!!!! #######
+		####### OK!!!! Next we will calcuate the round1 !!!!! ##########
+		####### load background avg ####################################
+		background_avg_1 = loadRData("/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Background_dat/back_seurat_Avg")
+		background_marker = loadRData("/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Background_dat/back_seurat_markers")
+		#######
+		ref_avg_back = paste0(ref,'_CT_Avg')
+		ref_mat_back = loadRData(ref_avg_back)
+		background_avg_final = equal_matrix2(background_avg_1,ref_mat_back)
+		#######
+		background_avg_final_merge = cbind(background_avg_final[[1]],background_avg_final[[2]])
+		#######
+		Mat_list_0 = equal_matrix2(query_mat,background_avg_final_merge)
+		query_mat_0 = Mat_list_0[[1]]
+		ref_mat_0 = Mat_list_0[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_0)
+		all_used_DEGs <- selection_DEGs(all_used_genes,background_marker,Top=25)
+		#######
+		cor_res_0 = calculate_Cor(query_mat_input=query_mat_0,ref_mat_input=ref_mat_0,DEGs_overlap=all_used_DEGs)
+		#######
+		cutoff_0 = Analysis_cor(cor_res_0,lower_cutoff = 0.4,high_cutoff=0.6)
+		#######
+		max_cutoff = apply(cor_res_0[,-c(1:dim(background_avg_1)[2])],1,max)
+		Unassigned_index_0 = which(max_cutoff < cutoff_0)
+		#######
+		####### Let us calculate the correlations !!!!! ################
+		####### first we need to make the 2 matrix equal !!!! ##########
+		####### make the 2 matrix equal !!! ############################
+		Mat_list = equal_matrix2(query_mat,ref_mat)
+		#######
+		query_mat_1 = Mat_list[[1]]
+		ref_mat_1 = Mat_list[[2]]
+		#######
+		all_used_genes <- rownames(query_mat_1)
+		####### level2 DEGs ########
+		all_used_DEGs <- selection_DEGs(all_used_genes,ref_marker,Top=100)
+		####### Next we need to calculate correlations !!!!! ###########
+		####### let us try to use combined markers !!! #################
+		####### level3 DEGs ########
+		all_used_DEGs_sub <- selection_DEGs(all_used_genes,ref_marker_sub,Top=50)
+		########## Don't know these DEGs !!! ######
+		#all_used_DEGs_total = c(all_used_DEGs,all_used_DEGs_sub)
+		#all_used_DEGs_total = all_used_DEGs_total[!duplicated(all_used_DEGs_total)]
+		##########
+		cor_res = calculate_Cor(query_mat_input=query_mat_1,ref_mat_input=ref_mat_1,DEGs_overlap=all_used_DEGs)
+		########## Next we need the cutoffs !!!! #######################
+		cutoff = Analysis_cor(cor_res,lower_cutoff = 0.4,high_cutoff=0.6)
+		########## Next we get the highest correlated cells !!!!! ######
+		candidate_align = Res_mat_highest_celltype(cor_res,cutoff)
+		##########
+		##########
+		########## "red" ####################
+		########## load DEGs #######
+		##########
+		res_max = apply(cor_res,1,max)
+		Unassigned_index = which(res_max < cutoff)
+		#####
+		##### Then we compare the DEGs !!! ###########
+		##### 看这些基因是否在里面富集 ###################
+		res_tab = compared_stat(candidate_align,ref_marker_sub,query_mat_1)
+		#####
+		#####
+		if(length(Unassigned_index_0) > 0){
+			res_tab[Unassigned_index_0] = 'Unassigned'
+		}
+		if(length(Unassigned_index) > 0){
+			res_tab[Unassigned_index] = 'Unassigned'
+		}
+		res_table = data.frame(cluster=colnames(query_mat_1),result=res_tab)
+		res_table = list(res_table)
+		names(res_table) = TAG
+		out_table_list = c(out_table_list,res_table)
+		#######
+		ref_label_list = c(ref_label_list,list(ref_label))
+		###### we need match the order of the avg matrix #######
+ 		query_label_list = c(query_label_list,list(query_label_tab))
+	}
+	out_table_list_v = Visualize_res(out_table_list,ref_label_list,query_label_list)
+	return(out_table_list_v)
+}
+
+
+
+
+
+cellAnn_mouse_res_1 = Main_compare_process_CellAnn6(Mouse_compare_list_tab[[1]],folder=output_folder1)
+cellAnn_mouse_res_2 = Main_compare_process_CellAnn6(Mouse_compare_list_tab[[2]],folder=output_folder2)
+cellAnn_mouse_res_3 = Main_compare_process_CellAnn6(Mouse_compare_list_tab[[3]],folder=output_folder3)
+cellAnn_mouse_res_4 = Main_compare_process_CellAnn6(Mouse_compare_list_tab[[4]],folder=Ori_folder)
+
+
+cellAnn_mouse_res_list = list(cellAnn_mouse_res_1,cellAnn_mouse_res_2,cellAnn_mouse_res_3,cellAnn_mouse_res_4)
+
+cellAnn_mouse_res_plot1 = res_list_to_plot(cellAnn_mouse_res_list[[1]],name='Q=R',tag1="mouse")
+cellAnn_mouse_res_plot2 = res_list_to_plot(cellAnn_mouse_res_list[[2]],name='Q<R',tag1="mouse")
+cellAnn_mouse_res_plot3 = res_list_to_plot(cellAnn_mouse_res_list[[3]],name='Q>R',tag1="mouse")
+cellAnn_mouse_res_plot4 = res_list_to_plot(cellAnn_mouse_res_list[[4]],name='Q//R',tag1="mouse")
+
+cellAnn_mouse_res_plot_all = rbind(cellAnn_mouse_res_plot1,cellAnn_mouse_res_plot2,cellAnn_mouse_res_plot3,cellAnn_mouse_res_plot4)
+levels_sample = cellAnn_mouse_res_plot_all$sample2
+levels_sample = levels_sample[!duplicated(levels_sample)]
+levels_sample = rev(levels_sample)
+cellAnn_mouse_res_plot_all$sample2 = factor(cellAnn_mouse_res_plot_all$sample2,levels=levels_sample)
+cellAnn_mouse_res_plot_all$class = factor(cellAnn_mouse_res_plot_all$class,levels=c('Correct_Classify','Correct_Classify_Half','Correct_unClassify','Failed_Classify','Wrong_Classify','Wrong_unClassify'))
+
+
+library(ggplot2)
+ggplot(cellAnn_mouse_res_plot_all,aes(x=sample2,y=counts,fill=class)) + geom_bar(position="fill", stat="identity") + coord_flip() + theme_classic() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_manual(values=c('#006994','lightblue','lightgreen','grey','red','pink')) + ylab('Cells (ratio)') + xlab('') + scale_y_continuous(expand=c(0,0))
+ggsave("cellAnn_res_plot_V5.png",width=8,height=8)
+
+
+
+
+
+
+
+
+
+
+
+
+###########
+
+###########
+###########
+###########
+
+
+Ori_folder <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_compared_datasets/"
+
+output_folder1 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_equal_datasets/"
+output_folder2 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_querysmaller_datasets/"
+output_folder3 <- "/zp1/data/plyu3/CellAnn_performence_final_check/CellAnn_methods_test/Totally_mouse_refsmaller_datasets/"
+
+setwd(Ori_folder)
+load('Mouse_compare_list_tab')
+
+compare_df = Mouse_compare_list_tab[[1]]
+folder = output_folder1
+
+
+############
+############
+############
+
+
+
+
+
+
+
+
+
 
 
 

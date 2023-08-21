@@ -2633,6 +2633,72 @@ L30_DEGs_list <- DEGseq2_DEGs_heatmaps_goterm(DEGs,logfc,pvalue,AVGs,tag,conditi
 
 
 
+
+
+
+
+
+
+###############
+###############
+
+
+
+
+Get_gene_sets_enrich_from_GO <- function(input_genes_list){
+	######
+	library(clusterProfiler)
+	library(org.Mm.eg.db)
+	library(GOSemSim)
+	######
+	GO_res <- list()
+	######
+	for(i in 1:length(input_genes_list)){
+		tmp_genes = input_genes_list[[i]]
+		####### tmp_genes = merge_Gene_list #####
+		Set1 <- bitr(tmp_genes, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Mm.eg.db")
+		result <- enrichGO(gene = Set1$ENTREZID,
+                   OrgDb = org.Mm.eg.db,
+                   ont  = "BP",
+                   keyType  = "ENTREZID",
+                   pAdjustMethod = "BH",
+                   pvalueCutoff  = 0.05,
+                   qvalueCutoff  = 1
+		)
+		result_s = simplify(result, cutoff=0.75, by="p.adjust", select_fun=min)
+		GOtable = result@result
+		######
+		for(j in 1:dim(GOtable)[1]){
+			########
+			tmp_G_sp = unlist(strsplit(GOtable$geneID[j],split='/',fixed=T))
+			tmp_G_sp_covert = Set1$SYMBOL[match(tmp_G_sp,Set1$ENTREZID)]
+			########
+			tmp_G_sp_covert_merge = paste(tmp_G_sp_covert,collapse=";")
+			GOtable$geneID[j] = tmp_G_sp_covert_merge
+
+		}
+		######
+		GO_res <- c(GO_res,list(GOtable))
+	}
+	#######
+	#######
+	####### GOtable[which(GOtable$ID == 'GO:0098535'),]
+	#######
+	####### GOtable[grep("cilia",GOtable$Description),]
+	#######
+	#######
+	#######
+	names(GO_res) <- names(input_genes_list)
+	#######
+	#######
+	return(GO_res)
+}
+
+
+
+
+
+
 DEGseq2_DEGs_heatmaps_goterm <- function(DEGs,logfc = 0.5,pvalue=0.05,AVGs,tag,condition){
 	#######
 	k1 = which(DEGs$log2FoldChange > logfc &  DEGs$pvalue < pvalue)
@@ -2826,6 +2892,237 @@ Veen_Plot(all_genes_tab,logfc=0.5,pvalue=0.05)
 
 
 
+############ Next redo the analysis for the inducible system ############
+
+ssh plyu3@10.112.40.197
+njd$rft1
+
+conda activate Signac2
+
+R
+
+setwd("/zp1/data/plyu3/QF_RNAseq")
+
+############
+############ line 1387 ##############
+1-1            shCtrl
+1-2            shCtrl
+1-3            shCtrl
+14-1           shLinc
+14-2           shLinc
+14-3           shLinc
+17-1 shCtrl_Dox_minus
+17-2 shCtrl_Dox_minus
+17-3 shCtrl_Dox_minus
+19-1 shLinc_Dox_minus
+19-2 shLinc_Dox_minus
+19-3 shLinc_Dox_minus
+6-1   shCtrl_Dox_plus
+6-2   shCtrl_Dox_plus
+6-3   shCtrl_Dox_plus
+7-1   shLinc_Dox_plus
+7-2   shLinc_Dox_plus
+7-3   shLinc_Dox_plus
+
+############ +Dox ############
+############ -Dox ############
+
+############ we need the table of rescued DEGs 
+############ we need the table of up-regulated GOs 
+############ we need the table of down-regulated GOs
+
+############ first we will load these counts ######
+setwd('/zp1/data/plyu3/QF_RNAseq')
+load("LiverInduce_counts")
+
+
+##### yellow ######################################
+##### 先做 shCtrl 可以 回复的基因有哪些 ？ ############
+##### shCtrl + Dox ##########
+counts = round(LiverInduce_counts[,c(1:3,13:15)])
+condition = rep(c("Ctrl","Ctrl_dox_plus"),each=3)
+contrast = c("condition","Ctrl_dox_plus","Ctrl")
+#### + Dox #####
+LiverNCD_Ctrl_plus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+####
+
+
+##### 把Dox撤掉之后gene的变化 #######################
+
+###
+counts = round(LiverInduce_counts[,c(7:9,13:15)])
+condition = rep(c("Ctrl_dox_minus","Ctrl_dox_plus"),each=3)
+contrast = c("condition","Ctrl_dox_minus","Ctrl_dox_plus")
+
+LiverNCD_Ctrl_minus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+
+##### next do the shLInc ########
+counts = round(LiverInduce_counts[,c(4:6,16:18)])
+condition = rep(c("shLinc","shLinc_dox_plus"),each=3)
+contrast = c("condition","shLinc_dox_plus","shLinc")
+LiverNCD_shLinc_plus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+counts = round(LiverInduce_counts[,c(10:12,16:18)])
+condition = rep(c("shLinc_dox_minus","shLinc_dox_plus"),each=3)
+contrast = c("condition","shLinc_dox_minus","shLinc_dox_plus")
+LiverNCD_shLinc_minus_DEGs = DEGseq2_DEG(counts,condition,contrast)
+
+######
+###### we will get 4 results !!!!! ######
+######
+
+dim(LiverNCD_Ctrl_plus_DEGs)
+
+dim(LiverNCD_Ctrl_minus_DEGs)
+
+dim(LiverNCD_shLinc_plus_DEGs)
+
+dim(LiverNCD_shLinc_minus_DEGs)
+
+
+###### Next filter the genes !!!! #######
+
+
+
+
+
+
+##### blue #######
+##### blue #######
+
+
+DEGseq2_DEG <- function(counts,condition,contrast){
+	colData <- data.frame(condition = condition)
+	rownames(colData) <- as.factor(colnames(counts))
+	colData$condition = as.factor(colData$condition)
+	######
+	library('DESeq2')
+	dds <- DESeqDataSetFromMatrix(countData = counts,colData = colData,design = ~condition)
+	num = dim(counts)[2]*2
+	dds <- dds[rowSums(counts(dds))>num,]
+	dds <- DESeq(dds,minReplicatesForReplace=Inf)
+	#######
+	res <- results(dds,contrast=contrast,cooksCutoff=FALSE, independentFiltering=FALSE)
+	#######
+	res_tab = res
+	res_tab$Genes = rownames(res)
+	k = which(colnames(res_tab) == 'Genes')
+	res_tab = res_tab[,c(k,1:(k-1))]
+	#######
+	return(res_tab)
+}
+
+
+#####
+##### functions #######
+#####
+
+
+tab1 = LiverNCD_Ctrl_plus_DEGs
+tab2 = LiverNCD_Ctrl_minus_DEGs
+
+cutoff = 0.25
+
+Merge1_tab_new <- function(tab1,tab2,cutoff){
+	tab1 = tab1[,c('Genes','log2FoldChange','pvalue')]
+	tab2 = tab2[,c('Genes','log2FoldChange','pvalue')]
+	####
+	k1 = which(abs(tab1$log2FoldChange) > cutoff & tab1$pvalue < 0.05)
+	k2 = which(abs(tab2$log2FoldChange) > cutoff & tab2$pvalue < 0.05)
+	####
+	tab1_cl = tab1[k1,]
+	tab2_cl = tab2[k2,]
+	####
+	overlap_Genes = tab1_cl$Genes[which(tab1_cl$Genes %in% tab2_cl$Genes == T)]
+	####
+	k3 = match(overlap_Genes,tab1_cl$Genes)
+	tab1_clcl = tab1_cl[k3,]
+	k4 = match(overlap_Genes,tab2_cl$Genes)
+	tab2_clcl = tab2_cl[k4,]
+	####
+	####
+	merge_tab1 = data.frame(tab1_clcl)
+	colnames(merge_tab1)[2:3] <- paste0('Dox+',colnames(merge_tab1)[2:3])
+	merge_tab2 = data.frame(tab2_clcl)
+	colnames(merge_tab2)[2:3] <- paste0('Dox-',colnames(merge_tab2)[2:3])
+	#####
+	all.equal(merge_tab1$Genes,merge_tab2$Genes)
+	#####
+	merge_tab3 = cbind(merge_tab1,merge_tab2[,c(2:3)])
+	##### filter rescued Genes #####
+	k5 = which(merge_tab3$"Dox+log2FoldChange" * merge_tab3$"Dox-log2FoldChange" < 0)
+	#####
+	merge_tab4 = merge_tab3[k5,]
+	##### filter low log2 fold change ######
+	k6 = which(abs(merge_tab4$"Dox+log2FoldChange"*0.5) < abs(merge_tab4$"Dox-log2FoldChange"))
+	merge_tab5 = merge_tab4[k6,]
+	#####
+	return(merge_tab5)
+}	
+
+LiverNCD_Ctrl_target = Merge1_tab_new(LiverNCD_Ctrl_plus_DEGs,LiverNCD_Ctrl_minus_DEGs,0.25)
+
+LiverNCD_shLinc_target = Merge1_tab_new(LiverNCD_shLinc_plus_DEGs,LiverNCD_shLinc_minus_DEGs,0.25)
+
+
+
+############ Next find the Final target of shLinc ########
+
+Clean_target_genes <- function(LiverNCD_Ctrl_target,LiverNCD_shLinc_target){
+	####
+	Up_Genes = LiverNCD_shLinc_target$Genes[which(LiverNCD_shLinc_target$"Dox+log2FoldChange" > 0)]
+	Down_Genes = LiverNCD_shLinc_target$Genes[which(LiverNCD_shLinc_target$"Dox+log2FoldChange" < 0)]
+	####
+	Up_Genes_Ctrl = LiverNCD_Ctrl_target$Genes[which(LiverNCD_Ctrl_target$"Dox+log2FoldChange" > 0)]
+	Down_Genes_Ctrl = LiverNCD_Ctrl_target$Genes[which(LiverNCD_Ctrl_target$"Dox+log2FoldChange" < 0)]
+	####
+	Up_Genes_cl = Up_Genes[which(Up_Genes %in% Up_Genes_Ctrl == F)]
+	Down_Genes_cl = Down_Genes[which(Down_Genes %in% Down_Genes_Ctrl == F)]
+	####
+	LiverNCD_shLinc_target_cl = LiverNCD_shLinc_target[which(LiverNCD_shLinc_target$Genes %in% c(Up_Genes_cl,Down_Genes_cl) == T),]
+	####
+	return(LiverNCD_shLinc_target_cl)
+}
+
+
+############
+
+LiverNCD_shLinc_target_cl = Clean_target_genes(LiverNCD_Ctrl_target,LiverNCD_shLinc_target)
+
+LiverNCD_shLinc_target_cl = LiverNCD_shLinc_target_cl[order(LiverNCD_shLinc_target_cl$"Dox+log2FoldChange"),]
+
+
+############ write excel !!! #######
+library(writexl)
+write_xlsx(LiverNCD_shLinc_target_cl, path = "L30_inducible_DEGs.xlsx")
+
+
+############
+############ next Plot the Heatmap of log2 fold change !!! #############
+############
+up_genes = LiverNCD_shLinc_target_cl[which(LiverNCD_shLinc_target_cl$"Dox+log2FoldChange" > 0),]
+down_genes = LiverNCD_shLinc_target_cl[which(LiverNCD_shLinc_target_cl$"Dox+log2FoldChange" < 0),]
+
+LiverNCD_shLinc_target_cl = LiverNCD_shLinc_target_cl[order(LiverNCD_shLinc_target_cl$"Dox+log2FoldChange",decreasing=T),]
+
+library('ComplexHeatmap')
+library('circlize')
+col_fun = colorRamp2(c(-2,-1,0,1,2), c('#026AB1','lightblue','white','#EF9000','#D11536'))
+
+#######
+row_sp = rep(c("up","down"),c(dim(up_genes)[1],dim(down_genes)[1]))
+col_sp = c("Dox+","Dox-")
+#######
+row_sp = factor(row_sp,levels=c("up","down"))
+col_sp = factor(col_sp,levels=c("Dox+","Dox-"))
+#######
+file3 = paste0("L30_DEGs.png")
+print(file3)
+#######
+png(file3,height=5000,width=3000,res=72*12)
+print(Heatmap(LiverNCD_shLinc_target_cl[,c(2,4)], name = "X", border = T,use_raster=TRUE,show_row_names=F,show_column_names=T,rect_gp = gpar(col = 'white', lwd = 0),cluster_rows = F,cluster_columns = F,col = col_fun,heatmap_legend_param = list(col_fun = col_fun,title = "",border ='black',at=c(-2,-1,0,1,2)),row_split=row_sp,column_split=col_sp))
+dev.off()
 
 
 
@@ -2834,15 +3131,54 @@ Veen_Plot(all_genes_tab,logfc=0.5,pvalue=0.05)
 
 
 
+up_genes = data.frame(Genes = up_genes$Genes)
+down_genes = data.frame(Genes = down_genes$Genes)
+#######
+file1 = paste0("Aml12_up_genes.txt")
+write.table(up_genes,file=file1,sep='\t',quote=F,col.names=F,row.names=F)
+file2 = paste0("Aml12_down_genes.txt")
+write.table(down_genes,file=file2,sep='\t',quote=F,col.names=F,row.names=F)
 
-############ next compartment 
+
+########
+########
+
+
+
+GO_terms <- readr::read_delim("Aml12_L30_upGO.txt")
+GO_terms <- data.frame(GO_terms)
+GO_terms$Term = factor(GO_terms$Term,levels=rev(GO_terms$Term))
+GO_terms$logP = -log10(GO_terms$PValue) 
+
+GO_terms_plot = GO_terms[1:10,]
+
+library(ggplot2)
+
+ggplot(GO_terms_plot,aes(x=Term,y=logP)) + geom_bar(stat="identity",fill='pink') + coord_flip() + theme_classic() + theme(panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + scale_y_continuous(expand=c(0,0))
+ggsave('Aml12_L30_up.pdf',height=4,width=5)
 
 
 
 
+GO_terms <- readr::read_delim("Aml12_L30_downGO.txt")
+GO_terms <- data.frame(GO_terms)
+GO_terms$Term = factor(GO_terms$Term,levels=rev(GO_terms$Term))
+GO_terms$logP = -log10(GO_terms$PValue) 
 
+GO_terms_plot = GO_terms[1:10,]
 
+library(ggplot2)
 
+ggplot(GO_terms_plot,aes(x=Term,y=logP)) + geom_bar(stat="identity",fill='lightblue') + coord_flip() + theme_classic() + theme(panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + scale_y_continuous(expand=c(0,0))
+ggsave('HFD_down.pdf',height=4,width=6)
 
 
 
